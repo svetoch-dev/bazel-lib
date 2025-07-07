@@ -63,7 +63,7 @@ def tf(
     expand_template(
         name = "tf_variables_tf",
         substitutions = {
-            "{env.name}": tf_env["name"],
+            "{env.name}": env_name,
         },
         template = ":tf_variables.tf.tpl",
         out = "tf_variables.tf",
