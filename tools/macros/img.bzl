@@ -7,8 +7,8 @@ load("@svetoch_bazel_lib//tools/utils:common.bzl", "build_envs")
 
 def img_build(
         name,
+        base,
         cmd = None,
-        base = "//deps/images/base:ubuntu_noble",
         tars = [],
         user = "1000",
         **kwargs):
