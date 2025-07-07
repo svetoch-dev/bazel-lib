@@ -49,7 +49,7 @@ def img_push(
         service_name,
         image,
         envs,
-        remote_tags = "//tools/stamping:stamp_img"):
+        remote_tags = "@svetoch_bazel_lib//tools/stamping:stamp_img"):
     """Macro for pushing container images
 
     Args:
