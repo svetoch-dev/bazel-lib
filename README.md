@@ -32,7 +32,6 @@ use_repo(svetoch_bazel_lib_pip, "svetoch_bazel_lib_py_deps")
 #To use tf macro
 
 
-```
 load_file = use_extension("@svetoch_bazel_lib//tools:extensions.bzl", "load_file")
 load_file.json(
     name = "tfvars",
@@ -45,4 +44,5 @@ override_repo(
     load_file,
     svetoch_bazel_lib_tfvars = "tfvars",
 )
+```
 
