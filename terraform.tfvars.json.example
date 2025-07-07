@@ -1,0 +1,88 @@
+{
+  "company": {
+    "domain": "test.by",
+    "name": "test"
+  },
+  "ci": {
+    "type": "github",
+    "group": "svetoch-dev"
+  },
+  "envs": {
+    "internal": {
+      "name": "internal",
+      "short_name": "int",
+      "import_secrets": {
+        "test": {
+          "name": "test",
+          "namespace": "test",
+          "secrets_to_import": [
+            "test"
+          ]
+        }
+      },
+      "tf_backend": {
+        "type": "gcs",
+        "configs": {
+          "bucket": "{company.name}-tf-state",
+          "prefix": "{env.name}/{tf_backend.state_name}"
+        }
+      },
+      "cloud": {
+        "name": "gcp",
+        "id": "test-internal",
+        "region": "europe-west2",
+        "registry": "{env.cloud.region}-docker.pkg.dev/{env.cloud.id}/containers",
+        "default_zone": "europe-west2-b",
+        "buckets": {
+          "deletion_protection": "true"
+        },
+        "multi_region": "EU"
+      },
+      "kubernetes": {
+        "enabled": "true",
+        "regional": "true",
+        "location": "europe-west2",
+        "deletion_protection": "true",
+        "auth_group": ""
+      }
+    },
+    "production": {
+      "name": "production",
+      "short_name": "prd",
+      "import_secrets": {
+        "test": {
+          "name": "test",
+          "namespace": "test",
+          "secrets_to_import": [
+            "test"
+          ]
+        }
+      },
+      "tf_backend": {
+        "type": "gcs",
+        "configs": {
+          "bucket": "{company.name}-tf-state",
+          "prefix": "{env.name}/{tf_backend.state_name}"
+        }
+      },
+      "cloud": {
+        "name": "gcp",
+        "id": "test-production",
+        "region": "europe-west2",
+        "registry": "{env.cloud.region}-docker.pkg.dev/{env.cloud.id}/containers",
+        "default_zone": "europe-west2-c",
+        "buckets": {
+          "deletion_protection": "true"
+        },
+        "multi_region": "EU"
+      },
+      "kubernetes": {
+        "enabled": "true",
+        "regional": "true",
+        "deletion_protection": "true",
+        "location": "europe-west2",
+        "auth_group": ""
+      }
+    }
+  }
+}

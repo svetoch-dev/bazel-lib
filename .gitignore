@@ -1,0 +1,19 @@
+#Bazel files
+bazel-*
+MODULE.bazel.lock
+
+# vim swp
+*.swp
+
+### VS Code ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## Idea ##
+.ijwb
+
+## Test files ##
+123

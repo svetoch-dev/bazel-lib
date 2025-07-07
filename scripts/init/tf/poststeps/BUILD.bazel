@@ -1,0 +1,6 @@
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+load(":poststeps.bzl", "clean")
+
+py_lint()
+
+clean()
