@@ -17,7 +17,7 @@ def deploy(service_name, app_name, envs):
         if env in envs:
             command(
                 name = "deploy_" + env,
-                command = "@@svetoch_bazel_lib//scripts/deploy:change_yaml",
+                command = "@svetoch_bazel_lib//scripts/deploy:change_yaml",
                 data = [
                     "@svetoch_bazel_lib//tools/stamping:stamp_img",
                     #Adding this in order to include
