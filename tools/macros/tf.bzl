@@ -96,6 +96,15 @@ def tf(
         ) + extra_srcs,
     )
 
+    native.filegroup(
+        name = "srcs_init",
+        srcs = [
+            ":main_tf",
+            ":terraform_tfvars_json",
+        ] + extra_srcs,
+    )
+
+
     tf_validate_test(
         name = "validate",
         srcs = [":srcs"],
@@ -109,20 +118,14 @@ def tf(
 
     tf_init(
         name = "init",
-        srcs = [
-            ":main_tf",
-            ":terraform_tfvars_json",
-        ],
+        srcs = [":srcs_init"],
         tags = ["manual"],
         backend_configs = tf_backend["configs"],
     )
 
     tf_init(
         name = "init_for_tests",
-        srcs = [
-            ":main_tf",
-            ":terraform_tfvars_json",
-        ],
+        srcs = [":srcs_init"],
         backend = False,
     )
 
