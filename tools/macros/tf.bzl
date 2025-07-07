@@ -16,6 +16,7 @@ load("@svetoch_bazel_lib//tools/utils:format.bzl", "formatted_tfvars")
 
 def tf(
         name = None,
+        extra_srcs = [],
         plan_target = "plan",
         apply_target = "apply",
         env_name = None,
@@ -24,6 +25,8 @@ def tf(
 
     Args:
         name: unused arg to stick with conventions
+        extra_srcs: additional source files that need to be added to
+            common tf targets
         plan_target: plan target name
         apply_target: apply target name
         env_name: name of the environment that state relates too
@@ -71,12 +74,14 @@ def tf(
         srcs = native.glob(
             [
                 "*.tf",
+                "templates/*/*.tpl",
             ],
+            allow_empty = True,
         ) + [
             ":main_tf",
             ":tf_variables_tf",
             ":terraform_tfvars_json",
-        ],
+        ] + extra_srcs,
         visibility = ["//visibility:__pkg__"],
     )
 
@@ -85,8 +90,10 @@ def tf(
         srcs = native.glob(
             [
                 "*.tf",
+                "templates/*/*.tpl",
             ],
-        ),
+            allow_empty = True,
+        ) + extra_srcs,
     )
 
     tf_validate_test(
