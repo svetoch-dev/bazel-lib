@@ -3,8 +3,6 @@ Repository rule to read json to starlark vars
 """
 
 def _impl(repository_ctx):
-    #src_path  = repository_ctx.path(repository_ctx.attr.src)
-    #print(src_path)
     json_data = json.decode(repository_ctx.read(repository_ctx.attr.src))
 
     repository_ctx.file("BUILD", "exports_files([ \"json.bzl\"])")
