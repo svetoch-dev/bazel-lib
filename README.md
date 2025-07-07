@@ -4,7 +4,7 @@ Bazel libraries, macros and infrastructure scripts used in https://github.com/sv
 
 ## How to use
 
-Add this code to you `MODULE.bazel` file
+Add this code to your `MODULE.bazel` file
 
 
 ```
@@ -28,4 +28,21 @@ use_repo(python, python = "python_versions")
 
 svetoch_bazel_lib_pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 use_repo(svetoch_bazel_lib_pip, "svetoch_bazel_lib_py_deps")
+
+#To use tf macro
+
+
 ```
+load_file = use_extension("@svetoch_bazel_lib//tools:extensions.bzl", "load_file")
+load_file.json(
+    name = "tfvars",
+    src = "//:terraform/terraform.tfvars.json",
+    variable_name = "tfvars",
+)
+use_repo(load_file, "tfvars")
+
+override_repo(
+    load_file,
+    svetoch_bazel_lib_tfvars = "tfvars",
+)
+
