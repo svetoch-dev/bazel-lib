@@ -1,9 +1,10 @@
 """Prepare steps for build images"""
 
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
-load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
-load("@svetoch_bazel_lib//tools/utils:format.bzl", "formatted_tfvars")
 load("@svetoch_bazel_lib//tools/utils:common.bzl", "build_envs")
+load("@svetoch_bazel_lib//tools/utils:format.bzl", "formatted_tfvars")
+load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
+
 tfvars = formatted_tfvars()
 
 def get_prepare_args():
