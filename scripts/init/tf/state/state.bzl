@@ -1,8 +1,8 @@
 """Create tf state"""
 
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
-load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 load("@svetoch_bazel_lib//tools/utils:format.bzl", "formatted_tfvars")
+load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 
 def get_create_state_args():
     """Get create_tf_state arguments from tfvars

@@ -3,9 +3,6 @@ module(name = "svetoch_bazel_lib")
 ###########
 # Bazel
 ###########
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2", dev_dependency = True)
 
 bazel_dep(name = "aspect_bazel_lib", version = "2.14.0")
@@ -29,18 +26,16 @@ git_override(
 tf = use_extension("@rules_tf//tf:extensions.bzl", "tf")
 tf.toolchain(
     name = "svetoch_bazel_lib_tf_executable",
-    version = "1.7.4"
+    version = "1.7.4",
 )
 use_repo(tf, "svetoch_bazel_lib_tf_executable")
 
 load_file = use_extension("@svetoch_bazel_lib//tools:extensions.bzl", "load_file")
-
 load_file.json(
     name = "svetoch_bazel_lib_tfvars",
     src = "//:terraform.tfvars.json.example",
     variable_name = "tfvars",
 )
-
 use_repo(load_file, "svetoch_bazel_lib_tfvars")
 
 ###################

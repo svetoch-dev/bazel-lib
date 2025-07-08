@@ -104,7 +104,6 @@ def tf(
         ] + extra_srcs,
     )
 
-
     tf_validate_test(
         name = "validate",
         srcs = [":srcs"],
