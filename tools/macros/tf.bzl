@@ -16,6 +16,7 @@ load("@svetoch_bazel_lib//tools/utils:format.bzl", "formatted_tfvars")
 
 def tf(
         name = None,
+        extra_srcs = [],
         plan_target = "plan",
         apply_target = "apply",
         env_name = None,
@@ -24,6 +25,8 @@ def tf(
 
     Args:
         name: unused arg to stick with conventions
+        extra_srcs: additional source files that need to be added to
+            common tf targets
         plan_target: plan target name
         apply_target: apply target name
         env_name: name of the environment that state relates too
@@ -60,7 +63,7 @@ def tf(
     expand_template(
         name = "tf_variables_tf",
         substitutions = {
-            "{env.name}": tf_env["name"],
+            "{env.name}": env_name,
         },
         template = ":tf_variables.tf.tpl",
         out = "tf_variables.tf",
@@ -71,12 +74,14 @@ def tf(
         srcs = native.glob(
             [
                 "*.tf",
+                "templates/*/*.tpl",
             ],
+            allow_empty = True,
         ) + [
             ":main_tf",
             ":tf_variables_tf",
             ":terraform_tfvars_json",
-        ],
+        ] + extra_srcs,
         visibility = ["//visibility:__pkg__"],
     )
 
@@ -85,9 +90,20 @@ def tf(
         srcs = native.glob(
             [
                 "*.tf",
+                "templates/*/*.tpl",
             ],
-        ),
+            allow_empty = True,
+        ) + extra_srcs,
     )
+
+    native.filegroup(
+        name = "srcs_init",
+        srcs = [
+            ":main_tf",
+            ":terraform_tfvars_json",
+        ] + extra_srcs,
+    )
+
 
     tf_validate_test(
         name = "validate",
@@ -102,20 +118,14 @@ def tf(
 
     tf_init(
         name = "init",
-        srcs = [
-            ":main_tf",
-            ":terraform_tfvars_json",
-        ],
+        srcs = [":srcs_init"],
         tags = ["manual"],
         backend_configs = tf_backend["configs"],
     )
 
     tf_init(
         name = "init_for_tests",
-        srcs = [
-            ":main_tf",
-            ":terraform_tfvars_json",
-        ],
+        srcs = [":srcs_init"],
         backend = False,
     )
 

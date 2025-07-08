@@ -50,6 +50,7 @@ def formatted_tfvars(state_name = None):
         replacement_dict["env.cloud.region"] = env_obj["cloud"]["region"]
         replacement_dict["env.cloud.id"] = env_obj["cloud"]["id"]
         replacement_dict["env.name"] = env_obj["name"]
+        replacement_dict["env.short_name"] = env_obj["short_name"]
         replacement_dict["tf_backend.type"] = env_obj["tf_backend"]["type"]
         tf_vars["envs"][env] = format_dict(replacement_dict, env_obj)
 

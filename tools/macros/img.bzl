@@ -7,8 +7,8 @@ load("@svetoch_bazel_lib//tools/utils:common.bzl", "build_envs")
 
 def img_build(
         name,
+        base,
         cmd = None,
-        base = "//deps/images/base:ubuntu_noble",
         tars = [],
         user = "1000",
         **kwargs):
@@ -49,7 +49,7 @@ def img_push(
         service_name,
         image,
         envs,
-        remote_tags = "//tools/stamping:stamp_img"):
+        remote_tags = "@svetoch_bazel_lib//tools/stamping:stamp_img"):
     """Macro for pushing container images
 
     Args:
