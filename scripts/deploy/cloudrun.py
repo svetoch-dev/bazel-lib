@@ -1,6 +1,6 @@
 import click
 import os
-from infra.libs.py.gcp.cloudrun import get_cloudrun_service, update_cloudrun_service
+from libs.py.gcp.cloudrun import get_cloudrun_service, update_cloudrun_service
 
 
 @click.command()
