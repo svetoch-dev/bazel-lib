@@ -5,7 +5,7 @@ Deploy macros
 load("@rules_multirun//:defs.bzl", "command")
 load("@svetoch_bazel_lib//tools/utils:common.bzl", "build_envs")
 
-def deploy(service_name, envs, type="argocd", app_name=None):
+def deploy(service_name, envs, type = "argocd", app_name = None):
     """Macro for deploying services to specific envs
 
     Args:
