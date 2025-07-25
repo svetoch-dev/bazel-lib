@@ -22,3 +22,13 @@ py_binary(
         requirement("GitPython"),
     ],
 )
+
+py_binary(
+    name = "cloudrun",
+    srcs = ["cloudrun.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("click"),
+        "@svetoch_bazel_lib//libs/py/gcp:cloudrun",
+    ],
+)

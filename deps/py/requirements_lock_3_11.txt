@@ -149,6 +149,7 @@ google-api-core[grpc]==2.24.1 \
     --hash=sha256:f8b36f5456ab0dd99a1b693a40a31d1e7757beea380ad1b38faaf8941eae9d8a
     # via
     #   google-cloud-core
+    #   google-cloud-run
     #   google-cloud-service-usage
     #   google-cloud-storage
 google-auth==2.38.0 \
@@ -157,12 +158,17 @@ google-auth==2.38.0 \
     # via
     #   google-api-core
     #   google-cloud-core
+    #   google-cloud-run
     #   google-cloud-service-usage
     #   google-cloud-storage
 google-cloud-core==2.4.2 \
     --hash=sha256:7459c3e83de7cb8b9ecfec9babc910efb4314030c56dd798eaad12c426f7d180 \
     --hash=sha256:a4fcb0e2fcfd4bfe963837fad6d10943754fd79c1a50097d68540b6eb3d67f35
     # via google-cloud-storage
+google-cloud-run==0.10.19 \
+    --hash=sha256:cf9feea66898d57ef8c2d6095d599cab2c013750aef71c58f04a88495e370fca \
+    --hash=sha256:e95f9337c4a66c8a094881864c86f708b6a519b938bef890eef43606e44e7538
+    # via -r deps/py/requirements.in
 google-cloud-service-usage==1.13.0 \
     --hash=sha256:366832965931a9cda254bb9de11f20f663e4171c33bf05773a3694faac3a1644 \
     --hash=sha256:af6f703776b419e7b9651986a2eade3f7fe33942f6451f41576cb9431b77c4c8
@@ -206,12 +212,17 @@ google-resumable-media==2.7.2 \
     --hash=sha256:3ce7551e9fe6d99e9a126101d2536612bb73486721951e9562fee0f90c6ababa \
     --hash=sha256:5280aed4629f2b60b847b0d42f9857fd4935c11af266744df33d8074cae92fe0
     # via google-cloud-storage
-googleapis-common-protos==1.68.0 \
+googleapis-common-protos[grpc]==1.68.0 \
     --hash=sha256:95d38161f4f9af0d9423eed8fb7b64ffd2568c3464eb542ff02c5bfa1953ab3c \
     --hash=sha256:aaf179b2f81df26dfadac95def3b16a95064c76a5f45f07e4c68a21bb371c4ac
     # via
     #   google-api-core
+    #   grpc-google-iam-v1
     #   grpcio-status
+grpc-google-iam-v1==0.14.2 \
+    --hash=sha256:a3171468459770907926d56a440b2bb643eec1d7ba215f48f3ecece42b4d8351 \
+    --hash=sha256:b3e1fc387a1a329e41672197d0ace9de22c78dd7d215048c4c78712073f7bd20
+    # via google-cloud-run
 grpcio==1.70.0 \
     --hash=sha256:0495c86a55a04a874c7627fd33e5beaee771917d92c0e6d9d797628ac40e7655 \
     --hash=sha256:07269ff4940f6fb6710951116a04cd70284da86d0a4368fd5a3b552744511f5a \
@@ -270,6 +281,8 @@ grpcio==1.70.0 \
     --hash=sha256:ff4a8112a79464919bb21c18e956c54add43ec9a4850e3949da54f61c241a4a6
     # via
     #   google-api-core
+    #   googleapis-common-protos
+    #   grpc-google-iam-v1
     #   grpcio-status
 grpcio-status==1.70.0 \
     --hash=sha256:0e7b42816512433b18b9d764285ff029bde059e9d41f8fe10a60631bd8348101 \
@@ -300,6 +313,7 @@ proto-plus==1.26.0 \
     --hash=sha256:bf2dfaa3da281fc3187d12d224c707cb57214fb2c22ba854eb0c105a3fb2d4d7
     # via
     #   google-api-core
+    #   google-cloud-run
     #   google-cloud-service-usage
 protobuf==5.29.3 \
     --hash=sha256:0a18ed4a24198528f2333802eb075e59dea9d679ab7a6c5efb017a59004d849f \
@@ -315,8 +329,10 @@ protobuf==5.29.3 \
     --hash=sha256:daaf63f70f25e8689c072cfad4334ca0ac1d1e05a92fc15c54eb9cf23c3efd84
     # via
     #   google-api-core
+    #   google-cloud-run
     #   google-cloud-service-usage
     #   googleapis-common-protos
+    #   grpc-google-iam-v1
     #   grpcio-status
     #   proto-plus
 pyasn1==0.6.1 \
