@@ -14,7 +14,7 @@ def deploy(service_name, envs, type="argocd", app_name=None):
       type: what type of tool is used to deploy (argocd,cloudrun)
       app_name: app that needs to be updated
     """
-    for env, _ in build_envs().items():
+    for env, env_dict in build_envs().items():
         if env in envs:
             if type == "argocd":
                 command(
