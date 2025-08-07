@@ -8,7 +8,7 @@ filegroup(
 )
 
 py_binary(
-    name = "black",
+    name = "lint_fix",
     srcs = [":black_src"],
     args = [
         #Fix all *.py files in WORKSPACE
