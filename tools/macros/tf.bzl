@@ -152,7 +152,7 @@ def tf(
     )
 
     tf_fmt(
-        name = "lint_fix",
+        name = "lint_fix_tf",
         srcs = [
             ":srcs_lint",
         ],

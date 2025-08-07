@@ -25,10 +25,15 @@ def main():
     2. executing all those targets via `bazel run`
     """
     os.chdir(WORKSPACE_FOLDER)
-    query = ["bazel", "query", 'attr(name, "^lint_fix$", "//...")']
+    query = [
+        "bazel",
+        "query",
+        'attr(name, "^(lint_fix_py|lint_fix_tf|lint_fix_bzl)$", "//...")',
+    ]
     result = subprocess.run(query, capture_output=True, text=True)
     output = process_results(result)
     output = output.strip("\n")
+    print(output)
     for target in output.split("\n"):
         command = ["bazel", "run", target]
         run_command(command)

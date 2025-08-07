@@ -4,7 +4,7 @@ Common lint rules
 
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
 
-def lint_fix():
+def global_lint_fix():
     """Fix all lint issues in repo
     """
 

@@ -1,6 +1,11 @@
-load("@svetoch_bazel_lib//tools/lint:lint.bzl", "lint_fix")
-load("@svetoch_bazel_lib//tools/lint/bazel:buildifier.bzl", "bazel_lint")
+load("@svetoch_bazel_lib//tools/lint:lint.bzl", "global_lint_fix")
+load("@svetoch_bazel_lib//tools/lint/bazel:buildifier.bzl", "bazel_lint", "bazel_lint_fix")
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint_fix")
 
 bazel_lint()
 
-lint_fix()
+bazel_lint_fix()
+
+py_lint_fix()
+
+global_lint_fix()
