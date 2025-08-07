@@ -5,17 +5,6 @@ from libs.py.helpers import run_command
 WORKSPACE_FOLDER = os.getenv("BUILD_WORKSPACE_DIRECTORY")
 
 
-def process_results(result):
-    if result.returncode == 0:
-        return result.stdout
-    else:
-        error = f"Bazel query failed with return code: {result.returncode}\n"
-        error += "Error:\n"
-        error += result.stderr
-
-        raise BaseException(error)
-
-
 def main():
     """
     Fix lint for all languages
@@ -25,16 +14,13 @@ def main():
     2. executing all those targets via `bazel run`
     """
     os.chdir(WORKSPACE_FOLDER)
-    query = [
+    command = [
         "bazel",
         "query",
         'attr(name, "^(lint_fix_py|lint_fix_tf|lint_fix_bzl)$", "//...")',
     ]
-    result = subprocess.run(query, capture_output=True, text=True)
-    output = process_results(result)
-    output = output.strip("\n")
-    print(output)
-    for target in output.split("\n"):
+    return_code, output = run_command(command, print_stdout=False)
+    for target in output:
         command = ["bazel", "run", target]
         run_command(command)
 
