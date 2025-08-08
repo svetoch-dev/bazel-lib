@@ -111,7 +111,7 @@ def tf(
     )
 
     tf_fmt_test(
-        name = "fmt",
+        name = "lint",
         srcs = [":srcs_lint"],
     )
 
@@ -152,7 +152,7 @@ def tf(
     )
 
     tf_fmt(
-        name = "fmt_fix",
+        name = "lint_fix_tf",
         srcs = [
             ":srcs_lint",
         ],

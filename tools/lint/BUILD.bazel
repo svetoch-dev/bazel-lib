@@ -1,0 +1,9 @@
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+
+filegroup(
+    name = "fix_all",
+    srcs = ["fix_all.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_lint()
