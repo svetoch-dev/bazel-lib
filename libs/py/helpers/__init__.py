@@ -1,4 +1,4 @@
-from libs.py.helpers.exceptions import CommandException 
+from libs.py.helpers.exceptions import CommandException
 import subprocess
 import glob
 import re

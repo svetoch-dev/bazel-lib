@@ -9,9 +9,11 @@ REPO_PATH = os.environ["BUILD_WORKSPACE_DIRECTORY"]
 HELM_EXECUTABLE = os.environ["HELM_EXECUTABLE"]
 APP_CHART_PATH_DEFAULT = f"{REPO_PATH}/argocd/charts/app"
 
+
 def init_submodules(repo):
     """Initialize and update submodules."""
     repo.submodule_update(init=True, recursive=True)
+
 
 @click.command()
 @click.argument("app_name", required=True, type=click.STRING)
@@ -25,8 +27,8 @@ def main(app_name, app_chart_path):
 
     if os.path.exists(chart_path):
         try:
-            #run_command([HELM_EXECUTABLE, "dependency", "update", chart_path])
-            run_command("hui",raise_exception=True)
+            # run_command([HELM_EXECUTABLE, "dependency", "update", chart_path])
+            run_command("hui", raise_exception=True)
         except CommandException as e:
             dir(e)
             sys.exit(1)
