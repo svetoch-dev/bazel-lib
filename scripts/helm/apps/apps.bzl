@@ -10,7 +10,7 @@ def helm_app_init():
     """
     py_binary(
         name = "init",
-        srcs = ["@svetoch_bazel_lib//scripts/helm/apps/init_services"],
+        srcs = ["@svetoch_bazel_lib//scripts/helm/apps:init"],
         data = [
             "@helm_executable//:executable",
         ],
