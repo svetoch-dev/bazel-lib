@@ -21,6 +21,7 @@ def helm_app_init():
         deps = [
             "@svetoch_bazel_lib//libs/py/helpers",
             requirement("click"),
+            requirement("GitPython"),
         ],
         visibility = ["//visibility:public"],
     )
