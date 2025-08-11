@@ -40,7 +40,7 @@ def apply(targets):
     os.chdir(WORKSPACE_FOLDER)
     target_objs = []
     query = ["bazel", "query", 'attr(name, "^apply$|^gh_apply$", "//terraform/...")']
-    return_code, apply_targets = run_command(query, print_stdout=False)
+    return_code, stderr, apply_targets = run_command(query, print_stdout=False)
     for target, is_masked in targets:
         if target in apply_targets:
             target_objs.append(Target(target, is_masked))

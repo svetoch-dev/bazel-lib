@@ -19,10 +19,12 @@ def main():
         "query",
         'attr(name, "^(lint_fix_py|lint_fix_tf|lint_fix_bzl)$", "//...")',
     ]
-    return_code, output = run_command(command, print_stdout=False)
+    return_code, stderr, output = run_command(
+        command, print_stdout=False, print_stderr=False
+    )
     for target in output:
         command = ["bazel", "run", target]
-        run_command(command)
+        run_command(command, print_stderr=False)
 
 
 if __name__ == "__main__":

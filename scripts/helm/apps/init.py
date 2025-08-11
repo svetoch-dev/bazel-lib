@@ -27,11 +27,11 @@ def main(app_name, app_chart_path):
 
     if os.path.exists(chart_path):
         try:
-            run_command([HELM_EXECUTABLE, "dependency", "update", "hui"], raise_exception=True)
+            run_command(
+                [HELM_EXECUTABLE, "dependency", "update", "hui"], raise_exception=True
+            )
         except CommandException as e:
-            print(321)
-            dir(e)
-            sys.exit(1)
+            sys.exit(e.args[0])
     else:
         print("Path does not exist")
         sys.exit(1)
