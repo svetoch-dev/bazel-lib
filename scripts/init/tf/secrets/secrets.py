@@ -33,7 +33,6 @@ def secrets(secrets):
             state_list_command, print_stdout=False
         )
 
-
         for secret_key in secret_keys.split(","):
             tf_resource = f'module.secrets["{secret_name}"].module.import_secret["{secret_key}"].secret_resource.secret'
             import_command = ["bazel", "run", ":tf", "import", tf_resource]
