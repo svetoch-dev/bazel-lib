@@ -13,6 +13,22 @@ use_repo(bazel_lib_toolchains, "zstd_toolchains")
 bazel_dep(name = "rules_multirun", version = "0.10.0")
 
 ######################
+# Binary tools support
+######################
+bazel_dep(name = "rules_bin_tools")
+git_override(
+    module_name = "rules_bin_tools",
+    commit = "d3fefc59031fe28fcc41918f8e9df752c58c3c49",
+    remote = "https://github.com/ggramal/rules_bin_tools",
+)
+
+tools = use_extension("@rules_bin_tools//tools:extensions.bzl", "tools")
+tools.download(
+    helm_version = "v3.18.4",
+)
+use_repo(tools, "helm_executable")
+
+######################
 # Terraform support
 ######################
 

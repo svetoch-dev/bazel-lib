@@ -1,6 +1,7 @@
 """
 Helm macros
 """
+
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
 load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 
@@ -19,7 +20,7 @@ def helm_app_init():
         },
         deps = [
             "@svetoch_bazel_lib//libs/py/helpers",
-            requirement("click")
+            requirement("click"),
         ],
         visibility = ["//visibility:public"],
     )

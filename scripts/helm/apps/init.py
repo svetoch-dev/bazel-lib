@@ -6,11 +6,13 @@ REPO_PATH = os.environ["BUILD_WORKSPACE_DIRECTORY"]
 HELM_EXECUTABLE = os.environ["HELM_EXECUTABLE"]
 APP_CHART_PATH_DEFAULT = f"{REPO_PATH}/argocd/charts/app"
 
+
 def init_submodules(repo):
     """Initialize and update submodules."""
     repo.submodule_update(init=True, recursive=True)
 
-def helm_app_init(chart_path)
+
+def helm_app_init(chart_path):
     run_command([HELM_EXECUTABLE, "dependency", "update", chart_path])
 
 
@@ -25,6 +27,7 @@ def main(app_name, app_chart_path):
     print(f"{app_chart_path}/{app_nam}")
 
     print("success")
+
 
 if __name__ == "__main__":
     main()
