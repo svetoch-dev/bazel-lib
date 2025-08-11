@@ -5,6 +5,6 @@ py_lint()
 
 py_library(
     name = "helpers",
-    srcs = ["__init__.py"],
+    srcs = glob(["*.py"])
     visibility = ["//visibility:public"],
 )

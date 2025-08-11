@@ -1,3 +1,4 @@
+from libs.py.helpers.exceptions import CommandException 
 import subprocess
 import glob
 import re
@@ -26,7 +27,7 @@ def unmask_tf(folder, mask_str=MASK_STR, unmask_str=UNMASK_STR):
             f.write(content)
 
 
-def run_command(command, print_stdout=True):
+def run_command(command, print_stdout=True, raise_exception=False):
     command_str = " ".join(command)
     stdout = []
     print(f"Running: {command_str}")
@@ -39,5 +40,7 @@ def run_command(command, print_stdout=True):
     result.wait()
     if result.returncode != 0:
         print("Command failed with return code:", result.returncode)
+        if raise_exception:
+            raise CommandException(result.returncode, stdout)
 
     return result.returncode, stdout
