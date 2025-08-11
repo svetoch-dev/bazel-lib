@@ -30,7 +30,9 @@ def secrets(secrets):
 
         state_list_command = ["bazel", "run", ":tf", "state", "list"]
         exit_code, stderr, tf_resources = run_command(
-            state_list_command, print_stdout=False
+            state_list_command,
+            print_stdout=False,
+            print_stderr=False
         )
 
         for secret_key in secret_keys.split(","):
@@ -45,17 +47,17 @@ def secrets(secrets):
                 try:
                     secret_value = os.environ[env_var_name]
                     import_command.append(secret_value)
-                    run_command(import_command)
+                    run_command(import_command, print_stderr=False)
                 except KeyError as e:
                     print(f"{env_var_name} is not set using prompt")
                     secret_value = input(f"Enter secret for {tf_resource}: ")
                     import_command.append(secret_value)
-                    run_command(import_command)
+                    run_command(import_command, print_stderr=False)
 
     for secret_state in secret_states:
         os.chdir(secret_state)
         command = ["bazel", "run", ":apply"]
-        run_command(command)
+        run_command(command, print_stderr=False)
 
 
 if __name__ == "__main__":
