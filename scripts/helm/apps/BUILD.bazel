@@ -1,0 +1,9 @@
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+
+py_lint()
+
+filegroup(
+    name = "init_services",
+    srcs = ["init_services.py"],
+    visibility = ["//visibility:public"],
+)
