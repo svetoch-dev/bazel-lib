@@ -25,8 +25,9 @@ git_override(
 tools = use_extension("@rules_bin_tools//tools:extensions.bzl", "tools")
 tools.download(
     helm_version = "v3.18.4",
+    suffix = "exec",
 )
-use_repo(tools, "helm_executable")
+use_repo(tools, "helm_exec")
 
 ######################
 # Terraform support
