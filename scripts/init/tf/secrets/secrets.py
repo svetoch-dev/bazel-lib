@@ -30,9 +30,7 @@ def secrets(secrets):
 
         state_list_command = ["bazel", "run", ":tf", "state", "list"]
         exit_code, stderr, tf_resources = run_command(
-            state_list_command,
-            print_stdout=False,
-            print_stderr=False
+            state_list_command, print_stdout=False, print_stderr=False
         )
 
         for secret_key in secret_keys.split(","):
