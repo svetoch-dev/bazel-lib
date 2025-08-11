@@ -23,21 +23,31 @@ def main(app_name, app_chart_path):
 
     init_submodules(repo)
 
-    chart_path = f"{app_chart_path}/{app_name}"
+    if os.path.exists(app_chart_path):
+        charts = []
+        failure_count = 0
+        if app_name == "all":
+            for file_name in os.listdir(app_chart_path):
+                file_name = f"{app_chart_path}/{file_name}"
+                if os.path.isdir(file_name):
+                    charts.append(file_name)
+        else:
+            charts.append(f"{app_chart_path}/{app_name}")
 
-    if os.path.exists(chart_path):
-        try:
-            run_command(
-                [HELM_EXECUTABLE, "dependency", "update", chart_path],
-                raise_exception=True,
-            )
-        except CommandException as e:
-            sys.exit(e.args[0])
+        for chart in charts:
+            try:
+                run_command(
+                    [HELM_EXECUTABLE, "dependency", "update", chart],
+                    raise_exception=True,
+                )
+            except CommandException as e:
+                failure_count += 1
+
+        if failure_count > 0:
+            sys.exit(1)
     else:
-        print("Path does not exist")
+        print(f"{app_chart_path} path does not exist")
         sys.exit(1)
-
-    print("success")
 
 
 if __name__ == "__main__":
