@@ -28,7 +28,7 @@ def main(app_name, app_chart_path):
     if os.path.exists(chart_path):
         try:
             run_command(
-                [HELM_EXECUTABLE, "dependency", "update", "hui"], raise_exception=True
+                [HELM_EXECUTABLE, "dependency", "update", chart_path], raise_exception=True
             )
         except CommandException as e:
             sys.exit(e.args[0])
