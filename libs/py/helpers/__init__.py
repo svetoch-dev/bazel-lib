@@ -41,6 +41,7 @@ def run_command(command, print_stdout=True, raise_exception=False):
     if result.returncode != 0:
         print("Command failed with return code:", result.returncode)
         if raise_exception:
+            print(123)
             raise CommandException(result.returncode, stdout)
 
     return result.returncode, stdout

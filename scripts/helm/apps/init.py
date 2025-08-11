@@ -29,6 +29,7 @@ def main(app_name, app_chart_path):
         try:
             run_command([HELM_EXECUTABLE, "dependency", "update", "hui"], raise_exception=True)
         except CommandException as e:
+            print(321)
             dir(e)
             sys.exit(1)
     else:
