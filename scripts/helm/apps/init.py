@@ -25,7 +25,7 @@ def main(app_name, app_chart_path):
 
     init_submodules(repo)
 
-    print(f"{app_chart_path}/{app_nam}")
+    print(f"{app_chart_path}/{app_name}")
 
     print("success")
 
