@@ -6,6 +6,16 @@ Helper scripts related to operations with app charts
 
 Update dependencies of a helm chart
 
+### Installation
+
+Add this to your BUILD.bazel file
+
+```
+load("@svetoch_bazel_lib//scripts/helm/apps:apps.bzl", "helm_app_init")
+
+helm_app_init()
+```
+
 ### Usage
 
 ```
