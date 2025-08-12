@@ -29,7 +29,9 @@ def secrets(secrets):
             secret_states.append(state_path)
 
         state_list_command = ["bazel", "run", ":tf", "state", "list"]
-        exit_code, tf_resources = run_command(state_list_command, print_stdout=False)
+        exit_code, stderr, tf_resources = run_command(
+            state_list_command, print_stdout=False
+        )
 
         for secret_key in secret_keys.split(","):
             tf_resource = f'module.secrets["{secret_name}"].module.import_secret["{secret_key}"].secret_resource.secret'

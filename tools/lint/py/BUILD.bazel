@@ -1,5 +1,5 @@
 filegroup(
-    name = "black_src",
+    name = "black",
     srcs = ["black.py"],
     visibility = ["//visibility:public"],
 )
