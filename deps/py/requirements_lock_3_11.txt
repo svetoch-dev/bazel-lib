@@ -414,6 +414,10 @@ smmap==5.0.1 \
     --hash=sha256:dceeb6c0028fdb6734471eb07c0cd2aae706ccaecab45965ee83f11c8d3b1f62 \
     --hash=sha256:e6d8668fa5f93e706934a62d7b4db19c8d9eb8cf2adbb75ef1b675aa332b69da
     # via gitdb
+tiny-json-log==0.1.0 \
+    --hash=sha256:c3cf1ae8ab119461cd4db801d7c8957707b1a0e51845cc1c74f1a48224550314 \
+    --hash=sha256:fe1a4e9b56d83c14b45ba0ae18bdd811b202de91cf7c388fc777d9aad6bbde46
+    # via -r deps/py/requirements.in
 urllib3==2.3.0 \
     --hash=sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df \
     --hash=sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d

@@ -1,4 +1,5 @@
 from libs.py.helpers.exceptions import CommandException
+from libs.py.utils.logger import CliLogger
 import subprocess
 import glob
 import re
@@ -28,10 +29,23 @@ def unmask_tf(folder, mask_str=MASK_STR, unmask_str=UNMASK_STR):
 
 
 def run_command(command, print_stdout=True, print_stderr=True, raise_exception=False):
+    """
+    Runs a command and captures its stdout and stderr.
+
+    Args:
+        command (list): A list of strings representing the command and its arguments.
+        print_stdout (bool): If True, prints the command's stdout to the console.
+        print_stderr (bool): If True, prints the command's stderr to the console.
+        raise_exception (bool): If True, raises a CommandException on a non-zero return code.
+
+    Returns:
+        tuple: A tuple containing the return code, a list of stderr lines, and a list of stdout lines.
+    """
     command_str = " ".join(command)
     stdout = []
     stderr = []
-    print(f"Running: {command_str}")
+    logger = CliLogger("helpers.run_command")
+    logger.info(f"Running: {command_str}")
     result = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
@@ -47,7 +61,7 @@ def run_command(command, print_stdout=True, print_stderr=True, raise_exception=F
 
     result.wait()
     if result.returncode != 0:
-        print("Command failed with return code:", result.returncode)
+        logger.info("Command failed with return code:", result.returncode)
         if raise_exception:
             raise CommandException(result.returncode, "\n".join(stderr))
 

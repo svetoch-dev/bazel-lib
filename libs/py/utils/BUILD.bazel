@@ -1,0 +1,17 @@
+load("@aspect_rules_py//py:defs.bzl", "py_library")
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
+
+py_lint()
+
+py_library(
+    name = "utils",
+    srcs = glob(
+        ["*.py"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//libs/py/settings",
+        requirement("tiny-json-log"),
+    ],
+)
