@@ -109,10 +109,30 @@ class CliLogger(Logger):
     def warning(self, msg: str, **kwargs: tp.Any) -> None:
         self.logger.warning(msg)
 
+class RootLogger(Logger):
+    def __init__(
+        self,
+        handler_type: str = LOG_HANDLER_TYPE,
+        fmt_type: str = LOG_FORMATTER_TYPE,
+        fmt: str = LOG_FORMATTER_FORMAT,
+    ) -> None:
 
-root_logger = Logger(
-    logging.getLogger(), LOG_HANDLER_TYPE, LOG_FORMATTER_TYPE, LOG_FORMATTER_FORMAT
-)
+        super().__init__(
+            logging.getLogger(), handler_type, fmt_type, fmt
+        )
+
+    def debug(self, msg: str, **kwargs: tp.Any) -> None:
+        self.logger.debug(msg)
+
+    def error(self, msg: str, **kwargs: tp.Any) -> None:
+        self.logger.error(msg)
+
+    def info(self, msg: str, **kwargs: tp.Any) -> None:
+        self.logger.info(msg)
+
+    def warning(self, msg: str, **kwargs: tp.Any) -> None:
+        self.logger.warning(msg)
+
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpx._client").setLevel(logging.WARNING)
