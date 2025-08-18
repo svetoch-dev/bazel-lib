@@ -1,5 +1,5 @@
 class CommandException(BaseException):
-    """A mock exception class to test error handling."""
+    """Exception class for command error handling."""
 
     def __init__(self, returncode, stderr_output):
         super().__init__(
