@@ -10,7 +10,7 @@ from libs.py.settings import LOG_LEVEL
 
 
 class LoggerMixin:
-    logger_name = "test_stream_logger"
+    logger_name = "test_logger"
     handler = None
     formatter = None
     logger_type = None
@@ -48,9 +48,6 @@ class LoggerMixin:
         return self.getRecord()
 
     def logger_initialization(self, propagate=False):
-        """
-        Test if the Logger is initialized correctly.
-        """
         logger_instance = self.logger.logger
         self.assertIsInstance(self.logger, self.logger_type)
         self.assertIsInstance(logger_instance, logging.Logger)
@@ -73,7 +70,7 @@ class StreamLoggerMixin(LoggerMixin):
     def setUp(self):
         """
         This method is called before each test.
-        It sets up a StringIO object to capture stderr,stdout and a CliLogger instance.
+        It sets up a StringIO object to capture stderr,stdout logger instance.
         """
         self.mock_stderr = io.StringIO()
         self.mock_stdout = io.StringIO()
@@ -102,6 +99,9 @@ class TestStreamCliLogger(StreamLoggerMixin, unittest.TestCase):
         self.logger = CliLogger(self.logger_name)
 
     def test_logger_initialization(self):
+        """
+        Test if the Logger is initialized correctly.
+        """
         self.logger_initialization()
 
     def test_debug_logging(self):
@@ -164,6 +164,9 @@ class TestStreamJsonLogger(StreamLoggerMixin, unittest.TestCase):
         self.logger = JsonLogger(self.logger_name)
 
     def test_logger_initialization(self):
+        """
+        Test if the Logger is initialized correctly.
+        """
         self.logger_initialization()
 
     def test_debug_logging(self):
@@ -228,16 +231,31 @@ class TestRootStreamLogger(TestStreamJsonLogger):
 
     def setLogger(self):
         self.logger = RootLogger()
+        self.none_root_logger = logging.getLogger("test_root_stream_logger")
 
     def test_logger_initialization(self):
+        """
+        Test if the Logger is initialized correctly.
+        """
         self.logger_initialization(propagate=True)
+        self.none_root_logger.info("message")
+
+    def test_none_root_logger(self):
+        """
+        Test that logs are logged in proper format for none root loggers
+        """
+        self.none_root_logger.info("message")
+        output = json.loads(self.mock_stdout.getvalue())
+        self.assertEqual(output["severity"], "INFO")
+        self.assertEqual(output["src"], "test_root_stream_logger")
+        self.assertEqual("message", output["message"])
 
     def test_logging_with_extra_kwargs(self):
         """
         Test that extra keyword arguments are handled correctly (or ignored).
         """
         output = json.loads(self.extra_kwargs())
-        # The message should contain the extra kwargs
+        # The message should not contain the extra kwargs
         self.assertFalse("key" in output.keys())
         self.assertFalse("another" in output.keys())
 
