@@ -1,4 +1,4 @@
-load("@aspect_rules_py//py:defs.bzl", "py_library")
+load("@aspect_rules_py//py:defs.bzl", "py_library", "py_test")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 
@@ -8,8 +8,20 @@ py_library(
     name = "utils",
     srcs = glob(
         ["*.py"],
+        exclude = ["test*py"],
     ),
     visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//libs/py/settings",
+        requirement("tiny-json-log"),
+    ],
+)
+
+py_test(
+    name = "test_logger",
+    srcs = glob(
+        ["*.py"],
+    ),
     deps = [
         "@svetoch_bazel_lib//libs/py/settings",
         requirement("tiny-json-log"),

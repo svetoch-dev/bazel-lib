@@ -1,16 +1,12 @@
 import logging
 import typing as tp
 import json
-from libs.py.settings import (
-    LOG_LEVEL,
-    LOG_HANDLER_TYPE,
-    LOG_FORMATTER_TYPE,
-    LOG_FORMATTER_FORMAT,
-)
+import sys
+from libs.py.settings import LOG_LEVEL
 from tiny_json_log import JSONFormatter
 
 
-class Logger:
+class _Logger:
     def __init__(
         self,
         logger: logging.Logger,
@@ -20,7 +16,7 @@ class Logger:
     ) -> None:
         self.logger = logger
         if handler_type == "stream":
-            handler = logging.StreamHandler()
+            handler = logging.StreamHandler(stream=sys.stdout)
         else:
             raise NotImplementedError(f"handler_type {handler_type} unknown")
 
@@ -48,11 +44,11 @@ class Logger:
         raise NotImplementedError("warning not implemented")
 
 
-class JsonLogger(Logger):
+class JsonLogger(_Logger):
     def __init__(
         self,
         name: str,
-        handler_type: str = LOG_HANDLER_TYPE,
+        handler_type: str = "stream",
         fmt: str = "severity={levelname} src={name} {message}",
         **initial: tp.Any,
     ) -> None:
@@ -84,11 +80,11 @@ class JsonLogger(Logger):
         self.logger.warning(self._get_log_msg(msg, **kwargs))
 
 
-class CliLogger(Logger):
+class CliLogger(_Logger):
     def __init__(
         self,
         name: str,
-        handler_type: str = LOG_HANDLER_TYPE,
+        handler_type: str = "stream",
         fmt: str = "{asctime} {levelname} {message}",
     ) -> None:
 
@@ -109,14 +105,13 @@ class CliLogger(Logger):
     def warning(self, msg: str, **kwargs: tp.Any) -> None:
         self.logger.warning(msg)
 
-class RootLogger(Logger):
+class RootLogger(_Logger):
     def __init__(
         self,
-        handler_type: str = LOG_HANDLER_TYPE,
-        fmt_type: str = LOG_FORMATTER_TYPE,
-        fmt: str = LOG_FORMATTER_FORMAT,
+        handler_type: str = "stream",
+        fmt_type: str = "json",
+        fmt: str = "severity={levelname} logger={name} {message}",
     ) -> None:
-
         super().__init__(
             logging.getLogger(), handler_type, fmt_type, fmt
         )
@@ -132,9 +127,3 @@ class RootLogger(Logger):
 
     def warning(self, msg: str, **kwargs: tp.Any) -> None:
         self.logger.warning(msg)
-
-
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("httpx._client").setLevel(logging.WARNING)
-logging.getLogger("httpcore").setLevel(logging.WARNING)
-logging.getLogger("telegram.Bot").setLevel(logging.WARNING)
