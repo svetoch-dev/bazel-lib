@@ -105,6 +105,7 @@ class CliLogger(_Logger):
     def warning(self, msg: str, **kwargs: tp.Any) -> None:
         self.logger.warning(msg)
 
+
 class RootLogger(_Logger):
     def __init__(
         self,
@@ -112,9 +113,7 @@ class RootLogger(_Logger):
         fmt_type: str = "json",
         fmt: str = "severity={levelname} src={name} {message}",
     ) -> None:
-        super().__init__(
-            logging.getLogger(), handler_type, fmt_type, fmt
-        )
+        super().__init__(logging.getLogger(), handler_type, fmt_type, fmt)
 
     def debug(self, msg: str, **kwargs: tp.Any) -> None:
         self.logger.debug(msg)

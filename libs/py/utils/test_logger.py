@@ -3,12 +3,11 @@ import logging
 import sys
 import io
 import json
-from unittest.mock import patch
-from tiny_json_log import JSONFormatter
-import pdb;
 
+from tiny_json_log import JSONFormatter
 from libs.py.utils.logger import CliLogger, JsonLogger, RootLogger
 from libs.py.settings import LOG_LEVEL
+
 
 class LoggerMixin:
     logger_name = "test_stream_logger"
@@ -18,7 +17,6 @@ class LoggerMixin:
 
     def setLogger(self):
         raise NotImplementedError("setLogger is not implemented")
-
 
     def getRecord(self):
         raise NotImplementedError("getRecord is not implemented")
@@ -59,7 +57,7 @@ class LoggerMixin:
         self.assertEqual(logger_instance.name, self.logger_name)
         self.assertEqual(logger_instance.propagate, propagate)
         self.assertEqual(logger_instance.level, logging.INFO)
-        
+
         handler = logger_instance.handlers[0]
         self.assertIsInstance(handler, self.handler)
         self.assertIsInstance(handler.formatter, self.formatter)
@@ -68,7 +66,7 @@ class LoggerMixin:
 class StreamLoggerMixin(LoggerMixin):
     handler = logging.StreamHandler
     logger_type = None
-    
+
     def getRecord(self):
         return self.mock_stdout.getvalue()
 
@@ -83,7 +81,7 @@ class StreamLoggerMixin(LoggerMixin):
         sys.stdout = self.mock_stdout
 
         self.setLogger()
-        
+
     def tearDown(self):
         """
         This method is called after each test.
@@ -95,7 +93,6 @@ class StreamLoggerMixin(LoggerMixin):
         sys.stdout = sys.__stdout__
 
 
-
 class TestStreamCliLogger(StreamLoggerMixin, unittest.TestCase):
     logger_name = "test_stream_cli_logger"
     formatter = logging.Formatter
@@ -103,7 +100,6 @@ class TestStreamCliLogger(StreamLoggerMixin, unittest.TestCase):
 
     def setLogger(self):
         self.logger = CliLogger(self.logger_name)
-
 
     def test_logger_initialization(self):
         self.logger_initialization()
@@ -148,7 +144,7 @@ class TestStreamCliLogger(StreamLoggerMixin, unittest.TestCase):
         self.assertIn("INFO Message with extra data.", output)
         self.assertNotIn("key='value'", output)
         self.assertNotIn("another='data'", output)
-        
+
     def test_log_level_restriction(self):
         """
         Test that messages below the set log level are not logged.
@@ -157,6 +153,7 @@ class TestStreamCliLogger(StreamLoggerMixin, unittest.TestCase):
 
         self.assertNotIn("This should not be logged.", output)
         self.assertIn("This should be logged.", output)
+
 
 class TestStreamJsonLogger(StreamLoggerMixin, unittest.TestCase):
     logger_name = "test_stream_json_logger"
@@ -214,7 +211,7 @@ class TestStreamJsonLogger(StreamLoggerMixin, unittest.TestCase):
         # The message should contain the extra kwargs
         self.assertEqual("value", output["key"])
         self.assertEqual("data", output["another"])
-        
+
     def test_log_level_restriction(self):
         """
         Test that messages below the set log level are not logged.
@@ -223,6 +220,7 @@ class TestStreamJsonLogger(StreamLoggerMixin, unittest.TestCase):
 
         self.assertNotEqual("This should not be logged.", output["message"])
         self.assertEqual("This should be logged.", output["message"])
+
 
 class TestRootStreamLogger(TestStreamJsonLogger):
     logger_name = "root"
@@ -233,6 +231,7 @@ class TestRootStreamLogger(TestStreamJsonLogger):
 
     def test_logger_initialization(self):
         self.logger_initialization(propagate=True)
+
     def test_logging_with_extra_kwargs(self):
         """
         Test that extra keyword arguments are handled correctly (or ignored).
@@ -243,6 +242,5 @@ class TestRootStreamLogger(TestStreamJsonLogger):
         self.assertFalse("another" in output.keys())
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
