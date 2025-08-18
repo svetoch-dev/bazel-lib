@@ -21,7 +21,7 @@ class _Logger:
             raise NotImplementedError(f"handler_type {handler_type} unknown")
 
         if formatter_type == "json":
-            formatter = JSONFormatter(fmt)
+            formatter = JSONFormatter(fmt, merge_message=True)
         elif formatter_type == "cli":
             formatter = logging.Formatter(fmt, style="{")
         else:
@@ -61,7 +61,7 @@ class JsonLogger(_Logger):
 
     def _get_log_msg(self, msg: str, **kwargs: tp.Any) -> str:
         log_entry = {
-            "msg": msg,
+            "message": msg,
         }
         log_entry.update(self._initial)
         log_entry.update(kwargs)
@@ -110,7 +110,7 @@ class RootLogger(_Logger):
         self,
         handler_type: str = "stream",
         fmt_type: str = "json",
-        fmt: str = "severity={levelname} logger={name} {message}",
+        fmt: str = "severity={levelname} src={name} {message}",
     ) -> None:
         super().__init__(
             logging.getLogger(), handler_type, fmt_type, fmt
