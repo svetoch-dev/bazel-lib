@@ -1,0 +1,12 @@
+load("@aspect_rules_py//py:defs.bzl", "py_library")
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+
+py_lint()
+
+py_library(
+    name = "settings",
+    srcs = glob(
+        ["*.py"],
+    ),
+    visibility = ["//visibility:public"],
+)
