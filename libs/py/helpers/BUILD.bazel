@@ -1,12 +1,25 @@
-load("@aspect_rules_py//py:defs.bzl", "py_library")
+load("@aspect_rules_py//py:defs.bzl", "py_library", "py_test")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 
 py_lint()
 
 py_library(
     name = "helpers",
-    srcs = glob(["*.py"]),
+    srcs = glob(
+        ["*.py"],
+        exclude = ["test*py"],
+    ),
     visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//libs/py/utils",
+    ],
+)
+
+py_test(
+    name = "tests",
+    srcs = glob(
+        ["*.py"],
+    ),
     deps = [
         "@svetoch_bazel_lib//libs/py/utils",
     ],

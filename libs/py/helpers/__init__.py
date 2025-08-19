@@ -3,6 +3,7 @@ from libs.py.utils.logger import CliLogger
 import subprocess
 import glob
 import re
+import sys
 
 MASK_STR = "##MASKED##"
 UNMASK_STR = ""
@@ -45,23 +46,23 @@ def run_command(command, print_stdout=True, print_stderr=True, raise_exception=F
     stdout = []
     stderr = []
     logger = CliLogger("helpers.run_command")
-    logger.info(f"Running: {command_str}")
+    logger.debug(f"Running: {command_str}")
     result = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
     for line in result.stdout:
         stdout.append(line.strip())
         if print_stdout:
-            print(line, end="")
+            print(line, end="", file=sys.stdout)
 
     for line in result.stderr:
         stderr.append(line.strip())
         if print_stderr:
-            print(line, end="")
+            print(line, end="", file=sys.stderr)
 
     result.wait()
     if result.returncode != 0:
-        logger.info("Command failed with return code:", result.returncode)
+        logger.debug(f"Command failed with return code: {result.returncode}")
         if raise_exception:
             raise CommandException(result.returncode, "\n".join(stderr))
 
