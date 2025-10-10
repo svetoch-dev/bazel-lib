@@ -20,7 +20,7 @@ def get_prepare_args():
     args = []
 
     for env_name, env_obj in tfvars["envs"].items():
-        if env_name == "prd" or env_name == "production":
+        if env_name == "int" or env_name == "internal":
             cloud_name = env_obj["cloud"]["name"]
 
     for env_name, env_obj in build_envs().items():
