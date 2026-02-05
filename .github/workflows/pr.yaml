@@ -1,12 +1,5 @@
 name: Pull requests
 
-env:
-  BAZEL_MANUAL_BUILD_TARGETS: "plan"
-  CI_BUILDS_DIR: "/__w/${{ github.event.repository.name}}"
-  CI_PROJECT_PATH: "${{ github.event.repository.name }}"
-  GIT_HEAD_REF: ${{ github.head_ref }}
-  BEFORE_COMMIT_SHA: ${{ github.event.pull_request.base.sha }}
-
 on:
   pull_request:
     branches:
