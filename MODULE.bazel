@@ -3,7 +3,7 @@ module(name = "svetoch_bazel_lib")
 ###########
 # Bazel
 ###########
-bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2", dev_dependency = True)
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
 
 bazel_dep(name = "aspect_bazel_lib", version = "2.14.0")
 
@@ -36,16 +36,20 @@ use_repo(tools, "helm_exec")
 bazel_dep(name = "rules_tf")
 git_override(
     module_name = "rules_tf",
-    commit = "2cb8d57eba4c190d37914c44af17a7d0b7b4f07f",
+    commit = "972e20e677514021345d095f258f2e5e31d5a3c6",
     remote = "https://github.com/ggramal/rules_tf",
 )
 
 tf = use_extension("@rules_tf//tf:extensions.bzl", "tf")
 tf.toolchain(
     name = "svetoch_bazel_lib_tf_executable",
-    version = "1.7.4",
+    version = "1.14.4",
 )
 use_repo(tf, "svetoch_bazel_lib_tf_executable")
+
+register_toolchains(
+    "@svetoch_bazel_lib_tf_executable//:all",
+)
 
 load_file = use_extension("@svetoch_bazel_lib//tools:extensions.bzl", "load_file")
 load_file.json(
