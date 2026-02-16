@@ -16,6 +16,7 @@ load("@svetoch_bazel_lib//tools/utils:format.bzl", "formatted_tfvars")
 
 def tf(
         name = None,
+        tf_variables = "@svetoch_bazel_lib//terraform:tf_variables.tf.tpl",
         extra_srcs = [],
         plan_target = "plan",
         apply_target = "apply",
@@ -25,6 +26,8 @@ def tf(
 
     Args:
         name: unused arg to stick with conventions
+        tf_variables: tf_variables.tf.tpl file that defines project
+            configuration schema
         extra_srcs: additional source files that need to be added to
             common tf targets
         plan_target: plan target name
@@ -65,7 +68,7 @@ def tf(
         substitutions = {
             "{env.name}": env_name,
         },
-        template = ":tf_variables.tf.tpl",
+        template = tf_variables,
         out = "tf_variables.tf",
     )
 

@@ -54,7 +54,7 @@ register_toolchains(
 load_file = use_extension("@svetoch_bazel_lib//tools:extensions.bzl", "load_file")
 load_file.json(
     name = "svetoch_bazel_lib_tfvars",
-    src = "//:terraform.tfvars.json.example",
+    src = "//terraform:terraform.tfvars.json.example",
     variable_name = "tfvars",
 )
 use_repo(load_file, "svetoch_bazel_lib_tfvars")
