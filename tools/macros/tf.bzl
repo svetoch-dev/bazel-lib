@@ -16,7 +16,7 @@ load("@svetoch_bazel_lib//tools/utils:format.bzl", "formatted_tfvars")
 
 def tf(
         name = None,
-        tf_variables = "@svetoch_bazel_lib//:tf_variables.tf.tpl",
+        tf_variables = "@svetoch_bazel_lib//terraform:tf_variables.tf.tpl",
         extra_srcs = [],
         plan_target = "plan",
         apply_target = "apply",
