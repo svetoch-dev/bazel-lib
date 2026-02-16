@@ -1,10 +1,10 @@
 {
   "company": {
-    "domain": "test.by",
-    "name": "test"
+    "domain": "rod.svetoch.dev",
+    "name": "rod"
   },
   "ci": {
-    "type": "github",
+    "type": "gha",
     "group": "svetoch-dev"
   },
   "envs": {
@@ -12,11 +12,26 @@
       "name": "internal",
       "short_name": "int",
       "import_secrets": {
-        "test": {
-          "name": "test",
-          "namespace": "test",
+        "redis": {
+          "name": "argocd-redis",
+          "namespace": "argocd",
           "secrets_to_import": [
-            "test"
+            "password", "redis-password"
+          ]
+        },
+        "alertmanager": {
+          "name": "alertmanager",
+          "namespace": "prometheus",
+          "secrets_to_import": [
+            "receiver-secret"
+          ]
+        },
+        "sso": {
+          "name": "sso",
+          "namespace": "pomerium",
+          "secrets_to_import": [
+            "client_id",
+            "client_secret"
           ]
         }
       },
@@ -29,20 +44,27 @@
       },
       "cloud": {
         "name": "gcp",
-        "id": "test-internal",
+        "id": "rod-internal",
         "region": "europe-west2",
-        "registry": "{env.cloud.region}-docker.pkg.dev/{env.cloud.id}/containers",
-        "default_zone": "europe-west2-b",
-        "buckets": {
-          "deletion_protection": "true"
+        "default_zone": "europe-west2-c",
+        "multi_region": "EU",
+        "network": {
+          "vm_cidr": "10.0.0.0/20",
+          "k8s_pod_cidr": "10.4.0.0/14",
+          "k8s_service_cidr": "10.1.0.0/20"
         },
-        "multi_region": "EU"
+        "registry": "{env.cloud.region}-docker.pkg.dev/{env.cloud.id}/containers",
+        "buckets": {
+          "deletion_protection": "false"
+        }
       },
       "kubernetes": {
         "enabled": "true",
-        "regional": "true",
-        "location": "europe-west2",
-        "deletion_protection": "true",
+        "regional": "false",
+        "node_locations": [
+          "europe-west2-a"
+        ],
+        "deletion_protection": "false",
         "auth_group": ""
       }
     },
@@ -50,11 +72,19 @@
       "name": "production",
       "short_name": "prd",
       "import_secrets": {
-        "test": {
-          "name": "test",
-          "namespace": "test",
+        "alertmanager": {
+          "name": "alertmanager",
+          "namespace": "prometheus",
           "secrets_to_import": [
-            "test"
+            "receiver-secret"
+          ]
+        },
+        "sso": {
+          "name": "sso",
+          "namespace": "pomerium",
+          "secrets_to_import": [
+            "client_id",
+            "client_secret"
           ]
         }
       },
@@ -67,20 +97,27 @@
       },
       "cloud": {
         "name": "gcp",
-        "id": "test-production",
+        "id": "rod-production",
         "region": "europe-west2",
-        "registry": "{env.cloud.region}-docker.pkg.dev/{env.cloud.id}/containers",
         "default_zone": "europe-west2-c",
-        "buckets": {
-          "deletion_protection": "true"
+        "multi_region": "EU",
+        "network": {
+          "vm_cidr": "10.8.0.0/20",
+          "k8s_pod_cidr": "10.12.0.0/14",
+          "k8s_service_cidr": "10.9.0.0/20"
         },
-        "multi_region": "EU"
+        "registry": "{env.cloud.region}-docker.pkg.dev/{env.cloud.id}/containers",
+        "buckets": {
+          "deletion_protection": "false"
+        }
       },
       "kubernetes": {
         "enabled": "true",
         "regional": "true",
-        "deletion_protection": "true",
-        "location": "europe-west2",
+        "deletion_protection": "false",
+        "node_locations": [
+          "europe-west2-a"
+        ],
         "auth_group": ""
       }
     }

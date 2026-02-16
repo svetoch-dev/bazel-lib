@@ -17,6 +17,18 @@ variable "company" {
   )
 }
 
+variable "apps" {
+  description = "Application related info"
+  type = map(
+    object(
+      {
+        name = string
+      }
+    )
+  )
+  default = {}
+}
+
 variable "ci" {
   description = "ci related info"
   type = object(
@@ -25,6 +37,18 @@ variable "ci" {
       group = string
     }
   )
+  default = null
+}
+
+variable "repo" {
+  description = "git repository related info"
+  type = object(
+    {
+      type  = string
+      group = string
+    }
+  )
+  default = null
 }
 
 variable "envs" {
@@ -58,10 +82,24 @@ variable "envs" {
             region       = string
             default_zone = string
             multi_region = string
-            registry     = string
-            buckets = object(
+            network = object(
               {
-                deletion_protection = bool
+                vm_cidr          = string
+                k8s_pod_cidr     = string
+                k8s_service_cidr = string
+              }
+            )
+            registry     = string
+            buckets = optional(
+              object(
+                {
+                  deletion_protection = optional(bool, true)
+                  multi_regional      = optional(bool, false)
+                }
+              ),
+              {
+                deletion_protection = true
+                multi_regional      = false
               }
             )
           }
@@ -72,10 +110,17 @@ variable "envs" {
               enabled             = bool
               regional            = bool
               deletion_protection = bool
-              location            = string
+              node_locations      = list(string)
               auth_group          = string
             }
-          )
+          ),
+          {
+            enabled             = false
+            regional            = false
+            node_locations      = []
+            auth_group          = ""
+            deletion_protection = false
+          }
         )
       }
     )
