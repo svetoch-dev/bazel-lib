@@ -79,6 +79,7 @@ variable "envs" {
           {
             name         = string
             id           = string
+            folder_id    = optional(string)
             region       = string
             default_zone = string
             multi_region = string
