@@ -52,6 +52,7 @@ def tf(
         name = "main_tf",
         substitutions = {
             "{tf_backend.type}": tf_backend["type"],
+            "{env.cloud.name}": tf_env["cloud"]["name"],
         },
         template = ":main.tf.tpl",
         out = "main.tf",
