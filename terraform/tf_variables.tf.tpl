@@ -22,7 +22,8 @@ variable "apps" {
   type = map(
     object(
       {
-        name = string
+        name     = string
+        postgres = optional(bool, false)
       }
     )
   )
