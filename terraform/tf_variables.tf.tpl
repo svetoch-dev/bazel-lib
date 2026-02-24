@@ -24,6 +24,8 @@ variable "apps" {
       {
         name     = string
         postgres = optional(bool, false)
+        redis    = optional(bool, false)
+        rabbitmq = optional(bool, false)
       }
     )
   )
@@ -81,9 +83,13 @@ variable "envs" {
             name         = string
             id           = string
             folder_id    = optional(string)
-            region       = string
-            default_zone = string
-            multi_region = string
+            location     = object(
+              {
+                region       = string
+                default_zone = string
+                multi_region = string
+              }
+            )
             network = object(
               {
                 vm_cidr          = string
