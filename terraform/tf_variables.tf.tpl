@@ -29,7 +29,6 @@ variable "apps" {
       }
     )
   )
-  default = {}
 }
 
 variable "ci" {
@@ -40,7 +39,6 @@ variable "ci" {
       group = string
     }
   )
-  default = null
 }
 
 variable "repo" {
@@ -51,7 +49,6 @@ variable "repo" {
       group = string
     }
   )
-  default = null
 }
 
 variable "envs" {
@@ -83,13 +80,9 @@ variable "envs" {
             name         = string
             id           = string
             folder_id    = optional(string)
-            location     = object(
-              {
-                region       = string
-                default_zone = string
-                multi_region = string
-              }
-            )
+            region       = string
+            default_zone = string
+            multi_region = string
             network = object(
               {
                 vm_cidr          = string

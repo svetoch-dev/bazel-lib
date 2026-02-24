@@ -3,6 +3,8 @@
     "domain": "rod.svetoch.dev",
     "name": "rod"
   },
+  "apps": {
+  },
   "ci": {
     "type": "gha",
     "group": "svetoch-dev"
