@@ -3,8 +3,6 @@
     "domain": "rod.svetoch.dev",
     "name": "rod"
   },
-  "apps": {
-  },
   "ci": {
     "type": "gha",
     "group": "svetoch-dev"
@@ -17,6 +15,8 @@
     "internal": {
       "name": "internal",
       "short_name": "int",
+      "apps": {
+      },
       "import_secrets": {
         "redis": {
           "name": "argocd-redis",
@@ -77,6 +77,15 @@
     "production": {
       "name": "production",
       "short_name": "prd",
+      "apps": {
+        "example": {
+          "name": "example",
+          "postgres": "true",
+          "redis": "true",
+          "rabbitmq": "true",
+          "devs": []
+        }
+      },
       "import_secrets": {
         "alertmanager": {
           "name": "alertmanager",

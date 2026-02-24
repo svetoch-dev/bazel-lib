@@ -17,20 +17,6 @@ variable "company" {
   )
 }
 
-variable "apps" {
-  description = "Application related info"
-  type = map(
-    object(
-      {
-        name     = string
-        postgres = optional(bool, false)
-        redis    = optional(bool, false)
-        rabbitmq = optional(bool, false)
-      }
-    )
-  )
-}
-
 variable "ci" {
   description = "ci related info"
   type = object(
@@ -58,6 +44,18 @@ variable "envs" {
       {
         name       = string
         short_name = string
+        apps = map(
+          object(
+            {
+              name     = string
+              postgres = optional(bool, false)
+              redis    = optional(bool, false)
+              rabbitmq = optional(bool, false)
+              devs     = optional(list, [])
+            }
+          )
+        )
+       
         import_secrets = map(
           object(
             {
