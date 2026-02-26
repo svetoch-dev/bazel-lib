@@ -47,8 +47,8 @@ variable "envs" {
         users      = map(
           object(
             {
-              name = string
-              role = string
+              name  = string
+              roles = list(string)
             }
           )
         )
