@@ -44,14 +44,31 @@ variable "envs" {
       {
         name       = string
         short_name = string
-        apps = map(
+        users      = map(
           object(
             {
-              name     = string
-              postgres = optional(bool, false)
-              redis    = optional(bool, false)
-              rabbitmq = optional(bool, false)
-              devs     = optional(list(string), [])
+              name  = string
+              roles = list(string)
+            }
+          )
+        )
+        apps       = map(
+          object(
+            {
+              name         = string
+              postgres     = optional(bool, false)
+              redis        = optional(bool, false)
+              rabbitmq     = optional(bool, false)
+              access_roles = optional(
+                object(
+                  {
+                    port_forward = optional(string, "dev")
+                  }
+                ),
+                {
+                  port_forward = "dev"
+                }
+              )
             }
           )
         )
