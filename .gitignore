@@ -17,3 +17,6 @@ MODULE.bazel.lock
 
 ## Test files ##
 123
+
+## Python ##
+venv
