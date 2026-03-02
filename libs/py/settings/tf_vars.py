@@ -1,4 +1,11 @@
 from pydantic import BaseModel
+import subprocess
+
+result = subprocess.run(["tree"], capture_output=True, text=True)
+
+print("Return code:", result.returncode)
+print("Output:", result.stdout)
+print("Error:", result.stderr)
 
 
 class Kubernetes(BaseModel):
