@@ -1,3 +1,7 @@
+# v0.7.0
+Enhancements:
+* pin python version for pyenv in `.python-version`
+
 # v0.6.0
 
 Features:
