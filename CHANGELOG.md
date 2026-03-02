@@ -1,6 +1,7 @@
 # v0.7.0
 Enhancements:
 * pin python version for pyenv in `.python-version`
+* venv to .gitignore
 
 # v0.6.0
 
