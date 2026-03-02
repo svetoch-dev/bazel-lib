@@ -1,7 +1,10 @@
 # v0.7.0
+
 Enhancements:
 * pin python version for pyenv in `.python-version`
 * venv to .gitignore
+* move terraform.tfvars.json to root of repo
+* move libs/py/utils/test_logger.py to libs/py/utils/tests.py to have the same test rules approach for all libs
 
 # v0.6.0
 

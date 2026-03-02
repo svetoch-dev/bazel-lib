@@ -18,7 +18,7 @@ py_library(
 )
 
 py_test(
-    name = "test_logger",
+    name = "tests",
     srcs = glob(
         ["*.py"],
     ),
