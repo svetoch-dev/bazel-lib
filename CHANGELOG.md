@@ -1,5 +1,8 @@
 # v0.7.0
 
+Features:
+* use pydantic models for logging and bazel settings
+
 Enhancements:
 * pin python version for pyenv in `.python-version`
 * venv to .gitignore

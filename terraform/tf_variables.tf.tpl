@@ -98,6 +98,7 @@ variable "envs" {
             region       = string
             default_zone = string
             multi_region = string
+            registry     = string
             network = object(
               {
                 vm_cidr          = string
@@ -105,7 +106,6 @@ variable "envs" {
                 k8s_service_cidr = string
               }
             )
-            registry     = string
             buckets = optional(
               object(
                 {
