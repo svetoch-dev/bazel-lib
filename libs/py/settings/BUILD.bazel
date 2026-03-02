@@ -9,7 +9,7 @@ py_library(
     srcs = glob(
         ["*.py"],
     ) + [
-        "//:terraform.tfvars.json"
+        "//:terraform.tfvars.json",
     ],
     visibility = ["//visibility:public"],
     deps = [

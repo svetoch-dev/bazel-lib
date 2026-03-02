@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class Kubernetes(BaseModel):
     enabled: bool = False
     regional: bool = False
@@ -92,6 +93,7 @@ class TfVars(BaseModel):
     repo: Repo
     ci: Ci
     envs: dict[str, Env]
+
 
 with open("terraform.tfvars.json", "r") as f:
     content = f.read()
