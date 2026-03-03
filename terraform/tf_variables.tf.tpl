@@ -106,36 +106,21 @@ variable "envs" {
                 k8s_service_cidr = string
               }
             )
-            buckets = optional(
-              object(
-                {
-                  deletion_protection = optional(bool, true)
-                  multi_regional      = optional(bool, false)
-                }
-              ),
+            buckets = object(
               {
-                deletion_protection = true
-                multi_regional      = false
+                deletion_protection = optional(bool, true)
+                multi_regional      = bool
               }
             )
           }
         )
-        kubernetes = optional(
-          object(
-            {
-              enabled             = bool
-              regional            = bool
-              deletion_protection = bool
-              node_locations      = list(string)
-              auth_group          = string
-            }
-          ),
+        kubernetes = object(
           {
-            enabled             = false
-            regional            = false
-            node_locations      = []
-            auth_group          = ""
-            deletion_protection = false
+            enabled             = bool
+            regional            = optional(bool, false)
+            node_locations      = optional(list(string), [])
+            auth_group          = optional(string, "")
+            deletion_protection = optional(bool, true)
           }
         )
       }

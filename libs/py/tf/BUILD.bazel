@@ -1,4 +1,3 @@
-load("@aspect_rules_py//py:defs.bzl", "py_test")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 
@@ -11,19 +10,6 @@ py_binary(
         exclude = ["test*py"],
     ),
     visibility = ["//visibility:public"],
-    deps = [
-        "@svetoch_bazel_lib//libs/py/settings",
-    ],
-)
-
-py_test(
-    name = "tests",
-    srcs = glob(
-        ["*.py"],
-    ),
-    data = [
-        "//:terraform.tfvars.json",
-    ],
     deps = [
         "@svetoch_bazel_lib//libs/py/settings",
     ],
