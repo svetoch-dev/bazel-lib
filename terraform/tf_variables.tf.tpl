@@ -1,3 +1,7 @@
+#if you change variables set in
+#this file you must also change
+#them here libs/py/settings/tfvars.py
+
 locals {
   # Be carefull when changing this
   # This is rendered using bazel and
