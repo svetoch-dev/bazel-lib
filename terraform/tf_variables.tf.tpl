@@ -1,6 +1,6 @@
 #if you change variables set in
 #this file you must also change
-#them here libs/py/settings/tfvars.py
+#them here libs/py/tf/tfvars.py
 
 locals {
   # Be carefull when changing this
