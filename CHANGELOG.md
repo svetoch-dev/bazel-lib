@@ -2,6 +2,7 @@
 
 Features:
 * use pydantic models for logging and bazel settings
+* pydantic models for tfvars and parsing of terraform.tfvars.json 
 
 Enhancements:
 * pin python version for pyenv in `.python-version`
