@@ -1,4 +1,5 @@
 from libs.py.settings import bazel_settings
+from libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholders
 from pydantic import BaseModel, ConfigDict
 
 

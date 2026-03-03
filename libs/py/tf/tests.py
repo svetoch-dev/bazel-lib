@@ -1,5 +1,5 @@
 import unittest
-from libs.py.settings.tfvars import tfvars
+from libs.py.tf.tfvars import tfvars
 
 
 class TestTfVarsSettings(unittest.TestCase):
