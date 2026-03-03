@@ -1,25 +1,30 @@
 from libs.py.settings import bazel_settings
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class Kubernetes(BaseModel):
-    enabled: bool = False
+class BaseTfVarsModel(BaseModel):
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class Kubernetes(BaseTfVarsModel):
+    enabled: bool
     regional: bool = False
-    deletion_protection: bool = False
+    deletion_protection: bool = True
     node_locations: list[str] = []
     auth_group: str = ""
 
 
-class User(BaseModel):
+class User(BaseTfVarsModel):
     name: str
     roles: list[str]
 
 
-class AppAccessRoles(BaseModel):
+class AppAccessRoles(BaseTfVarsModel):
     port_forward: str = "dev"
 
 
-class ImportSecret(BaseModel):
+class ImportSecret(BaseTfVarsModel):
     name: str
     k8s_enabled: bool = True
     namespace: str
@@ -27,23 +32,23 @@ class ImportSecret(BaseModel):
     secrets_to_import: list[str]
 
 
-class TfBackend(BaseModel):
+class TfBackend(BaseTfVarsModel):
     type: str
     configs: dict[str, str]
 
 
-class Buckets(BaseModel):
+class Buckets(BaseTfVarsModel):
+    multi_regional: bool
     deletion_protection: bool = True
-    multi_regional: bool = False
 
 
-class Network(BaseModel):
+class Network(BaseTfVarsModel):
     vm_cidr: str
     k8s_pod_cidr: str
     k8s_service_cidr: str
 
 
-class App(BaseModel):
+class App(BaseTfVarsModel):
     name: str
     postgres: bool = False
     redis: bool = False
@@ -51,7 +56,7 @@ class App(BaseModel):
     access_roles: AppAccessRoles = AppAccessRoles()
 
 
-class Cloud(BaseModel):
+class Cloud(BaseTfVarsModel):
     name: str
     id: str
     folder_id: str | None = None
@@ -60,10 +65,10 @@ class Cloud(BaseModel):
     multi_region: str
     registry: str
     network: Network
-    buckets: Buckets = Buckets()
+    buckets: Buckets
 
 
-class Env(BaseModel):
+class Env(BaseTfVarsModel):
     name: str
     short_name: str
     users: dict[str, User]
@@ -74,22 +79,22 @@ class Env(BaseModel):
     kubernetes: Kubernetes
 
 
-class Company(BaseModel):
+class Company(BaseTfVarsModel):
     name: str
     domain: str
 
 
-class Repo(BaseModel):
+class Repo(BaseTfVarsModel):
     type: str
     group: str
 
 
-class Ci(BaseModel):
+class Ci(BaseTfVarsModel):
     type: str
     group: str
 
 
-class TfVars(BaseModel):
+class TfVars(BaseTfVarsModel):
     company: Company
     repo: Repo
     ci: Ci
@@ -97,7 +102,7 @@ class TfVars(BaseModel):
 
 
 def tfvars():
-    with open(bazel_settings.tfvars, "r") as f:
+    with open(bazel_settings.tfvars_file, "r") as f:
         content = f.read()
 
     return TfVars.model_validate_json(content)
