@@ -16,7 +16,7 @@ class BazelSettings(BaseSettings):
     @property
     # We assume that terraform.tfvars.json can be found
     # in the root of every project
-    def tfvars(self) -> str:
+    def tfvars_file(self) -> str:
         return f"{self.workspace}/terraform.tfvars.json"
 
 
