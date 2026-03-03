@@ -21,6 +21,9 @@ py_test(
     srcs = glob(
         ["*.py"],
     ),
+    data = [
+        "//:terraform.tfvars.json",
+    ],
     deps = [
         "@svetoch_bazel_lib//libs/py/settings",
     ],

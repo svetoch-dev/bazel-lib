@@ -1,3 +1,3 @@
-from libs.py.settings.tf_vars import tf_vars
+from libs.py.settings.tfvars import tfvars
 
-print(tf_vars)
+print(tfvars())

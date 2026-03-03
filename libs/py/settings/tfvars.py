@@ -1,11 +1,5 @@
+from libs.py.settings import bazel_settings
 from pydantic import BaseModel
-import subprocess
-
-result = subprocess.run(["tree"], capture_output=True, text=True)
-
-print("Return code:", result.returncode)
-print("Output:", result.stdout)
-print("Error:", result.stderr)
 
 
 class Kubernetes(BaseModel):
@@ -102,7 +96,8 @@ class TfVars(BaseModel):
     envs: dict[str, Env]
 
 
-with open("terraform.tfvars.json", "r") as f:
-    content = f.read()
+def tfvars():
+    with open(bazel_settings.tfvars, "r") as f:
+        content = f.read()
 
-tf_vars = TfVars.model_validate_json(content)
+    return TfVars.model_validate_json(content)

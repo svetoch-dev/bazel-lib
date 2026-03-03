@@ -7,10 +7,17 @@ class LogSettings(BaseSettings):
 
 
 class BazelSettings(BaseSettings):
-    workspace: str | None = Field(
+    workspace: str = Field(
         validation_alias="BUILD_WORKSPACE_DIRECTORY",
-        default=None,
+        default=".",
     )
+
+    @computed_field
+    @property
+    # We assume that terraform.tfvars.json can be found
+    # in the root of every project
+    def tfvars(self) -> str:
+        return f"{self.workspace}/terraform.tfvars.json"
 
 
 log_settings = LogSettings()

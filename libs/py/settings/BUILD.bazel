@@ -1,4 +1,5 @@
 load("@aspect_rules_py//py:defs.bzl", "py_library")
+load("@rules_python//python:defs.bzl", "py_test")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 
@@ -9,10 +10,21 @@ py_library(
     srcs = glob(
         ["*.py"],
     ),
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("pydantic-settings"),
+        requirement("pydantic"),
+    ],
+)
+
+py_test(
+    name = "tests",
+    srcs = glob(
+        ["*.py"],
+    ),
     data = [
         "//:terraform.tfvars.json",
     ],
-    visibility = ["//visibility:public"],
     deps = [
         requirement("pydantic-settings"),
         requirement("pydantic"),
