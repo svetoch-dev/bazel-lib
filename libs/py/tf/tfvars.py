@@ -1,6 +1,7 @@
 from libs.py.settings import bazel_settings
 from pydantic import BaseModel, ConfigDict
 
+
 class BaseTfVarsModel(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
