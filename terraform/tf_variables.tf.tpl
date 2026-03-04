@@ -1,3 +1,7 @@
+#if you change variables set in
+#this file you must also change
+#them here libs/py/tf/tfvars.py
+
 locals {
   # Be carefull when changing this
   # This is rendered using bazel and
@@ -98,6 +102,7 @@ variable "envs" {
             region       = string
             default_zone = string
             multi_region = string
+            registry     = string
             network = object(
               {
                 vm_cidr          = string
@@ -105,37 +110,21 @@ variable "envs" {
                 k8s_service_cidr = string
               }
             )
-            registry     = string
-            buckets = optional(
-              object(
-                {
-                  deletion_protection = optional(bool, true)
-                  multi_regional      = optional(bool, false)
-                }
-              ),
+            buckets = object(
               {
-                deletion_protection = true
-                multi_regional      = false
+                deletion_protection = optional(bool, true)
+                multi_regional      = bool
               }
             )
           }
         )
-        kubernetes = optional(
-          object(
-            {
-              enabled             = bool
-              regional            = bool
-              deletion_protection = bool
-              node_locations      = list(string)
-              auth_group          = string
-            }
-          ),
+        kubernetes = object(
           {
-            enabled             = false
-            regional            = false
-            node_locations      = []
-            auth_group          = ""
-            deletion_protection = false
+            enabled             = bool
+            regional            = optional(bool, false)
+            node_locations      = optional(list(string), [])
+            auth_group          = optional(string, "")
+            deletion_protection = optional(bool, true)
           }
         )
       }

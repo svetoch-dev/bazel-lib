@@ -2,7 +2,7 @@ import logging
 import typing as tp
 import json
 import sys
-from libs.py.settings import LOG_LEVEL
+from libs.py.settings import log_settings
 from tiny_json_log import JSONFormatter
 
 
@@ -29,7 +29,7 @@ class _Logger:
 
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
-        self.logger.setLevel(LOG_LEVEL)
+        self.logger.setLevel(log_settings.log_level)
 
     def debug(self, msg: str, **kwargs: tp.Any) -> None:
         raise NotImplementedError("debug not implemented")

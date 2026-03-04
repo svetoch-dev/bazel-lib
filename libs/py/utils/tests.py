@@ -6,7 +6,6 @@ import json
 
 from tiny_json_log import JSONFormatter
 from libs.py.utils.logger import CliLogger, JsonLogger, RootLogger
-from libs.py.settings import LOG_LEVEL
 
 
 class LoggerMixin:

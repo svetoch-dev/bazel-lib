@@ -3,8 +3,7 @@ module(name = "svetoch_bazel_lib")
 ###########
 # Bazel
 ###########
-bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
-
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2")
 bazel_dep(name = "aspect_bazel_lib", version = "2.14.0")
 
 bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
@@ -54,7 +53,7 @@ register_toolchains(
 load_file = use_extension("@svetoch_bazel_lib//tools:extensions.bzl", "load_file")
 load_file.json(
     name = "svetoch_bazel_lib_tfvars",
-    src = "//terraform:terraform.tfvars.json.example",
+    src = "@svetoch_bazel_lib//:terraform.tfvars.json",
     variable_name = "tfvars",
 )
 use_repo(load_file, "svetoch_bazel_lib_tfvars")
