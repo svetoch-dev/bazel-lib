@@ -1,8 +1,10 @@
 from libs.py.helpers.exceptions import CommandException
 from libs.py.utils.logger import CliLogger
+from pathlib import Path
 import subprocess
 import glob
 import re
+import os
 import sys
 import json
 
@@ -140,3 +142,60 @@ def replace_dotted_placeholders(
     json_str = pattern.sub(replace, json_str)
 
     return json.loads(json_str)
+
+
+def create_dir(dir_name: str) -> bool:
+    """
+    Create a directory.
+
+    Returns True if the directory was created, otherwise False. Prints a message
+    on success, if the directory already exists, or if creation is not allowed.
+
+    Args:
+        dir_name: Name (or path) of the directory to create.
+
+    Returns:
+        True if the directory was created, False otherwise.
+    """
+    try:
+        Path(dir_name).mkdir(parents=True, exist_ok=True)
+        print(f"Directory '{dir_name}' created successfully.")
+        return True
+    except PermissionError:
+        print("Permission denied: Unable to create the directory.")
+
+    return False
+
+
+def create_file(file_name: str) -> None:
+    """
+    Create an empty file if it does not already exist.
+
+    Ensures the parent directory exists (creates it if needed). Uses exclusive
+    creation mode so the call fails if the file already exists.
+
+    Prints a message and returns True if the file was created. Returns False if
+    the file already exists or creation is not allowed (e.g., permission denied).
+
+    Args:
+        file_name: File path to create.
+
+    Returns:
+        True if the file was created, False otherwise.
+    """
+    path = Path(file_name)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # "x" creates the file exclusively and fails if it exists
+        with path.open("x"):
+            pass
+
+        print(f"File '{file_name}' created successfully.")
+        return True
+    except FileExistsError:
+        print(f"File '{file_name}' already exists.")
+    except PermissionError:
+        print("Permission denied: Unable to create the file.")
+
+    return False

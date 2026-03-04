@@ -3,11 +3,16 @@ import io
 import subprocess
 import glob
 import re
+import os
+import tempfile
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 from libs.py.helpers import (
     run_command,
     dict_to_dot_notation,
     replace_dotted_placeholders,
+    create_dir,
+    create_file,
 )
 from libs.py.helpers.exceptions import CommandException
 
@@ -230,6 +235,61 @@ class TestReplaceDottedPlaceholders(unittest.TestCase):
         snapshot = {"a": "x {env.x}", "b": {"c": "{env.c}"}}
         _ = replace_dotted_placeholders(original, {"env.x": "1", "env.c": "2"})
         self.assertEqual(original, snapshot)
+
+
+class TestCreateDir(unittest.TestCase):
+    def test_creates_directory_and_returns_true(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            new_dir = os.path.join(tmp, "new_dir")
+
+            result = create_dir(new_dir)
+
+            self.assertTrue(result)
+            self.assertTrue(os.path.isdir(new_dir))
+
+    def test_permission_error_returns_false(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target_dir = os.path.join(tmp, "no_perm_dir")
+
+            with patch("os.mkdir", side_effect=PermissionError) as mock_print:
+                result = create_dir(target_dir)
+
+            self.assertFalse(result)
+
+
+class TestCreateFile(unittest.TestCase):
+    def test_creates_file_and_parent_dirs_returns_true(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            file_path = Path(tmp) / "a" / "b" / "test.txt"
+
+            result = create_file(file_path)
+
+            self.assertTrue(result)
+            self.assertTrue(file_path.exists())
+            self.assertTrue(file_path.is_file())
+            self.assertTrue(file_path.parent.exists())
+
+    def test_existing_file_returns_false_and_does_not_modify(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            file_path = Path(tmp) / "existing.txt"
+            text = "Hello world"
+            file_path.write_text(text, encoding="utf-8")
+
+            result = create_file(file_path)
+
+            self.assertFalse(result)
+            self.assertTrue(file_path.exists())
+            self.assertEqual(file_path.read_text(), text)
+
+    def test_permission_error_returns_false(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            file_path = Path(tmp) / "no_perm.txt"
+
+            with patch("pathlib.Path.open", side_effect=PermissionError):
+                result = create_file(file_path)
+
+            self.assertFalse(result)
+            self.assertFalse(file_path.exists())
 
 
 if __name__ == "__main__":
