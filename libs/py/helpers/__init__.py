@@ -4,6 +4,7 @@ import subprocess
 import glob
 import re
 import sys
+import json
 
 MASK_STR = "##MASKED##"
 UNMASK_STR = ""
@@ -67,3 +68,75 @@ def run_command(command, print_stdout=True, print_stderr=True, raise_exception=F
             raise CommandException(result.returncode, "\n".join(stderr))
 
     return result.returncode, stderr, stdout
+
+
+def dict_to_dot_notation(
+    dictionary: dict[str, object], initial_key: str = ""
+) -> dict[str, object]:
+    """Flatten a nested dictionary into a single-level dictionary
+    using dot-separated keys.
+
+    For example:
+        {"test": {"a": 1, "b": 2}}
+    becomes:
+        {"test.a": 1, "test.b": 2}
+
+    Args:
+        dictionary: A potentially nested dictionary to flatten.
+        initial_key: Optional prefix to prepend to all generated keys.
+                     Used internally for recursive calls.
+
+    Returns:
+        A new dictionary where nested keys are represented
+        in dot notation.
+    """
+
+    results = {}
+
+    for key, value in dictionary.items():
+
+        if initial_key:
+            results_key = f"{initial_key}.{key}"
+        else:
+            results_key = key
+
+        if isinstance(value, dict):
+            results = results | dict_to_dot_notation(value, results_key)
+        else:
+            results[results_key] = value
+
+    return results
+
+
+def replace_dotted_placeholders(
+    dictionary: dict[str, object], dot_notation_dict: dict[str, str]
+) -> dict[str, object]:
+    """
+    Replace placeholders like "{key}" in a dictionary using values
+    from a dot-notation dictionary.
+
+    If a placeholder matches a key in `dot_notation_dict`, it is
+    replaced with its corresponding value. Unmatched placeholders
+    remain unchanged.
+
+    Args:
+        dictionary: Dictionary that may contain "{key}" placeholders.
+        dot_notation_dict: Mapping of dot-notation keys to replacement values.
+
+    Returns:
+        A new dictionary with placeholders replaced.
+    """
+
+    json_str = json.dumps(dictionary)
+
+    pattern = re.compile(r"\{([a-zA-z0-9.]+)\}")
+
+    def replace(match):
+        key = match.group(1)
+        if key in dot_notation_dict:
+            return str(dot_notation_dict[key])
+        return match.group(0)
+
+    json_str = pattern.sub(replace, json_str)
+
+    return json.loads(json_str)

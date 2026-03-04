@@ -8,6 +8,9 @@ py_binary(
     name = "prepare",
     srcs = ["prepare.py"],
     visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//libs/py/settings",
+    ],
 )
 
 command(

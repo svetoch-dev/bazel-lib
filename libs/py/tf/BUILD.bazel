@@ -1,8 +1,20 @@
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 
 py_lint()
+
+py_binary(
+    name = "tf_variables",
+    srcs = glob(
+        ["*.py"],
+        exclude = ["test*py"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tf",
+    ],
+)
 
 py_library(
     name = "tf",

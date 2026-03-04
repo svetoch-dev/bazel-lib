@@ -1,12 +1,11 @@
 from pathlib import Path
+from libs.py.settings import bazel_settings
 import shutil
 import os
 
-WORKSPACE_FOLDER = os.getenv("BUILD_WORKSPACE_DIRECTORY")
-
 
 def prepare_repo():
-    os.chdir(WORKSPACE_FOLDER)
+    os.chdir(bazel_settings.workspace)
     gitpath = Path(".git")
     if gitpath.exists() and gitpath.is_dir():
         shutil.rmtree(gitpath)

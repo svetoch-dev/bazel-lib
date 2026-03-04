@@ -1,5 +1,6 @@
 from libs.py.settings import bazel_settings
 from pydantic import BaseModel, ConfigDict
+from libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholders
 
 
 class BaseTfVarsModel(BaseModel):
@@ -106,3 +107,24 @@ def tfvars():
         content = f.read()
 
     return TfVars.model_validate_json(content)
+
+
+def formatted_tfvars():
+    tf_vars_dict = tfvars().model_dump()
+
+    replacement_dict = {}
+
+    for k, v in dict_to_dot_notation(tf_vars_dict).items():
+        print(f"{k}: {v}")
+    for key, obj in tf_vars_dict.items():
+        if key != "envs" and isinstance(obj, dict):
+            replacement_dict = replacement_dict | dict_to_dot_notation(obj, key)
+
+    for env_name, env_dict in tf_vars_dict["envs"].items():
+        replacement_dict = replacement_dict | dict_to_dot_notation(env_dict, "env")
+
+        tf_vars_dict["envs"][env_name] = replace_dotted_placeholders(
+            env_dict, replacement_dict
+        )
+
+    return TfVars.model_validate(tf_vars_dict)
