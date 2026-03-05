@@ -1,11 +1,7 @@
 load("@rules_multirun//:defs.bzl", "command", "multirun")
-load("@svetoch_bazel_lib//scripts/init/images/prepare:prepare.bzl", "get_prepare_args")
-
-prepare_args = get_prepare_args()
 
 command(
     name = "prepare",
-    arguments = prepare_args,
     command = "@svetoch_bazel_lib//scripts/init/images/prepare",
 )
 
