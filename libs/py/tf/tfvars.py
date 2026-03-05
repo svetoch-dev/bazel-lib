@@ -114,8 +114,6 @@ def formatted_tfvars():
 
     replacement_dict = {}
 
-    for k, v in dict_to_dot_notation(tf_vars_dict).items():
-        print(f"{k}: {v}")
     for key, obj in tf_vars_dict.items():
         if key != "envs" and isinstance(obj, dict):
             replacement_dict = replacement_dict | dict_to_dot_notation(obj, key)
