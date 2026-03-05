@@ -32,7 +32,12 @@ def unmask_tf(folder, mask_str=MASK_STR, unmask_str=UNMASK_STR):
             f.write(content)
 
 
-def run_command(command, print_stdout=True, print_stderr=True, raise_exception=False):
+def run_command(
+    command: list[str],
+    print_stdout: bool = True,
+    print_stderr: bool = True,
+    raise_exception: bool = False,
+) -> tuple[int, str, str]:
     """
     Runs a command and captures its stdout and stderr.
 
