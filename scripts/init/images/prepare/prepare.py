@@ -27,7 +27,7 @@ def create_cred_helpers():
 
         if env_obj.cloud.name == "gcp":
             creds_helper = "gcloud"
-        elif env_obj.cloud.name == "gcp":
+        elif env_obj.cloud.name == "yc":
             creds_helper = "yc"
         else:
             raise CredsHelperNotImplemented(
