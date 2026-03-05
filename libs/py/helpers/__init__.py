@@ -1,9 +1,12 @@
 from libs.py.helpers.exceptions import CommandException
 from libs.py.utils.logger import CliLogger
+from pathlib import Path
 import subprocess
 import glob
 import re
+import os
 import sys
+import json
 
 MASK_STR = "##MASKED##"
 UNMASK_STR = ""
@@ -29,7 +32,12 @@ def unmask_tf(folder, mask_str=MASK_STR, unmask_str=UNMASK_STR):
             f.write(content)
 
 
-def run_command(command, print_stdout=True, print_stderr=True, raise_exception=False):
+def run_command(
+    command: list[str],
+    print_stdout: bool = True,
+    print_stderr: bool = True,
+    raise_exception: bool = False,
+) -> tuple[int, str, str]:
     """
     Runs a command and captures its stdout and stderr.
 
@@ -67,3 +75,132 @@ def run_command(command, print_stdout=True, print_stderr=True, raise_exception=F
             raise CommandException(result.returncode, "\n".join(stderr))
 
     return result.returncode, stderr, stdout
+
+
+def dict_to_dot_notation(
+    dictionary: dict[str, object], initial_key: str = ""
+) -> dict[str, object]:
+    """Flatten a nested dictionary into a single-level dictionary
+    using dot-separated keys.
+
+    For example:
+        {"test": {"a": 1, "b": 2}}
+    becomes:
+        {"test.a": 1, "test.b": 2}
+
+    Args:
+        dictionary: A potentially nested dictionary to flatten.
+        initial_key: Optional prefix to prepend to all generated keys.
+                     Used internally for recursive calls.
+
+    Returns:
+        A new dictionary where nested keys are represented
+        in dot notation.
+    """
+
+    results = {}
+
+    for key, value in dictionary.items():
+
+        if initial_key:
+            results_key = f"{initial_key}.{key}"
+        else:
+            results_key = key
+
+        if isinstance(value, dict):
+            results = results | dict_to_dot_notation(value, results_key)
+        else:
+            results[results_key] = value
+
+    return results
+
+
+def replace_dotted_placeholders(
+    dictionary: dict[str, object], dot_notation_dict: dict[str, str]
+) -> dict[str, object]:
+    """
+    Replace placeholders like "{key}" in a dictionary using values
+    from a dot-notation dictionary.
+
+    If a placeholder matches a key in `dot_notation_dict`, it is
+    replaced with its corresponding value. Unmatched placeholders
+    remain unchanged.
+
+    Args:
+        dictionary: Dictionary that may contain "{key}" placeholders.
+        dot_notation_dict: Mapping of dot-notation keys to replacement values.
+
+    Returns:
+        A new dictionary with placeholders replaced.
+    """
+
+    json_str = json.dumps(dictionary)
+
+    pattern = re.compile(r"\{([a-zA-z0-9.]+)\}")
+
+    def replace(match):
+        key = match.group(1)
+        if key in dot_notation_dict:
+            return str(dot_notation_dict[key])
+        return match.group(0)
+
+    json_str = pattern.sub(replace, json_str)
+
+    return json.loads(json_str)
+
+
+def create_dir(dir_name: str) -> bool:
+    """
+    Create a directory.
+
+    Returns True if the directory was created, otherwise False. Prints a message
+    on success, if the directory already exists, or if creation is not allowed.
+
+    Args:
+        dir_name: Name (or path) of the directory to create.
+
+    Returns:
+        True if the directory was created, False otherwise.
+    """
+    try:
+        Path(dir_name).mkdir(parents=True, exist_ok=True)
+        print(f"Directory '{dir_name}' created successfully.")
+        return True
+    except PermissionError:
+        print("Permission denied: Unable to create the directory.")
+
+    return False
+
+
+def create_file(file_name: str) -> None:
+    """
+    Create an empty file if it does not already exist.
+
+    Ensures the parent directory exists (creates it if needed). Uses exclusive
+    creation mode so the call fails if the file already exists.
+
+    Prints a message and returns True if the file was created. Returns False if
+    the file already exists or creation is not allowed (e.g., permission denied).
+
+    Args:
+        file_name: File path to create.
+
+    Returns:
+        True if the file was created, False otherwise.
+    """
+    path = Path(file_name)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # "x" creates the file exclusively and fails if it exists
+        with path.open("x"):
+            pass
+
+        print(f"File '{file_name}' created successfully.")
+        return True
+    except FileExistsError:
+        print(f"File '{file_name}' already exists.")
+    except PermissionError:
+        print("Permission denied: Unable to create the file.")
+
+    return False

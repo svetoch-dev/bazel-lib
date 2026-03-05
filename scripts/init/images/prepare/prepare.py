@@ -1,21 +1,43 @@
-import click
 import os
 import json
-from scripts.init.images.prepare.config import DOCKER_CONFIG_FILE
+
+from libs.py.helpers import create_file
+from libs.py.tf.tfvars import formatted_tfvars
+
+HOME_DIR = os.getenv("HOME")
+DOCKER_CONFIG_DIR = f"{HOME_DIR}/.docker"
+DOCKER_CONFIG_FILE = f"{DOCKER_CONFIG_DIR}/config.json"
 
 
-@click.command()
-@click.argument("registries", required=True, type=click.STRING)
-@click.argument("creds_helper_name", required=True, type=click.STRING)
-def image_prepare(registries, creds_helper_name):
+class CredsHelperNotImplemented(BaseException):
+    pass
+
+
+def create_cred_helpers():
     """
-    1. creates a credHelpers section in ~/.docker/config.json based on registries
-
-    Args:
-        registries(str): comma separated list of container registries
-        creds_helper_name(str): credential helper name (eg gar, gcloud etc)
+    creates a credHelpers section in ~/.docker/config.json based on registries
+    if terraform.tfvars.json
     """
+    create_file(DOCKER_CONFIG_FILE)
+    tfvars = formatted_tfvars()
+
+    registries = []
+
+    for env_name, env_obj in tfvars.envs.items():
+
+        if env_obj.cloud.name == "gcp":
+            creds_helper = "gcloud"
+        elif env_obj.cloud.name == "yc":
+            creds_helper = "yc"
+        else:
+            raise CredsHelperNotImplemented(
+                f"creds_helper not found for this registry {env_obj.cloud.registry}"
+            )
+
+        registries.append({"url": env_obj.cloud.registry, "creds_helper": creds_helper})
+
     configs = {"auths": {}, "credHelpers": {}}
+
     try:
         with open(DOCKER_CONFIG_FILE, "r") as f:
             configs = json.load(f)
@@ -27,14 +49,14 @@ def image_prepare(registries, creds_helper_name):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-    registries = registries.split(",")
     for registry in registries:
-        registry = registry.split("/")[0]
-        configs["credHelpers"][registry] = creds_helper_name
+        registry_domain = registry["url"].split("/")[0]
+
+        configs["credHelpers"][registry_domain] = registry["creds_helper"]
 
     with open(DOCKER_CONFIG_FILE, "w") as f:
         json.dump(configs, f, indent=4)
 
 
 if __name__ == "__main__":
-    image_prepare()
+    create_cred_helpers()

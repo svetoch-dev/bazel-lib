@@ -40,6 +40,8 @@ def py_lint_fix():
         args = [
             #Fix all *.py files in WORKSPACE
             ".",
+            "--exclude",
+            "(bazel-.*|\\.git|\\.vscode|venv)",
         ],
         deps = [
             requirement("black"),
