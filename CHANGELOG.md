@@ -2,6 +2,7 @@
 
 Features:
 * tools/macros/tf.bzl can render variable `repo.type`
+* add `var.repo.name` attribute to tf_variables.tf.tpl
 
 
 # v0.8.0

@@ -86,6 +86,7 @@ class Company(BaseTfVarsModel):
 
 
 class Repo(BaseTfVarsModel):
+    name: str
     type: str
     group: str
 
