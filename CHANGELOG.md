@@ -1,3 +1,9 @@
+# v0.8.1
+
+Features:
+* tools/macros/tf.bzl can render variable `repo.type`
+
+
 # v0.8.0
 
 Features:
