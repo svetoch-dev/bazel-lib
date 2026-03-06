@@ -236,7 +236,7 @@ class TestRootStreamLogger(TestStreamJsonLogger):
         """
         Test if the Logger is initialized correctly.
         """
-        self.logger_initialization(propagate=True)
+        self.logger_initialization()
         self.none_root_logger.info("message")
 
     def test_none_root_logger(self):

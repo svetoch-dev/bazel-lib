@@ -1,3 +1,11 @@
+# v0.9.0
+
+Features:
+* `libs.py.utils.logger`
+  * rename `_Logger` class to `BaseLogger` 
+  * move common info/warning/error/debug methods to BaseLogger class
+  * `propagate = False` is now false for all loggers
+
 # v0.8.1
 
 Features:
