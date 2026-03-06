@@ -6,6 +6,7 @@ Features:
   * move common info/warning/error/debug methods to BaseLogger class
   * `propagate = False` is now false for all loggers
 * `libs.py.helpers` create_dir, create_file use CliLogger for output messages instead of print 
+* `libs.py.gcp` `enable_apis` function
 
 # v0.8.1
 
