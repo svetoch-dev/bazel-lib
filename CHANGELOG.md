@@ -2,6 +2,9 @@
 Features:
 * `scripts/init/tf/state` refactor code using python tfvars models
 
+Enhancements:
+* `scipts/init/tf/prepare` use single, global cloud object and set only needed attributes
+
 # v0.9.0
 
 Features:
