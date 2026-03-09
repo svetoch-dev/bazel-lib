@@ -1,3 +1,17 @@
+# v0.9.0
+
+Features:
+* `scripts/init/tf/prepare` refactor code using python tfvars models
+* `libs.py.utils.logger`
+  * rename `_Logger` class to `BaseLogger` 
+  * move common info/warning/error/debug methods to BaseLogger class
+  * `propagate = False` is now false for all loggers
+* `libs.py.helpers` create_dir, create_file use CliLogger for output messages instead of print 
+* `libs.py.gcp` `enable_apis` function
+
+Fixes:
+* `scripts/init/images/prepare` fix bazel path for deps
+
 # v0.8.1
 
 Features:

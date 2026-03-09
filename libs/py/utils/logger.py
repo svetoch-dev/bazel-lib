@@ -6,7 +6,7 @@ from libs.py.settings import log_settings
 from tiny_json_log import JSONFormatter
 
 
-class _Logger:
+class BaseLogger:
     def __init__(
         self,
         logger: logging.Logger,
@@ -15,6 +15,9 @@ class _Logger:
         fmt: str,
     ) -> None:
         self.logger = logger
+        self.logger.setLevel(log_settings.log_level)
+        self.logger.propagate = False
+
         if handler_type == "stream":
             handler = logging.StreamHandler(stream=sys.stdout)
         else:
@@ -28,23 +31,24 @@ class _Logger:
             raise NotImplementedError(f"formatter_type {formatter_type} unknown")
 
         handler.setFormatter(formatter)
+
+        self.logger.handlers.clear()
         self.logger.addHandler(handler)
-        self.logger.setLevel(log_settings.log_level)
 
     def debug(self, msg: str, **kwargs: tp.Any) -> None:
-        raise NotImplementedError("debug not implemented")
+        self.logger.debug(msg)
 
     def error(self, msg: str, **kwargs: tp.Any) -> None:
-        raise NotImplementedError("error not implemented")
+        self.logger.error(msg)
 
     def info(self, msg: str, **kwargs: tp.Any) -> None:
-        raise NotImplementedError("info not implemented")
+        self.logger.info(msg)
 
     def warning(self, msg: str, **kwargs: tp.Any) -> None:
-        raise NotImplementedError("warning not implemented")
+        self.logger.warning(msg)
 
 
-class JsonLogger(_Logger):
+class JsonLogger(BaseLogger):
     def __init__(
         self,
         name: str,
@@ -52,9 +56,7 @@ class JsonLogger(_Logger):
         fmt: str = "severity={levelname} src={name} {message}",
         **initial: tp.Any,
     ) -> None:
-
         logger = logging.getLogger(name)
-        logger.propagate = False
 
         super().__init__(logger, handler_type, "json", fmt)
         self._initial = initial
@@ -80,33 +82,18 @@ class JsonLogger(_Logger):
         self.logger.warning(self._get_log_msg(msg, **kwargs))
 
 
-class CliLogger(_Logger):
+class CliLogger(BaseLogger):
     def __init__(
         self,
         name: str,
         handler_type: str = "stream",
         fmt: str = "{asctime} {levelname} {message}",
     ) -> None:
-
         logger = logging.getLogger(name)
-        logger.propagate = False
-
         super().__init__(logger, handler_type, "cli", fmt)
 
-    def debug(self, msg: str, **kwargs: tp.Any) -> None:
-        self.logger.debug(msg)
 
-    def error(self, msg: str, **kwargs: tp.Any) -> None:
-        self.logger.error(msg)
-
-    def info(self, msg: str, **kwargs: tp.Any) -> None:
-        self.logger.info(msg)
-
-    def warning(self, msg: str, **kwargs: tp.Any) -> None:
-        self.logger.warning(msg)
-
-
-class RootLogger(_Logger):
+class RootLogger(BaseLogger):
     def __init__(
         self,
         handler_type: str = "stream",
@@ -114,15 +101,3 @@ class RootLogger(_Logger):
         fmt: str = "severity={levelname} src={name} {message}",
     ) -> None:
         super().__init__(logging.getLogger(), handler_type, fmt_type, fmt)
-
-    def debug(self, msg: str, **kwargs: tp.Any) -> None:
-        self.logger.debug(msg)
-
-    def error(self, msg: str, **kwargs: tp.Any) -> None:
-        self.logger.error(msg)
-
-    def info(self, msg: str, **kwargs: tp.Any) -> None:
-        self.logger.info(msg)
-
-    def warning(self, msg: str, **kwargs: tp.Any) -> None:
-        self.logger.warning(msg)

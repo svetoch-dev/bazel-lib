@@ -1,6 +1,7 @@
 from libs.py.helpers.exceptions import CommandException
-from libs.py.utils.logger import CliLogger
+from libs.py.utils.logger import CliLogger, BaseLogger
 from pathlib import Path
+from logging import Logger
 import subprocess
 import glob
 import re
@@ -37,6 +38,7 @@ def run_command(
     print_stdout: bool = True,
     print_stderr: bool = True,
     raise_exception: bool = False,
+    logger: BaseLogger = CliLogger("helpers.run_command"),
 ) -> tuple[int, str, str]:
     """
     Runs a command and captures its stdout and stderr.
@@ -53,7 +55,6 @@ def run_command(
     command_str = " ".join(command)
     stdout = []
     stderr = []
-    logger = CliLogger("helpers.run_command")
     logger.debug(f"Running: {command_str}")
     result = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -149,7 +150,9 @@ def replace_dotted_placeholders(
     return json.loads(json_str)
 
 
-def create_dir(dir_name: str) -> bool:
+def create_dir(
+    dir_name: str, logger: BaseLogger = CliLogger("helpers.create_dir")
+) -> bool:
     """
     Create a directory.
 
@@ -164,15 +167,17 @@ def create_dir(dir_name: str) -> bool:
     """
     try:
         Path(dir_name).mkdir(parents=True, exist_ok=True)
-        print(f"Directory '{dir_name}' created successfully.")
+        logger.info(f"Directory '{dir_name}' created successfully.")
         return True
     except PermissionError:
-        print("Permission denied: Unable to create the directory.")
+        logger.error("Permission denied: Unable to create the directory.")
 
     return False
 
 
-def create_file(file_name: str) -> None:
+def create_file(
+    file_name: str, logger: BaseLogger = CliLogger("helpers.create_dir")
+) -> None:
     """
     Create an empty file if it does not already exist.
 
@@ -196,11 +201,11 @@ def create_file(file_name: str) -> None:
         with path.open("x"):
             pass
 
-        print(f"File '{file_name}' created successfully.")
+        logger.info(f"File '{file_name}' created successfully.")
         return True
     except FileExistsError:
-        print(f"File '{file_name}' already exists.")
+        logger.info(f"File '{file_name}' already exists.")
     except PermissionError:
-        print("Permission denied: Unable to create the file.")
+        logger.error("Permission denied: Unable to create the file.")
 
     return False
