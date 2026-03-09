@@ -4,7 +4,7 @@ from scripts.init.tf.prepare.yc import prepare_yc
 import sys
 
 
-def prepare():
+def prepare() -> None:
     """
     Prepares various clouds for applying terraform root modules
     """

@@ -4,7 +4,7 @@ from libs.py.tf.tfvars import formatted_tfvars
 import sys
 
 
-def create_state():
+def create_state() -> None:
     """
     Create tf state backends for each env
     """
