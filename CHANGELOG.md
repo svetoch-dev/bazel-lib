@@ -1,3 +1,7 @@
+# v0.10.0
+Features:
+* `scripts/init/tf/state` refactor code using python tfvars models
+
 # v0.9.0
 
 Features:

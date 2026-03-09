@@ -2,9 +2,6 @@ load("@rules_multirun//:defs.bzl", "command", "multirun")
 load("@svetoch_bazel_lib//scripts/init/tf/apply:apply.bzl", "get_apply_args")
 load("@svetoch_bazel_lib//scripts/init/tf/poststeps:poststeps.bzl", "get_clean_args")
 load("@svetoch_bazel_lib//scripts/init/tf/secrets:secrets.bzl", "get_secrets_args")
-load("@svetoch_bazel_lib//scripts/init/tf/state:state.bzl", "get_create_state_args")
-
-_, create_state_args = get_create_state_args()
 
 apply_args = get_apply_args()
 
@@ -19,7 +16,6 @@ command(
 
 command(
     name = "state_create",
-    arguments = create_state_args,
     command = "@svetoch_bazel_lib//scripts/init/tf/state:create",
 )
 

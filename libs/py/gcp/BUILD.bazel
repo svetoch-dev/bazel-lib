@@ -1,5 +1,4 @@
-load("@aspect_rules_py//py:defs.bzl", "py_library")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@aspect_rules_py//py:defs.bzl", "py_library", "py_test")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 
