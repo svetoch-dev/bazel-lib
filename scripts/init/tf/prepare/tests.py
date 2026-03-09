@@ -3,7 +3,8 @@ from types import SimpleNamespace
 from unittest.mock import patch, call
 
 from scripts.init.tf.prepare.prepare import prepare
-from libs.py.tf.tfvars import Cloud
+from scripts.init.tf.prepare.copy import copy_template
+from libs.py.tf.tfvars import Cloud, Env
 
 cloud = Cloud(
     name="<replace-me>",
@@ -20,6 +21,119 @@ cloud = Cloud(
     registry="registry",
     buckets={"multi_regional": "false"},
 )
+
+env = Env(
+    name="<replace-me>",
+    short_name="<replace-me>",
+    users={},
+    apps={},
+    import_secrets={},
+    tf_backend={"type": "gcs", "configs": {"bucket": "some-tf-state"}},
+    cloud=cloud,
+    kubernetes={"enabled": False},
+)
+
+
+class TestCopyTemplate(unittest.TestCase):
+    @patch("scripts.init.tf.prepare.copy.sys.exit")
+    @patch("scripts.init.tf.prepare.copy.Path.exists")
+    @patch("scripts.init.tf.prepare.copy.formatted_tfvars")
+    @patch("scripts.init.tf.prepare.copy.bazel_settings")
+    def test_copy_template_exits_when_template_dir_missing(
+        self,
+        mock_bazel_settings,
+        mock_formatted_tfvars,
+        mock_exists,
+        mock_sys_exit,
+    ):
+        mock_bazel_settings.tf_env_dir = "/tmp/tf/env"
+        mock_bazel_settings.tf_template_dir = "/tmp/tf/env/template"
+        mock_exists.return_value = False
+
+        env_prd = env.model_copy(deep=True)
+        env_prd.name = "production"
+        env_prd.short_name = "prd"
+
+        envs = {
+            "production": env_prd,
+        }
+        mock_formatted_tfvars.return_value = SimpleNamespace(envs=envs)
+
+        mock_sys_exit.side_effect = SystemExit
+
+        with self.assertRaises(SystemExit):
+            copy_template()
+
+        mock_sys_exit.assert_called_once_with(1)
+
+    @patch("scripts.init.tf.prepare.copy.copytree")
+    @patch("scripts.init.tf.prepare.copy.Path.exists")
+    @patch("scripts.init.tf.prepare.copy.formatted_tfvars")
+    @patch("scripts.init.tf.prepare.copy.bazel_settings")
+    def test_copy_template_copies_template_to_each_env(
+        self,
+        mock_bazel_settings,
+        mock_formatted_tfvars,
+        mock_exists,
+        mock_copytree,
+    ):
+        mock_bazel_settings.tf_env_dir = "/tmp/tf/env"
+        mock_bazel_settings.tf_template_dir = "/tmp/tf/env/template"
+        mock_exists.return_value = True
+        env_dev = env.model_copy(deep=True)
+        env_dev.name = "development"
+        env_dev.short_name = "dev"
+
+        env_prd = env.model_copy(deep=True)
+        env_prd.name = "production"
+        env_prd.short_name = "prd"
+
+        envs = {
+            "development": env_dev,
+            "production": env_prd,
+        }
+
+        mock_formatted_tfvars.return_value = SimpleNamespace(envs=envs)
+
+        copy_template()
+
+        mock_copytree.assert_has_calls(
+            [
+                call("/tmp/tf/env/template", "/tmp/tf/env/development"),
+                call("/tmp/tf/env/template", "/tmp/tf/env/production"),
+            ],
+            any_order=False,
+        )
+        self.assertEqual(mock_copytree.call_count, 2)
+
+    @patch("scripts.init.tf.prepare.copy.copytree")
+    @patch("scripts.init.tf.prepare.copy.Path.exists")
+    @patch("scripts.init.tf.prepare.copy.formatted_tfvars")
+    @patch("scripts.init.tf.prepare.copy.bazel_settings")
+    def test_copy_template_does_not_copy_template_to_int(
+        self,
+        mock_bazel_settings,
+        mock_formatted_tfvars,
+        mock_exists,
+        mock_copytree,
+    ):
+        mock_bazel_settings.tf_env_dir = "/tmp/tf/env"
+        mock_bazel_settings.tf_template_dir = "/tmp/tf/env/template"
+        mock_exists.return_value = True
+
+        env_int = env.model_copy(deep=True)
+        env_int.name = "internal"
+        env_int.short_name = "int"
+
+        envs = {
+            "internal": env_int,
+        }
+
+        mock_formatted_tfvars.return_value = SimpleNamespace(envs=envs)
+
+        copy_template()
+
+        mock_copytree.assert_not_called()
 
 
 class TestPrepare(unittest.TestCase):

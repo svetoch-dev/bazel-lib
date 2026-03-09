@@ -1,5 +1,8 @@
 # v0.11.0
 
+Features:
+* `scripts/init/tf/prepare` copy script that copies template dir to real env dir
+
 Enhancements:
 * `libs.py.tf.tfvars` formatted_tfvars tests
 
