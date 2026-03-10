@@ -7,6 +7,9 @@ Features:
 Enhancements:
 * `libs.py.tf.tfvars` formatted_tfvars tests
 
+Fixes:
+* `tools/macros/tf.bzl` use json.encode(...) generate terraform.tfvars.json for tf
+
 # v0.10.0
 Features:
 * `scripts/init/tf/state` refactor code using python tfvars models
