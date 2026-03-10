@@ -2,6 +2,7 @@
 
 Features:
 * `scripts/init/tf/prepare` copy script that copies template dir to real env dir
+* `terraform/tf_variables.tf.tpl` new envs attribute - initial_start
 
 Enhancements:
 * `libs.py.tf.tfvars` formatted_tfvars tests
