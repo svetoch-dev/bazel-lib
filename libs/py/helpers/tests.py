@@ -25,16 +25,22 @@ class TestRunCommand(unittest.TestCase):
     def test_successful_command(self, mock_stdout, mock_popen):
         """Test a command that executes successfully and prints output."""
         mock_process = MagicMock()
-        mock_process.stdout = io.StringIO(
-            "This is stdout line 1\nThis is stdout line 2\n"
+        mock_process.communicate.return_value = (
+            "This is stdout line 1\nThis is stdout line 2\n",
+            "",
         )
-        mock_process.stderr = io.StringIO("")
         mock_process.returncode = 0
-        mock_process.wait.return_value = None
         mock_popen.return_value = mock_process
 
         returncode, stderr, stdout = run_command(["true"])
 
+        mock_process.communicate.assert_called_once()
+        mock_popen.assert_called_once_with(
+            ["true"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
         self.assertEqual(returncode, 0)
         self.assertEqual(stderr, [])
         self.assertEqual(stdout, ["This is stdout line 1", "This is stdout line 2"])
@@ -47,15 +53,15 @@ class TestRunCommand(unittest.TestCase):
     def test_failing_command_no_exception(self, mock_stderr, mock_popen):
         """Test a command that fails but does not raise an exception."""
         mock_process = MagicMock()
-        mock_process.stdout = io.StringIO("")
-        mock_process.stderr = io.StringIO(
-            "This is stderr line 1\nThis is stderr line 2\n"
+        mock_process.communicate.return_value = (
+            "",
+            "This is stderr line 1\nThis is stderr line 2\n",
         )
         mock_process.returncode = 1
-        mock_process.wait.return_value = None
         mock_popen.return_value = mock_process
         returncode, stderr, stdout = run_command(["false"])
 
+        mock_process.communicate.assert_called_once()
         self.assertEqual(returncode, 1)
         self.assertEqual(stderr, ["This is stderr line 1", "This is stderr line 2"])
         self.assertEqual(stdout, [])
@@ -67,15 +73,14 @@ class TestRunCommand(unittest.TestCase):
     def test_failing_command_with_exception(self, mock_popen):
         """Test a command that fails and raises an exception."""
         mock_process = MagicMock()
-        mock_process.stdout = io.StringIO("")
-        mock_process.stderr = io.StringIO("Error: something went wrong\n")
+        mock_process.communicate.return_value = ("", "Error: something went wrong\n")
         mock_process.returncode = 127
-        mock_process.wait.return_value = None
         mock_popen.return_value = mock_process
 
         with self.assertRaises(CommandException) as context:
             run_command(["non_existent_command"], raise_exception=True)
 
+        mock_process.communicate.assert_called_once()
         self.assertEqual(context.exception.returncode, 127)
         self.assertEqual(context.exception.stderr, "Error: something went wrong")
         self.assertIn("Command failed with return code 127", str(context.exception))
@@ -86,21 +91,33 @@ class TestRunCommand(unittest.TestCase):
     def test_no_output_printing(self, mock_stderr, mock_stdout, mock_popen):
         """Test a successful command where output printing is disabled."""
         mock_process = MagicMock()
-        mock_process.stdout = io.StringIO("stdout_line\n")
-        mock_process.stderr = io.StringIO("stderr_line\n")
+        mock_process.communicate.return_value = ("stdout_line\n", "stderr_line\n")
         mock_process.returncode = 0
-        mock_process.wait.return_value = None
         mock_popen.return_value = mock_process
 
         returncode, stderr, stdout = run_command(
             ["echo", "test"], print_stdout=False, print_stderr=False
         )
 
+        mock_process.communicate.assert_called_once()
         self.assertEqual(returncode, 0)
         self.assertEqual(stdout, ["stdout_line"])
         self.assertEqual(stderr, ["stderr_line"])
 
         self.assertEqual(mock_stderr.getvalue(), "")
+
+    @patch("subprocess.Popen")
+    def test_empty_stdout_and_stderr(self, mock_popen):
+        mock_process = MagicMock()
+        mock_process.communicate.return_value = ("", "")
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+
+        returncode, stderr, stdout = run_command(["true"])
+
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stderr, [])
+        self.assertEqual(stdout, [])
 
 
 class TestDictToDotNotation(unittest.TestCase):

@@ -9,6 +9,7 @@ Enhancements:
 
 Fixes:
 * `tools/macros/tf.bzl` use json.encode(...) generate terraform.tfvars.json for tf
+* `libs/py/helpers` `run_command` fix descriptor deadlock issue when stderr buffer is used and your are waiting for stdout
 
 # v0.10.0
 Features:
