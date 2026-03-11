@@ -1,7 +1,7 @@
 from libs.py.helpers.exceptions import CommandException
 from libs.py.utils.logger import CliLogger, BaseLogger
 from pathlib import Path
-from logging import Logger
+from typing import Any
 import subprocess
 import glob
 import re
@@ -212,3 +212,23 @@ def create_file(
         logger.error("Permission denied: Unable to create the file.")
 
     return False
+
+
+def switch_index(array: list[Any], element: Any, index: int) -> None:
+    """
+    Swaps the first occurrence of ``element`` with the item at ``index``.
+
+    Args:
+        array: The list to modify.
+        element: The value to look for.
+        index: The index to swap with.
+
+    Raises:
+        IndexError: If ``index`` is out of range.
+    """
+
+    for i, obj in enumerate(array):
+        if element == obj:
+            array[i] = array[index]
+            array[index] = element
+            break

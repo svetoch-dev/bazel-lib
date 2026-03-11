@@ -13,8 +13,52 @@ from libs.py.helpers import (
     replace_dotted_placeholders,
     create_dir,
     create_file,
+    switch_index,
 )
 from libs.py.helpers.exceptions import CommandException
+
+
+class TestSwitchIndex(unittest.TestCase):
+    def test_swaps_first_matching_element(self) -> None:
+        array = [1, 2, 3, 4]
+
+        switch_index(array, 3, 0)
+
+        self.assertEqual(array, [3, 2, 1, 4])
+
+    def test_only_swaps_first_occurrence(self) -> None:
+        array = ["1", "1", "2", "4"]
+
+        switch_index(array, "1", 3)
+
+        self.assertEqual(array, ["4", "1", "2", "1"])
+
+    def test_no_match_leaves_list_unchanged(self) -> None:
+        array = [1, 2, 3]
+
+        switch_index(array, 99, 1)
+
+        self.assertEqual(array, [1, 2, 3])
+
+    def test_same_index_has_no_effect(self) -> None:
+        array = [1, 2, 3]
+
+        switch_index(array, 2, 1)
+
+        self.assertEqual(array, [1, 2, 3])
+
+    def test_raises_index_error_for_out_of_range_index(self) -> None:
+        array = [1, 2, 3]
+
+        with self.assertRaises(IndexError):
+            switch_index(array, 2, 10)
+
+    def test_negative_index_works(self) -> None:
+        array = [1, 2, 3]
+
+        switch_index(array, 1, -1)
+
+        self.assertEqual(array, [3, 2, 1])
 
 
 class TestRunCommand(unittest.TestCase):

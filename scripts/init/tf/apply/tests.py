@@ -11,8 +11,10 @@ class TestApplyEnvTargets(unittest.TestCase):
             0,
             [],
             [
-                "//terraform/environments/dev:apply",
-                "//terraform/environments/dev:rapply",
+                "//terraform/environments/dev/secrets:apply",
+                "//terraform/environments/dev/k8s:apply",
+                "//terraform/environments/dev/repo:rapply",
+                "//terraform/environments/dev/cloud:apply",
             ],
         )
 
@@ -20,9 +22,12 @@ class TestApplyEnvTargets(unittest.TestCase):
 
         self.assertEqual(
             result,
+            # We switch index for cloud and secrets
             [
-                "//terraform/environments/dev:apply",
-                "//terraform/environments/dev:rapply",
+                "//terraform/environments/dev/cloud:apply",
+                "//terraform/environments/dev/k8s:apply",
+                "//terraform/environments/dev/repo:rapply",
+                "//terraform/environments/dev/secrets:apply",
             ],
         )
         mock_run_command.assert_called_once_with(
@@ -40,21 +45,21 @@ class TestApplyEnvTargets(unittest.TestCase):
             0,
             [],
             [
-                "//terraform/environments/dev:apply",
-                "//terraform/environments/dev:rapply",
-                "//terraform/environments/dev:other",
+                "//terraform/environments/dev/repo:rapply",
+                "//terraform/environments/dev/cloud:apply",
+                "//terraform/environments/dev/secrets:apply",
             ],
         )
 
         result = apply_env_targets(
             "dev",
             exclude_targets=[
-                "//terraform/environments/dev:rapply",
-                "//terraform/environments/dev:other",
+                "//terraform/environments/dev/secrets:apply",
+                "//terraform/environments/dev/repo:rapply",
             ],
         )
 
-        self.assertEqual(result, ["//terraform/environments/dev:apply"])
+        self.assertEqual(result, ["//terraform/environments/dev/cloud:apply"])
 
     @patch("scripts.init.tf.apply.env.run_command")
     def test_returns_empty_list_when_all_targets_excluded(
@@ -64,12 +69,12 @@ class TestApplyEnvTargets(unittest.TestCase):
         mock_run_command.return_value = (
             0,
             [],
-            ["//terraform/environments/dev:apply"],
+            ["//terraform/environments/dev/cloud:apply"],
         )
 
         result = apply_env_targets(
             "dev",
-            exclude_targets=["//terraform/environments/dev:apply"],
+            exclude_targets=["//terraform/environments/dev/cloud:apply"],
         )
 
         self.assertEqual(result, [])
@@ -93,12 +98,12 @@ class TestApplyEnvTargets(unittest.TestCase):
         mock_run_command.return_value = (
             0,
             [],
-            ["//terraform/environments/dev:apply"],
+            ["//terraform/environments/dev/cloud:apply"],
         )
 
         result = apply_env_targets("dev", exclude_targets=None)
 
-        self.assertEqual(result, ["//terraform/environments/dev:apply"])
+        self.assertEqual(result, ["//terraform/environments/dev/cloud:apply"])
 
 
 class TestApplyEnv(unittest.TestCase):

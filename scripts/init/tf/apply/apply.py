@@ -2,6 +2,7 @@ import os
 import sys
 from libs.py.settings import bazel_settings
 from libs.py.tf.tfvars import tfvars
+from libs.py.helpers import switch_index
 from libs.py.utils.logger import CliLogger
 from scripts.init.tf.apply.env import apply_env
 from pathlib import Path
@@ -11,6 +12,7 @@ def apply() -> None:
     os.chdir(bazel_settings.workspace)
     logger = CliLogger("scripts.init.tf.apply.apply")
     tf_vars = tfvars()
+    int_env = None
 
     envs = []
 
@@ -26,16 +28,13 @@ def apply() -> None:
         # initial_start = False
         # 5. Apply everything again
         env_obj.initial_start = False
-        # We need to apply all apply targets for int env
-        # first then for all others.
         if env_obj.short_name == "int":
-            if len(envs) != 0:
-                env_buffer = envs[0]
-                envs[0] = env_obj
-                envs.append(env_buffer)
-                continue
+            int_env = env_obj.model_copy(deep=True)
 
         envs.append(env_obj)
+
+    # We need to apply int env first
+    switch_index(envs, int_env, 0)
 
     for env_obj in envs:
         # We exclude secrets because we have a dedicated apply
