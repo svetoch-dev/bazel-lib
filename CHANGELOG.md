@@ -1,6 +1,7 @@
 # v0.11.0
 
 Features:
+* `scripts/init/tf/apply` refactor code using python tfvars models
 * `scripts/init/tf/prepare` copy script that copies template dir to real env dir
 * `terraform/tf_variables.tf.tpl` new envs attribute - initial_start
 
@@ -10,6 +11,7 @@ Enhancements:
 Fixes:
 * `tools/macros/tf.bzl` use json.encode(...) generate terraform.tfvars.json for tf
 * `libs/py/helpers` `run_command` fix descriptor deadlock issue when stderr buffer is used and your are waiting for stdout
+* `libs/py/settings` BazelSettings tf dir vars use relative to repo root paths instead of full paths
 
 # v0.10.0
 Features:

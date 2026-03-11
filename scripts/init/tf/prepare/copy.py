@@ -1,9 +1,10 @@
-from shutil import copytree, rmtree
+from shutil import copytree
 from pathlib import Path
 from libs.py.tf.tfvars import formatted_tfvars
 from libs.py.settings import bazel_settings
 from libs.py.utils.logger import CliLogger
 import sys
+import os
 
 TEMPLATE_DIR = Path(bazel_settings.tf_template_dir)
 
@@ -22,10 +23,6 @@ def copy_template() -> None:
             logger.info(f"{TEMPLATE_DIR} copied to {copy_to_dir}")
 
 
-def remove_template() -> None:
-    rmtree(TEMPLATE_DIR)
-
-
 if __name__ == "__main__":
+    os.chdir(bazel_settings.workspace)
     copy_template()
-    remove_template()

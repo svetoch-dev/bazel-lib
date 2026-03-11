@@ -65,13 +65,13 @@ def run_command(
     stdout = out.splitlines()
     stderr = err.splitlines()
 
-    if print_stdout:
-        for line in stdout:
-            print(line, file=sys.stdout)
-
     if print_stderr:
         for line in stderr:
             print(line, file=sys.stderr)
+
+    if print_stdout:
+        for line in stdout:
+            print(line, file=sys.stdout)
 
     if result.returncode != 0:
         logger.debug(f"Command failed with return code: {result.returncode}")
