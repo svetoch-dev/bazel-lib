@@ -1,22 +1,31 @@
-load("@aspect_rules_py//py:defs.bzl", "py_binary")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_test", "py_library")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 
 py_lint()
 
 py_binary(
     name = "apply",
-    srcs = glob(
-        ["*.py"],
-        exclude = [
-            "test*py",
-        ],
-    ),
+    srcs = [
+        "apply.py",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//libs/py/settings",
+        "@svetoch_bazel_lib//libs/py/tf",
+        "@svetoch_bazel_lib//libs/py/utils",
+        "@svetoch_bazel_lib//scripts/init/tf/apply:env",
+    ],
+)
+
+py_library(
+    name = "env",
+    srcs = [
+        "env.py",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "@svetoch_bazel_lib//libs/py/helpers",
         "@svetoch_bazel_lib//libs/py/settings",
-        "@svetoch_bazel_lib//libs/py/tf",
         "@svetoch_bazel_lib//libs/py/utils",
     ],
 )
