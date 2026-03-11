@@ -1,7 +1,104 @@
 import unittest
 from unittest.mock import Mock, call, patch
 
-from scripts.init.tf.apply.apply import apply_env
+from scripts.init.tf.apply.apply import apply_env, apply_env_targets
+
+
+class TestApplyEnvTargets(unittest.TestCase):
+    @patch("scripts.init.tf.apply.apply.run_command")
+    def test_returns_targets(self, mock_run_command):
+        mock_run_command.return_value = (
+            0,
+            [],
+            [
+                "//terraform/environments/dev:apply",
+                "//terraform/environments/dev:rapply",
+            ],
+        )
+
+        result = apply_env_targets("dev")
+
+        self.assertEqual(
+            result,
+            [
+                "//terraform/environments/dev:apply",
+                "//terraform/environments/dev:rapply",
+            ],
+        )
+        mock_run_command.assert_called_once_with(
+            [
+                "bazel",
+                "query",
+                'attr(name, "^apply$|^rapply$", "//terraform/environments/dev/...")',
+            ],
+            print_stdout=False,
+        )
+
+    @patch("scripts.init.tf.apply.apply.run_command")
+    def test_excludes_targets(self, mock_run_command):
+        mock_run_command.return_value = (
+            0,
+            [],
+            [
+                "//terraform/environments/dev:apply",
+                "//terraform/environments/dev:rapply",
+                "//terraform/environments/dev:other",
+            ],
+        )
+
+        result = apply_env_targets(
+            "dev",
+            exclude_targets=[
+                "//terraform/environments/dev:rapply",
+                "//terraform/environments/dev:other",
+            ],
+        )
+
+        self.assertEqual(result, ["//terraform/environments/dev:apply"])
+
+    @patch("scripts.init.tf.apply.apply.run_command")
+    def test_returns_empty_list_when_all_targets_excluded(
+        self,
+        mock_run_command,
+    ):
+        mock_run_command.return_value = (
+            0,
+            [],
+            ["//terraform/environments/dev:apply"],
+        )
+
+        result = apply_env_targets(
+            "dev",
+            exclude_targets=["//terraform/environments/dev:apply"],
+        )
+
+        self.assertEqual(result, [])
+
+    @patch("scripts.init.tf.apply.apply.run_command")
+    def test_returns_empty_list_when_no_targets_found(
+        self,
+        mock_run_command,
+    ):
+        mock_run_command.return_value = (0, [], [])
+
+        result = apply_env_targets("dev")
+
+        self.assertEqual(result, [])
+
+    @patch("scripts.init.tf.apply.apply.run_command")
+    def test_none_exclude_targets_is_treated_as_empty_list(
+        self,
+        mock_run_command,
+    ):
+        mock_run_command.return_value = (
+            0,
+            [],
+            ["//terraform/environments/dev:apply"],
+        )
+
+        result = apply_env_targets("dev", exclude_targets=None)
+
+        self.assertEqual(result, ["//terraform/environments/dev:apply"])
 
 
 class TestApplyEnv(unittest.TestCase):
