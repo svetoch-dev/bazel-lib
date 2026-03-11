@@ -19,10 +19,11 @@ class BazelSettings(BaseSettings):
 
     @computed_field
     @property
+    # Relative to workspace root
     def tf_dir(self) -> str:
         if self.tf_dir_override:
             return tf_dir_override
-        return f"{self.workspace}/terraform"
+        return f"terraform"
 
     @computed_field
     @property
