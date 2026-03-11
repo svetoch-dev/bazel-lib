@@ -32,7 +32,7 @@ multirun(
     name = "init",
     commands = [
         "tf_init",
-        #"images_init",
+        "images_init",
     ],
     visibility = ["//visibility:public"],
 )
