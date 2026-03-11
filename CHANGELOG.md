@@ -3,6 +3,7 @@
 Features:
 * `scripts/init/tf/apply` refactor code using python tfvars models
 * `scripts/init/tf/prepare` copy script that copies template dir to real env dir
+* `libs/py/helpers` switch_index function that switches index of an element
 * `terraform/tf_variables.tf.tpl` new envs attribute - initial_start
 
 Enhancements:
