@@ -110,6 +110,7 @@ def tfvars():
 
     return TfVars.model_validate_json(content)
 
+
 def env_key(env: Env, tf_vars: TfVars) -> str:
     """
     Given an Env obj find its key in TfVars.envs dict
@@ -122,6 +123,7 @@ def env_key(env: Env, tf_vars: TfVars) -> str:
     * key of found env object
     """
     return [k for k, v in tf_vars.envs.items() if v == env][0]
+
 
 def formatted_tfvars():
     tf_vars_dict = tfvars().model_dump()
