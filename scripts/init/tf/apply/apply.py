@@ -1,7 +1,7 @@
 import os
 import sys
 from libs.py.settings import bazel_settings
-from libs.py.tf.tfvars import tfvars
+from libs.py.tf.tfvars import tfvars, env_key
 from libs.py.helpers import switch_index
 from libs.py.utils.logger import CliLogger
 from libs.py.tf.apply import apply_env
@@ -40,7 +40,7 @@ def apply() -> None:
         # Our bazel tf macros choose env based on folder names
         # which are keys of tf_vars.envs so we need to find the
         # key name for the env_obj
-        env_name = [k for k, v in tf_vars.envs.items() if v == env_obj][0]
+        env_name = env_key(env_obj, tf_vars)
         # We exclude secrets because we have a dedicated apply
         # secret step
         secrets_target = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:apply"
@@ -60,7 +60,7 @@ def apply() -> None:
         # Our bazel tf macros choose env based on folder names
         # which are keys of tf_vars.envs so we need to find the
         # key name for the env_obj
-        env_name = [k for k, v in tf_vars.envs.items() if v == env_obj][0]
+        env_name = env_key(env_obj, tf_vars)
         # We exclude secrets because we have a dedicated apply
         # secret step
         secrets_target = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:apply"
