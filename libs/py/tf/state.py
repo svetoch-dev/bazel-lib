@@ -1,9 +1,14 @@
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
-from libs.py.utils.logger import CliLogger
+from libs.py.utils.logger import CliLogger, BaseLogger
 
 
-def create_gcs_tf_state(project_id: str, bucket_name: str, location: str) -> bool:
+def create_gcs_tf_state(
+    project_id: str,
+    bucket_name: str,
+    location: str,
+    logger: BaseLogger = CliLogger("libs.py.tf.state.create_gcs_tf_state"),
+) -> bool:
     """
     Ensure that a Google Cloud Storage bucket for Terraform state exists.
 
@@ -21,7 +26,6 @@ def create_gcs_tf_state(project_id: str, bucket_name: str, location: str) -> boo
         True if the bucket already exists or is created successfully.
         False if bucket creation fails due to an unexpected error.
     """
-    logger = CliLogger("init.tf.state.gcs.create_gcs_tf_state")
     client = storage.Client(project=project_id)
 
     try:
@@ -50,3 +54,7 @@ def create_gcs_tf_state(project_id: str, bucket_name: str, location: str) -> boo
     except Exception as e:
         logger.error(f"gcs tf state bucket {bucket_name} creation error: {e}")
         return False
+
+
+def create_yc_s3_tf_state() -> bool:
+    return False
