@@ -8,7 +8,7 @@ from libs.py.utils.logger import CliLogger, BaseLogger
 def import_secrets(
     env: str,
     secrets: dict[str, ImportSecret],
-    logger: BaseLogger = CliLogger("scripts.init.tf.secrets.secrets.import_secrets"),
+    logger: BaseLogger = CliLogger("libs.py.tf.secrets.import_secrets"),
 ) -> bool:
     os.chdir(bazel_settings.workspace)
     secrets_package = f"//{bazel_settings.tf_env_dir}/{env}/secrets"
