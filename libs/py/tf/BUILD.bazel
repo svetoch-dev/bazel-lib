@@ -14,7 +14,9 @@ py_library(
     deps = [
         "@svetoch_bazel_lib//libs/py/helpers",
         "@svetoch_bazel_lib//libs/py/settings",
+        "@svetoch_bazel_lib//libs/py/utils",
         requirement("pydantic"),
+        requirement("google-cloud-storage"),
     ],
 )
 
@@ -29,6 +31,8 @@ py_test(
     deps = [
         "@svetoch_bazel_lib//libs/py/helpers",
         "@svetoch_bazel_lib//libs/py/settings",
+        "@svetoch_bazel_lib//libs/py/utils",
         requirement("pydantic"),
+        requirement("google-cloud-storage"),
     ],
 )

@@ -4,7 +4,7 @@ from libs.py.settings import bazel_settings
 from libs.py.tf.tfvars import tfvars
 from libs.py.helpers import switch_index
 from libs.py.utils.logger import CliLogger
-from scripts.init.tf.apply.env import apply_env
+from libs.py.tf.apply import apply_env
 from pathlib import Path
 
 

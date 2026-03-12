@@ -45,7 +45,7 @@ def apply_env_targets(
 def apply_env(
     env: str,
     exclude_targets: list[str] | None = None,
-    logger: BaseLogger = CliLogger("scripts.init.tf.apply.apply_env"),
+    logger: BaseLogger = CliLogger("libs.py.tf.apply.apply_env"),
 ) -> bool:
     """
     Finds Bazel apply targets for the given Terraform environment and runs them.
