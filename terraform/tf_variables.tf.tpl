@@ -47,9 +47,10 @@ variable "envs" {
   type = map(
     object(
       {
-        name       = string
-        short_name = string
-        users      = map(
+        name          = string
+        short_name    = string
+        initial_start = optional(bool, false)
+        users = map(
           object(
             {
               name  = string

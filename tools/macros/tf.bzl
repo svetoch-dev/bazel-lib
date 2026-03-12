@@ -61,7 +61,7 @@ def tf(
 
     json_gen(
         name = "terraform_tfvars_json",
-        json_content = str(tf_vars),
+        json_content = json.encode(tf_vars),
         out = "terraform.tfvars.json",
     )
 

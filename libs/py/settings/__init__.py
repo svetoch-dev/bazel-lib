@@ -12,6 +12,33 @@ class BazelSettings(BaseSettings):
         default=".",
     )
 
+    tf_dir_override: str | None = None
+
+    tf_env_dir_override: str | None = None
+    tf_template_dir_override: str | None = None
+
+    @computed_field
+    @property
+    # Relative to workspace root
+    def tf_dir(self) -> str:
+        if self.tf_dir_override:
+            return tf_dir_override
+        return f"terraform"
+
+    @computed_field
+    @property
+    def tf_env_dir(self) -> str:
+        if self.tf_env_dir_override:
+            return tf_env_dir_override
+        return f"{self.tf_dir}/environments"
+
+    @computed_field
+    @property
+    def tf_template_dir(self) -> str:
+        if self.tf_template_dir_override:
+            return tf_template_dir_override
+        return f"{self.tf_env_dir}/template"
+
     @computed_field
     @property
     # We assume that terraform.tfvars.json can be found

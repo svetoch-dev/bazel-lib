@@ -15,7 +15,7 @@ py_binary(
 
 command(
     name = "init_prepare",
-    command = ":prepare",
+    command = "@svetoch_bazel_lib//scripts/init:prepare",
 )
 
 command(

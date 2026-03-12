@@ -1,7 +1,7 @@
 from libs.py.helpers.exceptions import CommandException
 from libs.py.utils.logger import CliLogger, BaseLogger
 from pathlib import Path
-from logging import Logger
+from typing import Any
 import subprocess
 import glob
 import re
@@ -39,9 +39,9 @@ def run_command(
     print_stderr: bool = True,
     raise_exception: bool = False,
     logger: BaseLogger = CliLogger("helpers.run_command"),
-) -> tuple[int, str, str]:
+) -> tuple[int, list[str], list[str]]:
     """
-    Runs a command and captures its stdout and stderr.
+    Runs a command and captures its stdout and stderr after the process finishes.
 
     Args:
         command (list): A list of strings representing the command and its arguments.
@@ -53,23 +53,26 @@ def run_command(
         tuple: A tuple containing the return code, a list of stderr lines, and a list of stdout lines.
     """
     command_str = " ".join(command)
-    stdout = []
-    stderr = []
+
     logger.debug(f"Running: {command_str}")
+
     result = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
-    for line in result.stdout:
-        stdout.append(line.strip())
-        if print_stdout:
-            print(line, end="", file=sys.stdout)
 
-    for line in result.stderr:
-        stderr.append(line.strip())
-        if print_stderr:
-            print(line, end="", file=sys.stderr)
+    out, err = result.communicate()
 
-    result.wait()
+    stdout = out.splitlines()
+    stderr = err.splitlines()
+
+    if print_stderr:
+        for line in stderr:
+            print(line, file=sys.stderr)
+
+    if print_stdout:
+        for line in stdout:
+            print(line, file=sys.stdout)
+
     if result.returncode != 0:
         logger.debug(f"Command failed with return code: {result.returncode}")
         if raise_exception:
@@ -209,3 +212,23 @@ def create_file(
         logger.error("Permission denied: Unable to create the file.")
 
     return False
+
+
+def switch_index(array: list[Any], element: Any, index: int) -> None:
+    """
+    Swaps the first occurrence of ``element`` with the item at ``index``.
+
+    Args:
+        array: The list to modify.
+        element: The value to look for.
+        index: The index to swap with.
+
+    Raises:
+        IndexError: If ``index`` is out of range.
+    """
+
+    for i, obj in enumerate(array):
+        if element == obj:
+            array[i] = array[index]
+            array[index] = element
+            break

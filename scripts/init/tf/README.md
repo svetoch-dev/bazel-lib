@@ -30,5 +30,5 @@ Import sensitive data required by infrastructure-level applications (e.g., crede
 
 ### 🧹 Post-Steps
 
-Clean up and remove any unused Terraform state folders to maintain a tidy project structure.
+Clean up and remove any unused folders to maintain a tidy project structure.
 

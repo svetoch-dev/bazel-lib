@@ -1,59 +1,73 @@
-import click
 import os
 import sys
-import re
-from dataclasses import dataclass
-from libs.py.helpers import run_command, unmask_tf
-
-WORKSPACE_FOLDER = os.getenv("BUILD_WORKSPACE_DIRECTORY")
-
-
-@dataclass
-class Target:
-    name: str
-    is_masked: bool
-
-    @property
-    def path(self):
-        path = self.package.lstrip("//")
-        return path
-
-    @property
-    def package(self):
-        package = re.sub(":.*$", "", self.name)
-        return package
+from libs.py.settings import bazel_settings
+from libs.py.tf.tfvars import tfvars
+from libs.py.helpers import switch_index
+from libs.py.utils.logger import CliLogger
+from scripts.init.tf.apply.env import apply_env
+from pathlib import Path
 
 
-@click.command()
-@click.option("--targets", "-t", required=True, type=(str, bool), multiple=True)
-def apply(targets):
-    """
-    1. Applies all apply targets passed in order
+def apply() -> None:
+    os.chdir(bazel_settings.workspace)
+    logger = CliLogger("scripts.init.tf.apply.apply")
+    tf_vars = tfvars()
+    int_env = None
 
-    2. Unmasks all masked tf code and applies related targets
+    envs = []
 
-    Args:
-        targets(set(tuple(str, bool))): list of target tuples:
-            1. first element target
-            2. second element descibes the need for umasking tf code
-    """
-    os.chdir(WORKSPACE_FOLDER)
-    target_objs = []
-    query = ["bazel", "query", 'attr(name, "^apply$|^gh_apply$", "//terraform/...")']
-    return_code, stderr, apply_targets = run_command(query, print_stdout=False)
-    for target, is_masked in targets:
-        if target in apply_targets:
-            target_objs.append(Target(target, is_masked))
+    for env_name, env_obj in tf_vars.envs.items():
+        # Some resources cant be applied because they
+        # depend on other root modules. So what we do is
+        # 1. Add logic in modules not to create them
+        # if initial_start = True
+        # 2. At the begining in terraform.tfvars.json,
+        # set initial_start = True
+        # 3. Apply everything
+        # 4. Dump a new version of terraform.tfvars.json with
+        # initial_start = False
+        # 5. Apply everything again
+        env_obj.initial_start = False
+        if env_obj.short_name == "int":
+            int_env = env_obj.model_copy(deep=True)
 
-    for target in target_objs:
-        command = ["bazel", "run", target.name]
-        run_command(command)
+        envs.append(env_obj)
 
-    for target in target_objs:
-        if target.is_masked:
-            unmask_tf(target.path)
-            command = ["bazel", "run", target.name]
-            run_command(command)
+    # We need to apply int env first
+    switch_index(envs, int_env, 0)
+
+    for env_obj in envs:
+        # Our bazel tf macros choose env based on folder names
+        # which are keys of tf_vars.envs so we need to find the
+        # key name for the env_obj
+        env_name = [k for k, v in tf_vars.envs.items() if v == env_obj][0]
+        # We exclude secrets because we have a dedicated apply
+        # secret step
+        secrets_target = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:apply"
+        applied = apply_env(env_name, exclude_targets=[secrets_target])
+        if not applied:
+            logger.error(f"Failed to apply tf for {env_name}")
+            sys.exit(1)
+
+    # Dump new terraform.tfvars.json with initial_start = False
+    Path(bazel_settings.tfvars_file).write_text(
+        tf_vars.model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+    # Re apply everything again
+    for env_obj in envs:
+        # Our bazel tf macros choose env based on folder names
+        # which are keys of tf_vars.envs so we need to find the
+        # key name for the env_obj
+        env_name = [k for k, v in tf_vars.envs.items() if v == env_obj][0]
+        # We exclude secrets because we have a dedicated apply
+        # secret step
+        secrets_target = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:apply"
+        applied = apply_env(env_name, exclude_targets=[secrets_target])
+        if not applied:
+            logger.error(f"Failed to apply tf for {env_name}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

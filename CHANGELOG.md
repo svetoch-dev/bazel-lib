@@ -1,9 +1,26 @@
+# v0.11.0
+
+Features:
+* `scripts/init/tf/apply` refactor code using python tfvars models
+* `scripts/init/tf/prepare` copy script that copies template dir to real env dir
+* `libs/py/helpers` switch_index function that switches index of an element
+* `terraform/tf_variables.tf.tpl` new envs attribute - initial_start
+
+Enhancements:
+* `libs.py.tf.tfvars` formatted_tfvars tests
+
+Fixes:
+* `tools/macros/tf.bzl` use json.encode(...) generate terraform.tfvars.json for tf
+* `libs/py/helpers` `run_command` fix descriptor deadlock issue when stderr buffer is used and your are waiting for stdout
+* `libs/py/settings` BazelSettings tf dir vars use relative to repo root paths instead of full paths
+
 # v0.10.0
 Features:
 * `scripts/init/tf/state` refactor code using python tfvars models
 
 Enhancements:
 * `scipts/init/tf/prepare` use single, global cloud object and set only needed attributes
+* `libs.py.tf.tfvars` improve tests
 
 # v0.9.0
 
