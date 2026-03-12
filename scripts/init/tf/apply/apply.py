@@ -37,12 +37,18 @@ def apply() -> None:
     switch_index(envs, int_env, 0)
 
     for env_obj in envs:
+        #Our bazel tf macros choose env based on folder names
+        #which are keys of tf_vars.envs so we need to find the
+        #key name for the env_obj
+        env_name = [k for k,v in tf_vars.envs.items() if v == env_obj ][0]
         # We exclude secrets because we have a dedicated apply
         # secret step
-        secrets_target = f"//{bazel_settings.tf_env_dir}/{env_obj.name}/secrets:apply"
-        applied = apply_env(env_obj.name, exclude_targets=[secrets_target])
+        secrets_target = (
+            f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:apply"
+        )
+        applied = apply_env(env_name, exclude_targets=[secrets_target])
         if not applied:
-            logger.error(f"Failed to apply tf for {env_obj.name}")
+            logger.error(f"Failed to apply tf for {env_name}")
             sys.exit(1)
 
     # Dump new terraform.tfvars.json with initial_start = False
@@ -53,12 +59,16 @@ def apply() -> None:
 
     # Re apply everything again
     for env_obj in envs:
+        #Our bazel tf macros choose env based on folder names
+        #which are keys of tf_vars.envs so we need to find the
+        #key name for the env_obj
+        env_name = [k for k,v in tf_vars.envs.items() if v == env_obj ][0]
         # We exclude secrets because we have a dedicated apply
         # secret step
-        secrets_target = f"//{bazel_settings.tf_env_dir}/{env_obj.name}/secrets:apply"
-        applied = apply_env(env_obj.name, exclude_targets=[secrets_target])
+        secrets_target = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:apply"
+        applied = apply_env(env_name, exclude_targets=[secrets_target])
         if not applied:
-            logger.error(f"Failed to apply tf for {env_obj.name}")
+            logger.error(f"Failed to apply tf for {env_name}")
             sys.exit(1)
 
 

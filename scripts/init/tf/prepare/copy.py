@@ -17,7 +17,7 @@ def copy_template() -> None:
         sys.exit(1)
 
     for env_name, env_obj in tfvars.envs.items():
-        copy_to_dir = Path(bazel_settings.tf_env_dir + "/" + env_obj.name)
+        copy_to_dir = Path(bazel_settings.tf_env_dir + "/" + env_name)
         if env_obj.short_name != "int" and not copy_to_dir.exists():
             copytree(TEMPLATE_DIR, copy_to_dir)
             logger.info(f"{TEMPLATE_DIR} copied to {copy_to_dir}")
