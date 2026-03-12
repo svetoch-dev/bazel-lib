@@ -18,7 +18,7 @@ def apply() -> None:
 
     for env_name, env_obj in tf_vars.envs.items():
         # Some resources cant be applied because they
-        # depend on other root module. So what we do is
+        # depend on other root modules. So what we do is
         # 1. Add logic in modules not to create them
         # if initial_start = True
         # 2. At the begining in terraform.tfvars.json,
