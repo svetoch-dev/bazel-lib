@@ -1,4 +1,8 @@
 # v0.12.0
+
+Features:
+* `libs/py/tf` `import_secrets` function
+
 Enhancements:
 * `scripts/init/tf/state` move `create_gcs_tf_state` `create_yc_s3_tf_state` functions to `libs/py/tf/state`
 * `scripts/init/tf/apply` move `apply_env` `apply_env_targets` functions to `libs/py/tf/apply`
