@@ -1,3 +1,9 @@
+# v0.12.0
+Enhancements:
+* `scripts/init/tf/state` move `create_gcs_tf_state` `create_yc_s3_tf_state` functions to `libs/py/tf/state`
+* `scripts/init/tf/apply` move `apply_env` `apply_env_targets` functions to `libs/py/tf/apply`
+
+
 # v0.11.0
 
 Features:
