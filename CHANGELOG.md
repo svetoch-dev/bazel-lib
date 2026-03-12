@@ -1,6 +1,7 @@
 # v0.12.0
 
 Features:
+* `scripts/init` enable prepare and poststeps
 * `scripts/init/tf/secrets` use tfvars models to import secrets
 * `scripts/init/tf/poststeps` adjust clean.py to the new rod modules
 * `libs/py/tf` `import_secrets` function

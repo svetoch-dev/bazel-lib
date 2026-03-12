@@ -13,6 +13,15 @@ py_binary(
     ],
 )
 
+py_binary(
+    name = "poststeps",
+    srcs = ["poststeps.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//libs/py/settings",
+    ],
+)
+
 command(
     name = "init_prepare",
     command = "@svetoch_bazel_lib//scripts/init:prepare",
@@ -31,8 +40,10 @@ command(
 multirun(
     name = "init",
     commands = [
+        "prepare",
         "tf_init",
         "images_init",
+        "poststeps",
     ],
     visibility = ["//visibility:public"],
 )
