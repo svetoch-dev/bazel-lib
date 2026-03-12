@@ -1,7 +1,4 @@
 load("@rules_multirun//:defs.bzl", "command", "multirun")
-load("@svetoch_bazel_lib//scripts/init/tf/poststeps:poststeps.bzl", "get_clean_args")
-
-clean_args = get_clean_args()
 
 command(
     name = "prepare",
@@ -30,7 +27,6 @@ command(
 
 command(
     name = "cleanup",
-    arguments = clean_args,
     command = "@svetoch_bazel_lib//scripts/init/tf/poststeps:clean",
 )
 
@@ -42,7 +38,7 @@ multirun(
         "state_create",
         "apply",
         "import_secrets",
-        #"cleanup",
+        "cleanup",
     ],
     visibility = ["//visibility:public"],
 )

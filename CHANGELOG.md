@@ -2,6 +2,7 @@
 
 Features:
 * `scripts/init/tf/secrets` use tfvars models to import secrets
+* `scripts/init/tf/poststeps` adjust clean.py to the new rod modules
 * `libs/py/tf` `import_secrets` function
 
 Enhancements:

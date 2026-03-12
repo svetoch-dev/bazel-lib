@@ -1,6 +1,14 @@
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
-load(":poststeps.bzl", "clean")
 
 py_lint()
 
-clean()
+py_binary(
+    name = "clean",
+    srcs = ["clean.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//libs/py/helpers",
+        "@svetoch_bazel_lib//libs/py/settings",
+    ],
+)
