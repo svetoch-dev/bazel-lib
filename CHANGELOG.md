@@ -1,6 +1,7 @@
 # v0.12.0
 
 Features:
+* `scripts/init/tf/secrets` use tfvars models to import secrets
 * `libs/py/tf` `import_secrets` function
 
 Enhancements:

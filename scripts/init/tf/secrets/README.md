@@ -7,15 +7,13 @@ This process imports sensitive data (e.g., credentials, tokens) required by infr
 1. **Parse `terraform.tfvars.json`**  
    Extract the list of secrets from the `import_secrets` field.
 
-2. **Unmask the `import_secrets_variables.tf` file**  
-
-3. **Iterate over `import_secrets`**  
+2. **Iterate over `import_secrets`**  
    Loop through each secret defined in step 1.
 
-4. **Check if the secret exists in the Terraform state**  
+3. **Check if the secret exists in the Terraform state**  
    Skip import if already present.
 
-5. **If not present, retrieve the value**  
+4. **If not present, retrieve the value**  
    Attempt to load from an environment variable using the pattern:  
    ```
    TF_IMPORT_SECRET_<SECRET_NAME>_<SECRET_KEY>
