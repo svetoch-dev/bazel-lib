@@ -1,3 +1,18 @@
+# v0.12.0
+
+Features:
+* `scripts/init` enable prepare and poststeps
+* `scripts/init/tf/secrets` use tfvars models to import secrets
+* `scripts/init/tf/poststeps` adjust clean.py to the new rod modules
+* `libs/py/tf` `import_secrets` function
+* `libs/py/tf/tfvars` `env_key` function
+
+Enhancements:
+* `scripts/init/tf/apply` tests for apply function
+* `scripts/init/tf/state` move `create_gcs_tf_state` `create_yc_s3_tf_state` functions to `libs/py/tf/state`
+* `scripts/init/tf/apply` move `apply_env` `apply_env_targets` functions to `libs/py/tf/apply`
+
+
 # v0.11.0
 
 Features:

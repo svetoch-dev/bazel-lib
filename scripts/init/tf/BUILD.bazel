@@ -1,10 +1,4 @@
 load("@rules_multirun//:defs.bzl", "command", "multirun")
-load("@svetoch_bazel_lib//scripts/init/tf/poststeps:poststeps.bzl", "get_clean_args")
-load("@svetoch_bazel_lib//scripts/init/tf/secrets:secrets.bzl", "get_secrets_args")
-
-secrets_args = get_secrets_args()
-
-clean_args = get_clean_args()
 
 command(
     name = "prepare",
@@ -28,13 +22,11 @@ command(
 
 command(
     name = "import_secrets",
-    arguments = secrets_args,
     command = "@svetoch_bazel_lib//scripts/init/tf/secrets",
 )
 
 command(
     name = "cleanup",
-    arguments = clean_args,
     command = "@svetoch_bazel_lib//scripts/init/tf/poststeps:clean",
 )
 

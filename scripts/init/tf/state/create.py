@@ -1,5 +1,5 @@
-from scripts.init.tf.state.gcs import create_gcs_tf_state
-from scripts.init.tf.state.ycs3 import create_yc_s3_tf_state
+from libs.py.tf.state import create_gcs_tf_state
+from libs.py.tf.state import create_yc_s3_tf_state
 from libs.py.tf.tfvars import formatted_tfvars
 import sys
 
