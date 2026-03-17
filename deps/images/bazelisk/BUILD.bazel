@@ -83,7 +83,6 @@ tar(
 oci_image(
     name = "bazelisk_img",
     base = "@svetoch_bazel_lib//deps/images/base:ubuntu_noble",
-    visibility = ["//visibility:public"],
     tars = [
         _packages_tar,
         "@svetoch_bazel_lib//deps/images/bazelisk:passwd",
@@ -91,4 +90,5 @@ oci_image(
         "@svetoch_bazel_lib//deps/images/bazelisk:links",
     ],
     user = "1001",
+    visibility = ["//visibility:public"],
 )

@@ -21,8 +21,8 @@ tar(
 oci_image(
     name = "spilo_img",
     base = "@svetoch_bazel_lib_spilo17",
-    visibility = ["//visibility:public"],
     tars = [
         ":clone_with_wale",
     ],
+    visibility = ["//visibility:public"],
 )
