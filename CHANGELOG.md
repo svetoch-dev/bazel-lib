@@ -1,3 +1,8 @@
+# v0.13.0
+Features:
+* `deps/images` base/bazelisk and postgres images
+* `deps/deb` deb packages needed for images
+
 # v0.12.0
 
 Features:
