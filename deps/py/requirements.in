@@ -4,10 +4,10 @@ black==24.8.0
 #infra deps
 PyYAML<7.0.0
 click<9.0.0
-GitPython==3.1.43
-google-cloud-storage==3.0.0
-google-cloud-service-usage==1.13.0 
+GitPython<4.0.0
+google-cloud-storage<4.0.0
+google-cloud-service-usage<2.0.0 
 google-cloud-run<1.0.0
-tiny-json-log==0.1.0
-pydantic==2.12.5
-pydantic-settings==2.13.1
+tiny-json-log<1.0.0
+pydantic<3.0.0
+pydantic-settings<3.0.0
