@@ -1,0 +1,28 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+
+mtree_spec(
+    name = "mtree",
+    srcs = ["scripts/clone_with_wale.py"],
+)
+
+mtree_mutate(
+    name = "strip_package",
+    mtree = "mtree",
+    strip_prefix = package_name(),
+)
+
+tar(
+    name = "clone_with_wale",
+    srcs = ["scripts/clone_with_wale.py"],
+    mtree = "strip_package",
+)
+
+oci_image(
+    name = "spilo_img",
+    base = "@svetoch_bazel_lib_spilo17",
+    visibility = ["//visibility:public"],
+    tars = [
+        ":clone_with_wale",
+    ],
+)
