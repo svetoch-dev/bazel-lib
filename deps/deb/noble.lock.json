@@ -1900,6 +1900,102 @@
 			"arch": "amd64",
 			"dependencies": [
 				{
+					"key": "rpcsvc-proto_1.4.2-0ubuntu7_amd64",
+					"name": "rpcsvc-proto",
+					"version": "1.4.2-0ubuntu7"
+				},
+				{
+					"key": "libc6_2.39-0ubuntu8.3_amd64",
+					"name": "libc6",
+					"version": "2.39-0ubuntu8.3"
+				},
+				{
+					"key": "libgcc-s1_14-20240412-0ubuntu1_amd64",
+					"name": "libgcc-s1",
+					"version": "14-20240412-0ubuntu1"
+				},
+				{
+					"key": "gcc-14-base_14-20240412-0ubuntu1_amd64",
+					"name": "gcc-14-base",
+					"version": "14-20240412-0ubuntu1"
+				},
+				{
+					"key": "libcrypt-dev_1-4.4.36-4build1_amd64",
+					"name": "libcrypt-dev",
+					"version": "1:4.4.36-4build1"
+				},
+				{
+					"key": "libcrypt1_1-4.4.36-4build1_amd64",
+					"name": "libcrypt1",
+					"version": "1:4.4.36-4build1"
+				},
+				{
+					"key": "linux-libc-dev_6.8.0-45.45_amd64",
+					"name": "linux-libc-dev",
+					"version": "6.8.0-45.45"
+				},
+				{
+					"key": "libc-dev-bin_2.39-0ubuntu8.3_amd64",
+					"name": "libc-dev-bin",
+					"version": "2.39-0ubuntu8.3"
+				}
+			],
+			"key": "libc6-dev_2.39-0ubuntu8.3_amd64",
+			"name": "libc6-dev",
+			"sha256": "2fa5027a8251b3aab324ecc5ff9d85215d109ea157d9eb765700b75c4d99c8fc",
+			"urls": [
+				"https://snapshot.ubuntu.com/ubuntu/20240917T000000Z/pool/main/g/glibc/libc6-dev_2.39-0ubuntu8.3_amd64.deb"
+			],
+			"version": "2.39-0ubuntu8.3"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "rpcsvc-proto_1.4.2-0ubuntu7_amd64",
+			"name": "rpcsvc-proto",
+			"sha256": "7eb710fe148d224c159ddec1ceb0ba53ead52a80a6793dcdae1474acf20d8f71",
+			"urls": [
+				"https://snapshot.ubuntu.com/ubuntu/20240917T000000Z/pool/main/r/rpcsvc-proto/rpcsvc-proto_1.4.2-0ubuntu7_amd64.deb"
+			],
+			"version": "1.4.2-0ubuntu7"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libcrypt-dev_1-4.4.36-4build1_amd64",
+			"name": "libcrypt-dev",
+			"sha256": "2edff420ef80b4a3f3751e65c33423ef30e563122a58b759e4854ea8d84ba1b1",
+			"urls": [
+				"https://snapshot.ubuntu.com/ubuntu/20240917T000000Z/pool/main/libx/libxcrypt/libcrypt-dev_4.4.36-4build1_amd64.deb"
+			],
+			"version": "1:4.4.36-4build1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "linux-libc-dev_6.8.0-45.45_amd64",
+			"name": "linux-libc-dev",
+			"sha256": "01243e00d7d06e9bc572b59e2f7fb819192b7937a68ea8cd03357bb6b824ee05",
+			"urls": [
+				"https://snapshot.ubuntu.com/ubuntu/20240917T000000Z/pool/main/l/linux/linux-libc-dev_6.8.0-45.45_amd64.deb"
+			],
+			"version": "6.8.0-45.45"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libc-dev-bin_2.39-0ubuntu8.3_amd64",
+			"name": "libc-dev-bin",
+			"sha256": "05209e8f2b5c6a4c446d46d564cdb3244ad0412a0841652cf80c011c76a172ca",
+			"urls": [
+				"https://snapshot.ubuntu.com/ubuntu/20240917T000000Z/pool/main/g/glibc/libc-dev-bin_2.39-0ubuntu8.3_amd64.deb"
+			],
+			"version": "2.39-0ubuntu8.3"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [
+				{
 					"key": "libc6_2.39-0ubuntu8.3_amd64",
 					"name": "libc6",
 					"version": "2.39-0ubuntu8.3"

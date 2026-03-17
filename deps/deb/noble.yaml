@@ -2,7 +2,7 @@
 #
 #  To generate the noble.lock.json run the following command
 #
-#     bazel run @noble//:lock
+#     bazel run @svetoch_bazel_lib_noble//:lock
 version: 1
 
 sources:
@@ -34,7 +34,8 @@ packages:
   - "git" #used in scripts/ci/ci.sh
   - "curl" #used in scripts/ci/ci.sh
   - "gzip" #used in scripts/ci/ci.sh
-  - "libc-bin" #contains getent cli that is needed by tf to lookup HOME dir if its not set
+  - "libc6-dev" #assert.h, stdlib.h etc used by dpkg_status
+  - "libc-bin" #contains getent cli that is needed by tf to lookup HOME dir if its not set needed for rules_tf
   - "gcc" #needed by bazel
   - "findutils" #needed for requirements.txt.lock tests
   - "python3" #needed for requirements.txt.lock tests
