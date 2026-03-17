@@ -34,7 +34,8 @@ packages:
   - "git" #used in scripts/ci/ci.sh
   - "curl" #used in scripts/ci/ci.sh
   - "gzip" #used in scripts/ci/ci.sh
-  - "libc6-dev" #assert.h, stdlib.h etc used by dpkg_status
+  - "libc6-dev" #assert.h, stdlib.h etc used by dpkg_status to compile packages
+  - "g++" #used by dpkg_status to compile packages
   - "libc-bin" #contains getent cli that is needed by tf to lookup HOME dir if its not set needed for rules_tf
   - "gcc" #needed by bazel
   - "findutils" #needed for requirements.txt.lock tests

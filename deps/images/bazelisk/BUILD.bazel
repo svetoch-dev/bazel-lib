@@ -44,6 +44,7 @@ PACKAGES = [
     "@svetoch_bazel_lib_noble//gzip",
     "@svetoch_bazel_lib_noble//libc-bin",
     "@svetoch_bazel_lib_noble//libc6-dev",
+    "@svetoch_bazel_lib_noble//g++",
 ]
 
 _packages_tar = deb_packages(PACKAGES)
