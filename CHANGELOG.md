@@ -1,3 +1,14 @@
+# v0.13.0
+Features:
+* `deps/images` base/bazelisk and postgres images
+* `deps/deb` deb packages needed for images
+
+Enhancements:
+* `aspect_bazel_lib` update to 2.22.5
+* `rules_oci` update to 2.3.0
+* `rules_distroless` update to 0.6.2
+* `buildifier_prebuiltr` update to 8.5.1
+
 # v0.12.0
 
 Features:

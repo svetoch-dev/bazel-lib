@@ -1,0 +1,29 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+
+mtree_spec(
+    name = "mtree",
+    srcs = ["entrypoint.sh"],
+)
+
+mtree_mutate(
+    name = "strip_package",
+    mtree = "mtree",
+    strip_prefix = package_name(),
+)
+
+tar(
+    name = "entrypoint",
+    srcs = ["entrypoint.sh"],
+    mtree = "strip_package",
+)
+
+oci_image(
+    name = "exporter_img",
+    base = "@svetoch_bazel_lib_postgres-exporter",
+    entrypoint = ["/entrypoint.sh"],
+    tars = [
+        ":entrypoint",
+    ],
+    visibility = ["//visibility:public"],
+)
