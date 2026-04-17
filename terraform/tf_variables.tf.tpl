@@ -25,8 +25,11 @@ variable "ci" {
   description = "ci related info"
   type = object(
     {
-      type  = string
-      group = string
+      type             = string
+      group            = string
+      app_build_image  = string
+      git_clone_image  = string
+      update_tag_image = string
     }
   )
 }
