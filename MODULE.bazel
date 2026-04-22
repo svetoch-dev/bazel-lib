@@ -126,8 +126,8 @@ http_file(
 http_archive(
     name = "svetoch_bazel_lib_docker_credential_gcr",
     build_file_content = "exports_files([\"docker-credential-gcr\"])",
-    sha256 = "604c1a1de24fa13dafa88f0e9e030b2d3ad813b588a1d1037418774aaf2adf59",
-    urls = ["https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v2.1.26/docker-credential-gcr_linux_amd64-2.1.26.tar.gz"],
+    sha256 = "fc8927596b8b2ac939a48b020bd1105dff8c367f584a2b3b54c08915127c9ebb",
+    urls = ["https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v2.1.32/docker-credential-gcr_linux_amd64-2.1.32.tar.gz"],
 )
 
 ##################
