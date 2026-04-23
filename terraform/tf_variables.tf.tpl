@@ -28,7 +28,6 @@ variable "ci" {
       type                 = string
       group                = string
       bazelisk_img_version = optional(string,"")
-      gha_checkout_image   = optional(string,"")
     }
   )
 }

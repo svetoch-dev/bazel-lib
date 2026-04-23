@@ -1,8 +1,7 @@
 # v0.15.0
 Features:
-* New tf CI variables:
+* New tf CI variable:
   * `bazelisk_img_version` to specify `version of bazelisk image`
-  * `gha_checkout_image` to specify image used in `Clone Git branch` step (`github` only)
 
 # v0.14.0
 Features:

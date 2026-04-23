@@ -96,7 +96,6 @@ class Ci(BaseTfVarsModel):
     type: str
     group: str
     bazelisk_img_version: str = ""
-    gha_checkout_image: str = ""
 
 
 class TfVars(BaseTfVarsModel):
