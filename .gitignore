@@ -20,3 +20,6 @@ MODULE.bazel.lock
 
 ## Python ##
 venv
+
+## Codex ##
+.codex
