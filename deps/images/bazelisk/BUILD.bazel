@@ -54,9 +54,21 @@ mtree_spec(
     srcs = ["@svetoch_bazel_lib_bazelisk//file"],
 )
 
+mtree_spec(
+    name = "mtree_docker_credential_gcr",
+    srcs = ["@svetoch_bazel_lib_docker_credential_gcr//:docker-credential-gcr"],
+)
+
 mtree_mutate(
     name = "change_owner_bazelisk",
     mtree = "@svetoch_bazel_lib//deps/images/bazelisk:mtree_bazelisk",
+    owner = "1001",
+    package_dir = "usr/local/bin",
+)
+
+mtree_mutate(
+    name = "change_owner_docker_credential_gcr",
+    mtree = "@svetoch_bazel_lib//deps/images/bazelisk:mtree_docker_credential_gcr",
     owner = "1001",
     package_dir = "usr/local/bin",
 )
@@ -68,11 +80,18 @@ tar(
 )
 
 tar(
+    name = "docker_credential_gcr",
+    srcs = ["@svetoch_bazel_lib_docker_credential_gcr//:docker-credential-gcr"],
+    mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_docker_credential_gcr",
+)
+
+tar(
     name = "links",
     mtree = [
         #Some bug with mtree_mutate with strip_prefix = "file"
         #so we need to use a symlink here
         "./usr/local/bin/bazel type=link link=/usr/local/bin/file/bazelisk",
+        "./usr/local/bin/docker-credential-gcloud type=link link=/usr/local/bin/docker-credential-gcr",
         #symlink awk to mawk the same how its done in ubuntu
         "./usr/bin/awk type=link link=/usr/bin/mawk",
         #change permissions of home dir
@@ -87,6 +106,7 @@ oci_image(
         _packages_tar,
         "@svetoch_bazel_lib//deps/images/bazelisk:passwd",
         "@svetoch_bazel_lib//deps/images/bazelisk:bazelisk",
+        "@svetoch_bazel_lib//deps/images/bazelisk:docker_credential_gcr",
         "@svetoch_bazel_lib//deps/images/bazelisk:links",
     ],
     user = "1001",

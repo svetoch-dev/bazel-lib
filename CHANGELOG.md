@@ -1,3 +1,7 @@
+# v0.14.0
+Features:
+* `deps/images/bazelisk` add docker-credentials-gcr
+
 # v0.13.0
 Features:
 * `deps/images` base/bazelisk and postgres images
