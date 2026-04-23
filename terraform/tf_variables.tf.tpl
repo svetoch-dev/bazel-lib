@@ -27,10 +27,8 @@ variable "ci" {
     {
       type                 = string
       group                = string
-      app_build_image      = optional(string,"")
       bazelisk_img_version = optional(string,"")
-      git_clone_image      = optional(string,"")
-      update_tag_image     = optional(string,"")
+      gha_checkout_image   = optional(string,"")
     }
   )
 }

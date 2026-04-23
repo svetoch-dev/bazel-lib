@@ -95,10 +95,8 @@ class Repo(BaseTfVarsModel):
 class Ci(BaseTfVarsModel):
     type: str
     group: str
-    app_build_image: str = ""
     bazelisk_img_version: str = ""
-    git_clone_image: str = ""
-    update_tag_image: str = ""
+    gha_checkout_image: str = ""
 
 
 class TfVars(BaseTfVarsModel):
