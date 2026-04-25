@@ -10,7 +10,7 @@ All code under `libs/*` and `scripts/*` has been moved into the `rod/` directory
 **Why?**
 When using Bazel modules, Python imports from `svetoch_bazel_lib` could conflict with local directories that have the same names (e.g., `libs/`). This leads to import resolution issues.
 
-** Example **
+**Example**
 
 Given the following `MODULE.bazel`:
 
@@ -47,13 +47,13 @@ py_library(
 
 Trying to import:
 
-``
+```
 import libs.py.settings
 ```
 
 will fail with a `ModuleNotFoundError`.
 
-** Root cause **
+**Root cause**
 
 The local `libs/` directory shadows the `libs/` directory inside `@svetoch_bazel_lib`, so Python resolves imports against the local path instead of the external module.
 
