@@ -1,0 +1,20 @@
+load("@rules_multirun//:defs.bzl", "command", "multirun")
+
+command(
+    name = "prepare",
+    command = "@svetoch_bazel_lib//rod/scripts/init/images/prepare",
+)
+
+command(
+    name = "build",
+    command = "@svetoch_bazel_lib//rod/scripts/init/images/build",
+)
+
+multirun(
+    name = "init",
+    commands = [
+        "prepare",
+        "build",
+    ],
+    visibility = ["//visibility:public"],
+)

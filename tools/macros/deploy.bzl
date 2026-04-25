@@ -19,7 +19,7 @@ def deploy(service_name, envs, type = "argocd", app_name = None):
             if type == "argocd":
                 command(
                     name = "deploy_" + env,
-                    command = "@svetoch_bazel_lib//scripts/deploy:change_yaml",
+                    command = "@svetoch_bazel_lib//rod/scripts/deploy:change_yaml",
                     data = [
                         "@svetoch_bazel_lib//tools/stamping:stamp_img",
                         #Adding this in order to include
@@ -36,7 +36,7 @@ def deploy(service_name, envs, type = "argocd", app_name = None):
             if type == "cloudrun":
                 command(
                     name = "deploy_" + env,
-                    command = "@svetoch_bazel_lib//scripts/deploy:cloudrun",
+                    command = "@svetoch_bazel_lib//rod/scripts/deploy:cloudrun",
                     data = [
                         "@svetoch_bazel_lib//tools/stamping:stamp_img",
                         #Adding this in order to include

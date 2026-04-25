@@ -1,0 +1,44 @@
+load("@rules_multirun//:defs.bzl", "command", "multirun")
+
+command(
+    name = "prepare",
+    command = "@svetoch_bazel_lib//rod/scripts/init/tf/prepare",
+)
+
+command(
+    name = "copy_from_template",
+    command = "@svetoch_bazel_lib//rod/scripts/init/tf/prepare:copy",
+)
+
+command(
+    name = "state_create",
+    command = "@svetoch_bazel_lib//rod/scripts/init/tf/state:create",
+)
+
+command(
+    name = "apply",
+    command = "@svetoch_bazel_lib//rod/scripts/init/tf/apply",
+)
+
+command(
+    name = "import_secrets",
+    command = "@svetoch_bazel_lib//rod/scripts/init/tf/secrets",
+)
+
+command(
+    name = "cleanup",
+    command = "@svetoch_bazel_lib//rod/scripts/init/tf/poststeps:clean",
+)
+
+multirun(
+    name = "init",
+    commands = [
+        "prepare",
+        "copy_from_template",
+        "state_create",
+        "apply",
+        "import_secrets",
+        "cleanup",
+    ],
+    visibility = ["//visibility:public"],
+)
