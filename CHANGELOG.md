@@ -1,3 +1,80 @@
+
+# v0.15.0
+
+## ⚠️ Breaking Changes:
+
+### Directory restructuring
+
+All code under `libs/*` and `scripts/*` has been moved into the `rod/` directory.
+
+**Why?**
+When using Bazel modules, Python imports from `svetoch_bazel_lib` could conflict with local directories that have the same names (e.g., `libs/`). This leads to import resolution issues.
+
+** Example **
+
+Given the following `MODULE.bazel`:
+
+```python
+module(name = "some_company")
+
+###########
+# Bazel
+###########
+bazel_dep(name = "svetoch_bazel_lib")
+
+git_override(
+    module_name = "svetoch_bazel_lib",
+    commit = "ab53043175e4e61d0f7f39b8c6295a3c5f816734",
+    remote = "https://github.com/svetoch-dev/bazel-lib",
+)
+```
+
+And a local library:
+
+```
+# libs/some_cool_lib
+load("@aspect_rules_py//py:defs.bzl", "py_library")
+
+py_library(
+    name = "some_cool_lib",
+    srcs = glob(["*.py"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//libs/py/settings",
+    ],
+)
+```
+
+Trying to import:
+
+``
+import libs.py.settings
+```
+
+will fail with a `ModuleNotFoundError`.
+
+** Root cause **
+
+The local `libs/` directory shadows the `libs/` directory inside `@svetoch_bazel_lib`, so Python resolves imports against the local path instead of the external module.
+
+**Solution**
+
+All internal Python modules are now namespaced under a unique top-level directory: `rod/`.
+
+Instead of:
+
+```
+import libs.py.settings
+```
+
+Use:
+
+```
+import rod.libs.py.settings
+```
+
+This avoids naming collisions and ensures imports from external Bazel modules work correctly.
+
 # v0.14.0
 Features:
 * `deps/images/bazelisk` add docker-credentials-gcr

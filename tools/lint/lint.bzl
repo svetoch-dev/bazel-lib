@@ -16,6 +16,6 @@ def all_lint_fix():
         ],
         visibility = ["//visibility:public"],
         deps = [
-            "@svetoch_bazel_lib//libs/py/helpers",
+            "@svetoch_bazel_lib//rod/libs/py/helpers",
         ],
     )

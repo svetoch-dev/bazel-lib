@@ -1,0 +1,35 @@
+load("@aspect_rules_py//py:defs.bzl", "py_library", "py_test")
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
+
+py_lint()
+
+py_library(
+    name = "cloudrun",
+    srcs = ["cloudrun.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("google-cloud-run"),
+    ],
+)
+
+py_library(
+    name = "api",
+    srcs = ["api.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("google-cloud-service-usage"),
+    ],
+)
+
+py_test(
+    name = "tests",
+    srcs = glob(
+        ["*.py"],
+    ),
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("google-cloud-service-usage"),
+    ],
+)

@@ -1,6 +1,6 @@
 import subprocess
 import os
-from libs.py.helpers import run_command
+from rod.libs.py.helpers import run_command
 
 WORKSPACE_FOLDER = os.getenv("BUILD_WORKSPACE_DIRECTORY")
 
