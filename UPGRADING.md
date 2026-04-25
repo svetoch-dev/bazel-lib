@@ -1,5 +1,25 @@
 # v0.16.0
 
+Update `git_override` commit for `svetoch_bazel_lib` to commit that `v0.16.0` tag points to eg
+
+```
+module(name = "<module_name>")
+
+###########
+# Bazel
+###########
+
+....
+bazel_dep(name = "svetoch_bazel_lib")
+
+git_override(
+    module_name = "svetoch_bazel_lib",
+    commit = "<commit>",
+    remote = "https://github.com/svetoch-dev/bazel-lib",
+)
+...
+```
+
 ## Python files
 
 Instead of:
