@@ -30,7 +30,7 @@ Where
 ### Examples
 
 ```
-bazel run  //rod/scripts/helm/apps:init somechart
+bazel run //rod/scripts/helm/apps:init somechart
 bazel run //rod/scripts/helm/apps:init all
 bazel run //rod/scripts/helm/apps:init -- somechart2 --app_chart_path /some/other/path
 ```

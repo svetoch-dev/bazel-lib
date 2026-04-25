@@ -58,7 +58,7 @@ The local `libs/` directory shadows the `libs/` directory inside `@svetoch_bazel
 
 **Solution**
 
-All internal Python modules are now namespaced under a unique top-level directory: `rod/`.
+All `svetoch_bazel_lib` Python modules are now namespaced under a unique top-level directory: `rod/`.
 
 Instead of:
 
