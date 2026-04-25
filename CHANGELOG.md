@@ -1,5 +1,4 @@
-
-# v0.15.0
+# v0.16.0
 
 ## ⚠️ Breaking Changes:
 
@@ -74,6 +73,11 @@ import rod.libs.py.settings
 ```
 
 This avoids naming collisions and ensures imports from external Bazel modules work correctly.
+
+# v0.15.0
+Features:
+* New tf CI variable:
+  * `bazelisk_img_version` to specify `version of bazelisk image`
 
 # v0.14.0
 Features:

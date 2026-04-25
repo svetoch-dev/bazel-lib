@@ -95,6 +95,7 @@ class Repo(BaseTfVarsModel):
 class Ci(BaseTfVarsModel):
     type: str
     group: str
+    bazelisk_img_version: str = ""
 
 
 class TfVars(BaseTfVarsModel):

@@ -25,8 +25,9 @@ variable "ci" {
   description = "ci related info"
   type = object(
     {
-      type  = string
-      group = string
+      type                 = string
+      group                = string
+      bazelisk_img_version = optional(string,"")
     }
   )
 }
