@@ -11,15 +11,16 @@ cloud = Cloud(
     name="<replace-me>",
     id="<replace-me>",
     folder_id="adadadadad",
-    region="ignored",
-    default_zone="",
-    multi_region="",
+    location={
+        "region": "ignored",
+        "default_zone": "",
+        "multi_region": "",
+    },
     network={
         "vm_cidr": "10.8.0.0/20",
         "k8s_pod_cidr": "10.12.0.0/14",
         "k8s_service_cidr": "10.9.0.0/20",
     },
-    registry="registry",
     buckets={"multi_regional": "false"},
 )
 
@@ -29,6 +30,8 @@ env = Env(
     users={},
     apps={},
     import_secrets={},
+    registry={"type": "gar", "url": "registry"},
+    dns={"domain": "example.com", "type": "cloud-dns"},
     tf_backend={"type": "gcs", "configs": {"bucket": "some-tf-state"}},
     cloud=cloud,
     kubernetes={"enabled": False},

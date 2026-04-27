@@ -30,6 +30,11 @@ variable "ci" {
       bazelisk_img_version = optional(string,"")
     }
   )
+
+  validation {
+    condition     = contains(["gl", "gha"], var.ci.type)
+    error_message = "ci.type must be either \"gl\" or \"gha\"."
+  }
 }
 
 variable "repo" {
@@ -91,6 +96,18 @@ variable "envs" {
             }
           )
         )
+        registry = object(
+          {
+            type = string
+            url  = string
+          }
+        )
+        dns = object(
+          {
+            domain = string
+            type   = string
+          }
+        )
         tf_backend = object(
           {
             type    = string
@@ -102,10 +119,13 @@ variable "envs" {
             name         = string
             id           = string
             folder_id    = optional(string)
-            region       = string
-            default_zone = string
-            multi_region = string
-            registry     = string
+            location     = object(
+              {
+                region       = string
+                default_zone = string
+                multi_region = optional(string, "")
+              }
+            )
             network = object(
               {
                 vm_cidr          = string
