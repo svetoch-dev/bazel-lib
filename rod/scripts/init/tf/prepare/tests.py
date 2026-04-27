@@ -8,7 +8,7 @@ from rod.scripts.init.tf.prepare.copy import copy_template
 from rod.libs.py.tf.tfvars import Cloud, Env
 
 cloud = Cloud(
-    name="<replace-me>",
+    name="yc",
     id="<replace-me>",
     folder_id="adadadadad",
     location={
@@ -30,9 +30,9 @@ env = Env(
     users={},
     apps={},
     import_secrets={},
-    registry={"type": "gar", "url": "registry"},
-    dns={"domain": "example.com", "type": "cloud-dns"},
-    tf_backend={"type": "gcs", "configs": {"bucket": "some-tf-state"}},
+    registry={"type": "ycr", "url": "registry"},
+    dns={"domain": "example.com", "type": "yc"},
+    tf_backend={"type": "s3", "configs": {"bucket": "some-tf-state"}},
     cloud=cloud,
     kubernetes={"enabled": False},
 )

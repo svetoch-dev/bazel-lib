@@ -6,7 +6,7 @@ from rod.scripts.init.tf.apply.apply import apply
 from rod.libs.py.tf.tfvars import Cloud, Env, TfVars
 
 cloud = Cloud(
-    name="<replace-me>",
+    name="yc",
     id="<replace-me>",
     folder_id="adadadadad",
     location={
@@ -29,16 +29,16 @@ env = Env(
     apps={},
     initial_start=True,
     import_secrets={},
-    registry={"type": "gar", "url": "registry"},
-    dns={"domain": "example.com", "type": "cloud-dns"},
-    tf_backend={"type": "gcs", "configs": {"bucket": "some-tf-state"}},
+    registry={"type": "ycr", "url": "registry"},
+    dns={"domain": "example.com", "type": "yc"},
+    tf_backend={"type": "s3", "configs": {"bucket": "some-tf-state"}},
     cloud=cloud,
     kubernetes={"enabled": False},
 )
 
 tfvars = TfVars(
     company={"name": "test", "domain": "test.com"},
-    repo={"type": "gha", "group": "test", "name": "test"},
+    repo={"type": "github", "group": "test", "name": "test"},
     ci={
         "type": "gha",
         "group": "test",

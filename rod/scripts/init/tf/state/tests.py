@@ -6,7 +6,7 @@ from rod.scripts.init.tf.state.create import create_state
 from rod.libs.py.tf.tfvars import TfBackend, Cloud
 
 cloud = Cloud(
-    name="<replace-me>",
+    name="gcp",
     id="<replace-me>",
     folder_id="adadadadad",
     location={

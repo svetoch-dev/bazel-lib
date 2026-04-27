@@ -1,7 +1,7 @@
 from typing import Literal
 
 from rod.libs.py.settings import bazel_settings
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from rod.libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholders
 
 
@@ -41,13 +41,13 @@ class TfBackend(BaseTfVarsModel):
 
 
 class Registry(BaseTfVarsModel):
-    type: str
+    type: Literal["ycr", "gar"]
     url: str
 
 
 class Dns(BaseTfVarsModel):
     domain: str
-    type: str
+    type: Literal["gcp", "yc"]
 
 
 class Buckets(BaseTfVarsModel):
@@ -76,12 +76,19 @@ class App(BaseTfVarsModel):
 
 
 class Cloud(BaseTfVarsModel):
-    name: str
+    name: Literal["gcp", "yc"]
     id: str
     folder_id: str | None = None
     location: Location
     network: Network
     buckets: Buckets
+
+    @model_validator(mode="after")
+    def validate_folder_id_for_yc(self):
+        if self.name == "yc" and not self.folder_id:
+            raise ValueError("folder_id must be set when cloud.name is yc")
+
+        return self
 
 
 class Env(BaseTfVarsModel):
@@ -105,7 +112,7 @@ class Company(BaseTfVarsModel):
 
 class Repo(BaseTfVarsModel):
     name: str
-    type: str
+    type: Literal["github", "gitlab"]
     group: str
 
 

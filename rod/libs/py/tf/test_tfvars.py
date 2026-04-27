@@ -4,6 +4,7 @@ from rod.libs.py.tf.tfvars import (
     formatted_tfvars,
     TfVars,
     Ci,
+    Repo,
     tfvars,
     Env,
     App,
@@ -105,3 +106,96 @@ class TestFormattedTfvars(unittest.TestCase):
     def test_ci_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
             Ci(type="gitlab", group="test")
+
+    def test_repo_type_accepts_supported_values(self):
+        self.assertEqual(Repo(name="test", type="github", group="test").type, "github")
+        self.assertEqual(Repo(name="test", type="gitlab", group="test").type, "gitlab")
+
+    def test_repo_type_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Repo(name="test", type="gha", group="test")
+
+    def test_cloud_name_accepts_supported_values(self):
+        cloud = {
+            "id": "test",
+            "location": {
+                "region": "europe-west2",
+                "default_zone": "europe-west2-a",
+            },
+            "network": {
+                "vm_cidr": "10.8.0.0/20",
+                "k8s_pod_cidr": "10.12.0.0/14",
+                "k8s_service_cidr": "10.9.0.0/20",
+            },
+            "buckets": {"multi_regional": True},
+        }
+
+        self.assertEqual(Cloud(name="gcp", **cloud).name, "gcp")
+        self.assertEqual(Cloud(name="yc", folder_id="yc-folder", **cloud).name, "yc")
+
+    def test_cloud_name_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Cloud(
+                name="none_existant_cloud",
+                id="test",
+                location={
+                    "region": "europe-west2",
+                    "default_zone": "europe-west2-a",
+                },
+                network={
+                    "vm_cidr": "10.8.0.0/20",
+                    "k8s_pod_cidr": "10.12.0.0/14",
+                    "k8s_service_cidr": "10.9.0.0/20",
+                },
+                buckets={"multi_regional": True},
+            )
+
+    def test_yc_cloud_requires_folder_id(self):
+        with self.assertRaises(ValidationError):
+            Cloud(
+                name="yc",
+                id="test",
+                location={
+                    "region": "ru-central1",
+                    "default_zone": "ru-central1-a",
+                },
+                network={
+                    "vm_cidr": "10.8.0.0/20",
+                    "k8s_pod_cidr": "10.12.0.0/14",
+                    "k8s_service_cidr": "10.9.0.0/20",
+                },
+                buckets={"multi_regional": False},
+            )
+
+        with self.assertRaises(ValidationError):
+            Cloud(
+                name="yc",
+                id="test",
+                folder_id="",
+                location={
+                    "region": "ru-central1",
+                    "default_zone": "ru-central1-a",
+                },
+                network={
+                    "vm_cidr": "10.8.0.0/20",
+                    "k8s_pod_cidr": "10.12.0.0/14",
+                    "k8s_service_cidr": "10.9.0.0/20",
+                },
+                buckets={"multi_regional": False},
+            )
+
+    def test_dns_type_accepts_supported_values(self):
+        self.assertEqual(Dns(domain="example.com", type="gcp").type, "gcp")
+        self.assertEqual(Dns(domain="example.com", type="yc").type, "yc")
+
+    def test_dns_type_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Dns(domain="example.com", type="none_existant_domain")
+
+    def test_registry_type_accepts_supported_values(self):
+        self.assertEqual(Registry(type="ycr", url="registry.example.com").type, "ycr")
+        self.assertEqual(Registry(type="gar", url="registry.example.com").type, "gar")
+
+    def test_registry_type_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Registry(type="none_existant_registry", url="registry.example.com")
