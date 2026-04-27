@@ -1,3 +1,17 @@
+# v0.17.0
+
+## ⚠️ Breaking Changes:
+
+### terrafrom.tfvars.json schema changes
+
+* `env.cloud.registry` is moved to `env.registry` and type is changed to object
+* `env.dns` new mandatory object variable
+* `env.cloud.{region,default_zone,multi_region}` attributes are moved under `env.cloud.location`
+
+
+Features:
+* `terrafrom.tfvars.json` variables validation
+
 # v0.16.0
 
 ## ⚠️ Breaking Changes:
