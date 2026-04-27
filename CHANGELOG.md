@@ -11,6 +11,7 @@
 
 Features:
 * `terrafrom.tfvars.json` variables validation
+* `.codex/rules/bazel.rules` codex rules that allow `bazel {build,test} *` commands
 
 # v0.16.0
 
