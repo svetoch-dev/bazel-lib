@@ -27,7 +27,7 @@ def create_cred_helpers():
 
         if env_obj.registry.type == "gar":
             creds_helper = "gcloud"
-        elif env_obj.registry.type == "yc":
+        elif env_obj.registry.type == "ycr":
             creds_helper = "yc"
         else:
             raise CredsHelperNotImplemented(
