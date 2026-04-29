@@ -1,13 +1,19 @@
 import unittest
+from pydantic import ValidationError
 from rod.libs.py.tf.tfvars import (
     formatted_tfvars,
     TfVars,
+    Ci,
+    Repo,
     tfvars,
     Env,
     App,
     AppAccessRoles,
     TfBackend,
+    Registry,
+    Dns,
     Cloud,
+    Location,
     Kubernetes,
 )
 
@@ -39,8 +45,14 @@ class TestFormattedTfvars(unittest.TestCase):
             "production/{tf_backend.state_name}",
         )
         self.assertEqual(prd.cloud.id, "rod-production")
+        self.assertEqual(prd.cloud.location.region, "europe-west2")
+        self.assertEqual(prd.cloud.location.default_zone, "europe-west2-c")
+        self.assertEqual(prd.cloud.location.multi_region, "EU")
+        self.assertEqual(prd.dns.domain, "prd.rod.svetoch.dev")
+        self.assertEqual(prd.dns.type, "gcp")
+        self.assertEqual(prd.registry.type, "gar")
         self.assertEqual(
-            prd.cloud.registry, "europe-west2-docker.pkg.dev/rod-production/containers"
+            prd.registry.url, "europe-west2-docker.pkg.dev/rod-production/containers"
         )
 
     def test_formatted_tfvars_formats_each_env_with_its_own_env_values(self):
@@ -59,12 +71,14 @@ class TestFormattedTfvars(unittest.TestCase):
 
         self.assertEqual(dev.cloud.id, "rod-development")
         self.assertEqual(prd.cloud.id, "rod-production")
+        self.assertEqual(dev.cloud.location.default_zone, "europe-west2-a")
+        self.assertEqual(prd.cloud.location.default_zone, "europe-west2-c")
 
         self.assertEqual(
-            prd.cloud.registry, "europe-west2-docker.pkg.dev/rod-production/containers"
+            prd.registry.url, "europe-west2-docker.pkg.dev/rod-production/containers"
         )
         self.assertEqual(
-            dev.cloud.registry, "europe-west2-docker.pkg.dev/rod-development/containers"
+            dev.registry.url, "europe-west2-docker.pkg.dev/rod-development/containers"
         )
 
     def test_formatted_tfvars_returns_validated_models(self):
@@ -73,7 +87,10 @@ class TestFormattedTfvars(unittest.TestCase):
 
         self.assertIsInstance(result, TfVars)
         self.assertIsInstance(result.envs["production"], Env)
+        self.assertIsInstance(result.envs["production"].registry, Registry)
+        self.assertIsInstance(result.envs["production"].dns, Dns)
         self.assertIsInstance(result.envs["production"].cloud, Cloud)
+        self.assertIsInstance(result.envs["production"].cloud.location, Location)
         self.assertIsInstance(result.envs["production"].tf_backend, TfBackend)
         self.assertIsInstance(result.envs["production"].kubernetes, Kubernetes)
         self.assertIsInstance(result.envs["production"].apps["example"], App)
@@ -81,3 +98,104 @@ class TestFormattedTfvars(unittest.TestCase):
             result.envs["production"].apps["example"].access_roles,
             AppAccessRoles,
         )
+
+    def test_ci_type_accepts_supported_values(self):
+        self.assertEqual(Ci(type="gl", group="test").type, "gl")
+        self.assertEqual(Ci(type="gha", group="test").type, "gha")
+
+    def test_ci_type_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Ci(type="gitlab", group="test")
+
+    def test_repo_type_accepts_supported_values(self):
+        self.assertEqual(Repo(name="test", type="github", group="test").type, "github")
+        self.assertEqual(Repo(name="test", type="gitlab", group="test").type, "gitlab")
+
+    def test_repo_type_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Repo(name="test", type="gha", group="test")
+
+    def test_cloud_name_accepts_supported_values(self):
+        cloud = {
+            "id": "test",
+            "location": {
+                "region": "europe-west2",
+                "default_zone": "europe-west2-a",
+            },
+            "network": {
+                "vm_cidr": "10.8.0.0/20",
+                "k8s_pod_cidr": "10.12.0.0/14",
+                "k8s_service_cidr": "10.9.0.0/20",
+            },
+            "buckets": {"multi_regional": True},
+        }
+
+        self.assertEqual(Cloud(name="gcp", **cloud).name, "gcp")
+        self.assertEqual(Cloud(name="yc", folder_id="yc-folder", **cloud).name, "yc")
+
+    def test_cloud_name_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Cloud(
+                name="none_existant_cloud",
+                id="test",
+                location={
+                    "region": "europe-west2",
+                    "default_zone": "europe-west2-a",
+                },
+                network={
+                    "vm_cidr": "10.8.0.0/20",
+                    "k8s_pod_cidr": "10.12.0.0/14",
+                    "k8s_service_cidr": "10.9.0.0/20",
+                },
+                buckets={"multi_regional": True},
+            )
+
+    def test_yc_cloud_requires_folder_id(self):
+        with self.assertRaises(ValidationError):
+            Cloud(
+                name="yc",
+                id="test",
+                location={
+                    "region": "ru-central1",
+                    "default_zone": "ru-central1-a",
+                },
+                network={
+                    "vm_cidr": "10.8.0.0/20",
+                    "k8s_pod_cidr": "10.12.0.0/14",
+                    "k8s_service_cidr": "10.9.0.0/20",
+                },
+                buckets={"multi_regional": False},
+            )
+
+        with self.assertRaises(ValidationError):
+            Cloud(
+                name="yc",
+                id="test",
+                folder_id="",
+                location={
+                    "region": "ru-central1",
+                    "default_zone": "ru-central1-a",
+                },
+                network={
+                    "vm_cidr": "10.8.0.0/20",
+                    "k8s_pod_cidr": "10.12.0.0/14",
+                    "k8s_service_cidr": "10.9.0.0/20",
+                },
+                buckets={"multi_regional": False},
+            )
+
+    def test_dns_type_accepts_supported_values(self):
+        self.assertEqual(Dns(domain="example.com", type="gcp").type, "gcp")
+        self.assertEqual(Dns(domain="example.com", type="yc").type, "yc")
+
+    def test_dns_type_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Dns(domain="example.com", type="none_existant_domain")
+
+    def test_registry_type_accepts_supported_values(self):
+        self.assertEqual(Registry(type="ycr", url="registry.example.com").type, "ycr")
+        self.assertEqual(Registry(type="gar", url="registry.example.com").type, "gar")
+
+    def test_registry_type_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Registry(type="none_existant_registry", url="registry.example.com")

@@ -30,6 +30,11 @@ variable "ci" {
       bazelisk_img_version = optional(string,"")
     }
   )
+
+  validation {
+    condition     = contains(["gl", "gha"], var.ci.type)
+    error_message = "ci.type must be either \"gl\" or \"gha\"."
+  }
 }
 
 variable "repo" {
@@ -41,6 +46,11 @@ variable "repo" {
       group = string
     }
   )
+
+  validation {
+    condition     = contains(["github", "gitlab"], var.repo.type)
+    error_message = "repo.type must be either \"github\" or \"gitlab\"."
+  }
 }
 
 variable "envs" {
@@ -91,6 +101,18 @@ variable "envs" {
             }
           )
         )
+        registry = object(
+          {
+            type = string
+            url  = string
+          }
+        )
+        dns = object(
+          {
+            domain = string
+            type   = string
+          }
+        )
         tf_backend = object(
           {
             type    = string
@@ -102,10 +124,13 @@ variable "envs" {
             name         = string
             id           = string
             folder_id    = optional(string)
-            region       = string
-            default_zone = string
-            multi_region = string
-            registry     = string
+            location     = object(
+              {
+                region       = string
+                default_zone = string
+                multi_region = optional(string, "")
+              }
+            )
             network = object(
               {
                 vm_cidr          = string
@@ -133,4 +158,37 @@ variable "envs" {
       }
     )
   )
+
+  validation {
+    condition     = alltrue([for env_name, env_obj in var.envs : contains(["gcp", "yc"], env_obj.cloud.name)])
+    error_message = "envs[*].cloud.name must be either \"gcp\" or \"yc\"."
+  }
+
+  validation {
+    condition     = alltrue([for env_name, env_obj in var.envs : contains(["gcp", "yc"], env_obj.dns.type)])
+    error_message = "envs[*].dns.type must be either \"gcp\" or \"yc\"."
+  }
+
+  validation {
+    condition     = alltrue([for env_name, env_obj in var.envs : contains(["ycr", "gar"], env_obj.registry.type)])
+    error_message = "envs[*].registry.type must be either \"ycr\" or \"gar\"."
+  }
+
+  validation {
+    condition     = alltrue(
+      concat(
+        [
+          for env_name, env_obj in var.envs:
+          env_obj.cloud.folder_id != null && env_obj.cloud.folder_id != ""
+          if env_obj.cloud.name == "yc"
+        ],
+        [
+          for env_name, env_obj in var.envs:
+          true
+          if env_obj.cloud.name != "yc"
+        ],
+      )
+    )
+    error_message = "envs[*].cloud.folder_id must be set when cloud.name is \"yc\"."
+  }
 }

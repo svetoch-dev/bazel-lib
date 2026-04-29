@@ -1,5 +1,7 @@
+from typing import Literal
+
 from rod.libs.py.settings import bazel_settings
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from rod.libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholders
 
 
@@ -38,9 +40,25 @@ class TfBackend(BaseTfVarsModel):
     configs: dict[str, str]
 
 
+class Registry(BaseTfVarsModel):
+    type: Literal["ycr", "gar"]
+    url: str
+
+
+class Dns(BaseTfVarsModel):
+    domain: str
+    type: Literal["gcp", "yc"]
+
+
 class Buckets(BaseTfVarsModel):
     multi_regional: bool
     deletion_protection: bool = True
+
+
+class Location(BaseTfVarsModel):
+    region: str
+    default_zone: str
+    multi_region: str = ""
 
 
 class Network(BaseTfVarsModel):
@@ -58,15 +76,19 @@ class App(BaseTfVarsModel):
 
 
 class Cloud(BaseTfVarsModel):
-    name: str
+    name: Literal["gcp", "yc"]
     id: str
     folder_id: str | None = None
-    region: str
-    default_zone: str
-    multi_region: str
-    registry: str
+    location: Location
     network: Network
     buckets: Buckets
+
+    @model_validator(mode="after")
+    def validate_folder_id_for_yc(self):
+        if self.name == "yc" and not self.folder_id:
+            raise ValueError("folder_id must be set when cloud.name is yc")
+
+        return self
 
 
 class Env(BaseTfVarsModel):
@@ -76,6 +98,8 @@ class Env(BaseTfVarsModel):
     users: dict[str, User]
     apps: dict[str, App]
     import_secrets: dict[str, ImportSecret]
+    registry: Registry
+    dns: Dns
     tf_backend: TfBackend
     cloud: Cloud
     kubernetes: Kubernetes
@@ -88,12 +112,12 @@ class Company(BaseTfVarsModel):
 
 class Repo(BaseTfVarsModel):
     name: str
-    type: str
+    type: Literal["github", "gitlab"]
     group: str
 
 
 class Ci(BaseTfVarsModel):
-    type: str
+    type: Literal["gl", "gha"]
     group: str
     bazelisk_img_version: str = ""
 

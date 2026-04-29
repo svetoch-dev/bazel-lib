@@ -12,9 +12,9 @@ def build_envs():
     tf_vars = formatted_tfvars()
     for _, env_obj in tf_vars["envs"].items():
         envs[env_obj["short_name"]] = {
-            "registry": env_obj["cloud"]["registry"],
+            "registry": env_obj["registry"]["url"],
             "id": env_obj["cloud"]["id"],
-            "region": env_obj["cloud"]["region"],
+            "region": env_obj["cloud"]["location"]["region"],
         }
 
     return envs

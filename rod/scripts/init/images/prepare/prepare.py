@@ -23,18 +23,18 @@ def create_cred_helpers():
 
     registries = []
 
-    for env_name, env_obj in tfvars.envs.items():
+    for env_obj in tfvars.envs.values():
 
-        if env_obj.cloud.name == "gcp":
+        if env_obj.registry.type == "gar":
             creds_helper = "gcloud"
-        elif env_obj.cloud.name == "yc":
+        elif env_obj.registry.type == "ycr":
             creds_helper = "yc"
         else:
             raise CredsHelperNotImplemented(
-                f"creds_helper not found for this registry {env_obj.cloud.registry}"
+                f"creds_helper not found for this registry {env_obj.registry.url}"
             )
 
-        registries.append({"url": env_obj.cloud.registry, "creds_helper": creds_helper})
+        registries.append({"url": env_obj.registry.url, "creds_helper": creds_helper})
 
     configs = {"auths": {}, "credHelpers": {}}
 

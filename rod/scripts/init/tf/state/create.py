@@ -15,7 +15,7 @@ def create_state() -> None:
             created = create_gcs_tf_state(
                 env_obj.cloud.id,
                 env_obj.tf_backend.configs["bucket"],
-                env_obj.cloud.region,
+                env_obj.cloud.location.region,
             )
             if not created:
                 sys.exit(1)
