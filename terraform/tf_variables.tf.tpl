@@ -69,13 +69,35 @@ variable "envs" {
             }
           )
         )
-        apps       = map(
+        apps = map(
           object(
             {
-              name         = string
-              postgres     = optional(bool, false)
-              redis        = optional(bool, false)
-              rabbitmq     = optional(bool, false)
+              name     = string
+              postgres = optional(bool, false)
+              redis    = optional(bool, false)
+              rabbitmq = optional(bool, false)
+              ci       = map(
+                object(
+                  {
+                    vars = map(
+                      object(
+                        {
+                          name  = string
+                          value = string
+                        }
+                      )
+                    )
+                    secrets = map(
+                      object(
+                        {
+                          name  = string
+                          value = string
+                        }
+                      )
+                    )
+                  }
+                )
+              )
               access_roles = optional(
                 object(
                   {

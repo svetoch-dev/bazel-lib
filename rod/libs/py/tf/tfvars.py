@@ -73,7 +73,12 @@ class App(BaseTfVarsModel):
     redis: bool = False
     rabbitmq: bool = False
     access_roles: AppAccessRoles = AppAccessRoles()
+    ci: dict[str, CiApp]
 
+
+class CiApp(BaseTfVarsModel):
+    vars: dict[str, str]
+    secrets: dict[str, str]
 
 class Cloud(BaseTfVarsModel):
     name: Literal["gcp", "yc"]
