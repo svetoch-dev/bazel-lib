@@ -80,7 +80,10 @@ variable "envs" {
                 object(
                   {
                     repo_name = string
-                    vars = map(
+                    cd_branch = optional(string)
+                    cd_file   = optional(string)
+                    cd_path   = optional(string)
+                    vars = optional(
                       object(
                         {
                           name  = string
@@ -88,7 +91,7 @@ variable "envs" {
                         }
                       )
                     )
-                    secrets = map(
+                    secrets = optional(
                       object(
                         {
                           name  = string
