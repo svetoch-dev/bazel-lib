@@ -1,4 +1,6 @@
 import unittest
+from copy import deepcopy
+
 from pydantic import ValidationError
 from rod.libs.py.tf.tfvars import (
     formatted_tfvars,
@@ -20,6 +22,42 @@ from rod.libs.py.tf.tfvars import (
 
 class TestFormattedTfvars(unittest.TestCase):
     """Test suite for checking that template terraform.tfvars.json is rendered properly."""
+
+    def _env(self, env_type):
+        return {
+            "name": env_type,
+            "short_name": env_type[:3],
+            "type": env_type,
+            "users": {},
+            "apps": {},
+            "import_secrets": {},
+            "registry": {"type": "gar", "url": "registry.example.com"},
+            "dns": {"domain": "example.com", "type": "gcp"},
+            "tf_backend": {"type": "gcs", "configs": {"bucket": "tf-state"}},
+            "cloud": {
+                "name": "gcp",
+                "id": env_type,
+                "location": {
+                    "region": "europe-west2",
+                    "default_zone": "europe-west2-a",
+                },
+                "network": {
+                    "vm_cidr": "10.8.0.0/20",
+                    "k8s_pod_cidr": "10.12.0.0/14",
+                    "k8s_service_cidr": "10.9.0.0/20",
+                },
+                "buckets": {"multi_regional": True},
+            },
+            "kubernetes": {"enabled": False},
+        }
+
+    def _tfvars(self, envs):
+        return {
+            "company": {"name": "test", "domain": "example.com"},
+            "repo": {"name": "test", "type": "github", "group": "test"},
+            "ci": {"type": "gha", "group": "test"},
+            "envs": envs,
+        }
 
     def test_formatted_tfvars_replaces_top_level_and_env_placeholders(self):
 
@@ -117,132 +155,65 @@ class TestFormattedTfvars(unittest.TestCase):
             Repo(name="test", type="gha", group="test")
 
     def test_env_type_accepts_supported_values(self):
-        env = {
-            "name": "test",
-            "short_name": "tst",
-            "users": {},
-            "apps": {},
-            "import_secrets": {},
-            "registry": {"type": "gar", "url": "registry.example.com"},
-            "dns": {"domain": "example.com", "type": "gcp"},
-            "tf_backend": {"type": "gcs", "configs": {"bucket": "tf-state"}},
-            "cloud": {
-                "name": "gcp",
-                "id": "test",
-                "location": {
-                    "region": "europe-west2",
-                    "default_zone": "europe-west2-a",
-                },
-                "network": {
-                    "vm_cidr": "10.8.0.0/20",
-                    "k8s_pod_cidr": "10.12.0.0/14",
-                    "k8s_service_cidr": "10.9.0.0/20",
-                },
-                "buckets": {"multi_regional": True},
-            },
-            "kubernetes": {"enabled": False},
-        }
-
-        self.assertEqual(Env(type="internal", **env).type, "internal")
-        self.assertEqual(Env(type="product", **env).type, "product")
+        self.assertEqual(Env(**self._env("internal")).type, "internal")
+        self.assertEqual(Env(**self._env("product")).type, "product")
 
     def test_env_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
-            Env(
-                name="test",
-                short_name="tst",
-                type="staging",
-                users={},
-                apps={},
-                import_secrets={},
-                registry={"type": "gar", "url": "registry.example.com"},
-                dns={"domain": "example.com", "type": "gcp"},
-                tf_backend={"type": "gcs", "configs": {"bucket": "tf-state"}},
-                cloud={
-                    "name": "gcp",
-                    "id": "test",
-                    "location": {
-                        "region": "europe-west2",
-                        "default_zone": "europe-west2-a",
-                    },
-                    "network": {
-                        "vm_cidr": "10.8.0.0/20",
-                        "k8s_pod_cidr": "10.12.0.0/14",
-                        "k8s_service_cidr": "10.9.0.0/20",
-                    },
-                    "buckets": {"multi_regional": True},
-                },
-                kubernetes={"enabled": False},
-            )
+            Env(**self._env("staging"))
+
+    def test_tfvars_accepts_single_internal_env(self):
+        envs = {
+            "internal": self._env("internal"),
+            "production": self._env("product"),
+        }
+
+        self.assertEqual(
+            TfVars.model_validate(self._tfvars(envs)).envs["internal"].type, "internal"
+        )
+
+    def test_tfvars_rejects_missing_internal_env(self):
+        envs = {
+            "development": self._env("product"),
+            "production": self._env("product"),
+        }
+
+        with self.assertRaises(ValidationError):
+            TfVars.model_validate(self._tfvars(envs))
+
+    def test_tfvars_rejects_multiple_internal_envs(self):
+        first_internal = self._env("internal")
+        second_internal = deepcopy(first_internal)
+        second_internal["name"] = "another-internal"
+        second_internal["short_name"] = "ain"
+
+        envs = {
+            "internal": first_internal,
+            "another_internal": second_internal,
+            "production": self._env("product"),
+        }
+
+        with self.assertRaises(ValidationError):
+            TfVars.model_validate(self._tfvars(envs))
 
     def test_cloud_name_accepts_supported_values(self):
-        cloud = {
-            "id": "test",
-            "location": {
-                "region": "europe-west2",
-                "default_zone": "europe-west2-a",
-            },
-            "network": {
-                "vm_cidr": "10.8.0.0/20",
-                "k8s_pod_cidr": "10.12.0.0/14",
-                "k8s_service_cidr": "10.9.0.0/20",
-            },
-            "buckets": {"multi_regional": True},
-        }
+        cloud = self._env("internal")["cloud"]
+        del cloud["name"]
 
         self.assertEqual(Cloud(name="gcp", **cloud).name, "gcp")
         self.assertEqual(Cloud(name="yc", folder_id="yc-folder", **cloud).name, "yc")
 
     def test_cloud_name_rejects_unsupported_values(self):
+        cloud = self._env("internal")["cloud"]
+        cloud["name"] = "none_existant_cloud"
         with self.assertRaises(ValidationError):
-            Cloud(
-                name="none_existant_cloud",
-                id="test",
-                location={
-                    "region": "europe-west2",
-                    "default_zone": "europe-west2-a",
-                },
-                network={
-                    "vm_cidr": "10.8.0.0/20",
-                    "k8s_pod_cidr": "10.12.0.0/14",
-                    "k8s_service_cidr": "10.9.0.0/20",
-                },
-                buckets={"multi_regional": True},
-            )
+            Cloud(**cloud)
 
     def test_yc_cloud_requires_folder_id(self):
+        cloud = self._env("internal")["cloud"]
+        cloud["name"] = "yc"
         with self.assertRaises(ValidationError):
-            Cloud(
-                name="yc",
-                id="test",
-                location={
-                    "region": "ru-central1",
-                    "default_zone": "ru-central1-a",
-                },
-                network={
-                    "vm_cidr": "10.8.0.0/20",
-                    "k8s_pod_cidr": "10.12.0.0/14",
-                    "k8s_service_cidr": "10.9.0.0/20",
-                },
-                buckets={"multi_regional": False},
-            )
-
-        with self.assertRaises(ValidationError):
-            Cloud(
-                name="yc",
-                id="test",
-                folder_id="",
-                location={
-                    "region": "ru-central1",
-                    "default_zone": "ru-central1-a",
-                },
-                network={
-                    "vm_cidr": "10.8.0.0/20",
-                    "k8s_pod_cidr": "10.12.0.0/14",
-                    "k8s_service_cidr": "10.9.0.0/20",
-                },
-                buckets={"multi_regional": False},
-            )
+            Cloud(**cloud)
 
     def test_dns_type_accepts_supported_values(self):
         self.assertEqual(Dns(domain="example.com", type="gcp").type, "gcp")

@@ -129,6 +129,19 @@ class TfVars(BaseTfVarsModel):
     ci: Ci
     envs: dict[str, Env]
 
+    @model_validator(mode="after")
+    def validate_single_internal_env(self):
+        internal_envs = [
+            env_name
+            for env_name, env_obj in self.envs.items()
+            if env_obj.type == "internal"
+        ]
+
+        if len(internal_envs) != 1:
+            raise ValueError('exactly one env type must be "internal"')
+
+        return self
+
 
 def tfvars():
     with open(bazel_settings.tfvars_file, "r") as f:

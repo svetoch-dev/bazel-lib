@@ -181,6 +181,11 @@ variable "envs" {
   }
 
   validation {
+    condition     = length([for env_name, env_obj in var.envs : env_name if env_obj.type == "internal"]) == 1
+    error_message = "Exactly one envs[*].type must be \"internal\"."
+  }
+
+  validation {
     condition     = alltrue(
       concat(
         [

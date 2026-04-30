@@ -25,7 +25,7 @@ cloud = Cloud(
 env = Env(
     name="<replace-me>",
     short_name="<replace-me>",
-    type="product",
+    type="internal",
     users={},
     apps={},
     initial_start=True,
@@ -44,7 +44,7 @@ tfvars = TfVars(
         "type": "gha",
         "group": "test",
     },
-    envs={},
+    envs={"int": env},
 )
 
 
@@ -74,9 +74,9 @@ class TestApply(unittest.TestCase):
         env_prd = env.model_copy(deep=True)
         env_prd.name = "production"
         env_prd.short_name = "prd"
+        env_prd.type = "product"
 
         tf_vars = tfvars.model_copy(deep=True)
-
         tf_vars.envs = {"int": env_int, "prd": env_prd}
 
         mock_tfvars.return_value = tf_vars
@@ -136,6 +136,7 @@ class TestApply(unittest.TestCase):
         env_prd = env.model_copy(deep=True)
         env_prd.name = "production"
         env_prd.short_name = "prd"
+        env_prd.type = "product"
 
         tf_vars = tfvars.model_copy(deep=True)
 
@@ -189,6 +190,7 @@ class TestApply(unittest.TestCase):
 
         env_prd = env.model_copy(deep=True)
         env_prd.name = "production"
+        env_prd.type = "product"
         env_prd.short_name = "prd"
 
         tf_vars = tfvars.model_copy(deep=True)
@@ -250,6 +252,7 @@ class TestApply(unittest.TestCase):
         env_prd = env.model_copy(deep=True)
         env_prd.name = "production"
         env_prd.short_name = "prd"
+        env_prd.type = "product"
 
         tf_vars = tfvars.model_copy(deep=True)
         tf_vars.envs = {"int": env_int, "prd": env_prd}
