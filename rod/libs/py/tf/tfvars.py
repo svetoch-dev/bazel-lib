@@ -77,6 +77,7 @@ class App(BaseTfVarsModel):
 
 
 class CiApp(BaseTfVarsModel):
+    repo_name: string
     vars: dict[str, str]
     secrets: dict[str, str]
 

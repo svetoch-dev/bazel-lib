@@ -79,6 +79,7 @@ variable "envs" {
               ci       = map(
                 object(
                   {
+                    repo_name = string
                     vars = map(
                       object(
                         {
