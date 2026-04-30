@@ -15,6 +15,7 @@ def build_envs():
             "registry": env_obj["registry"]["url"],
             "id": env_obj["cloud"]["id"],
             "region": env_obj["cloud"]["location"]["region"],
+            "type": env_obj["type"],
         }
 
     return envs
@@ -29,6 +30,6 @@ def app_envs():
     envs = {}
 
     for env_name, env_obj in build_envs().items():
-        if env_name != "int":
+        if env_obj["type"] == "product":
             envs[env_name] = env_obj
     return envs
