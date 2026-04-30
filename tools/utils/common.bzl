@@ -15,7 +15,7 @@ def build_envs():
             "registry": env_obj["registry"]["url"],
             "id": env_obj["cloud"]["id"],
             "region": env_obj["cloud"]["location"]["region"],
-            "type": env_obj["cloud"]["type"],
+            "type": env_obj["type"],
         }
 
     return envs
