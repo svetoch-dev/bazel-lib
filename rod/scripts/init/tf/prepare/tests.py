@@ -27,6 +27,7 @@ cloud = Cloud(
 env = Env(
     name="<replace-me>",
     short_name="<replace-me>",
+    type="product",
     users={},
     apps={},
     import_secrets={},
@@ -39,9 +40,7 @@ env = Env(
 
 
 class TestCopyTemplate(unittest.TestCase):
-    @patch(
-        "rod.scripts.init.tf.prepare.copy.TEMPLATE_DIR", Path("/tmp/tf/env/template")
-    )
+    @patch("rod.scripts.init.tf.prepare.copy.PRODUCT_DIR", Path("/tmp/tf/env/product"))
     @patch("rod.scripts.init.tf.prepare.copy.sys.exit")
     @patch("rod.scripts.init.tf.prepare.copy.Path.exists")
     @patch("rod.scripts.init.tf.prepare.copy.formatted_tfvars")
@@ -72,9 +71,7 @@ class TestCopyTemplate(unittest.TestCase):
 
         mock_sys_exit.assert_called_once_with(1)
 
-    @patch(
-        "rod.scripts.init.tf.prepare.copy.TEMPLATE_DIR", Path("/tmp/tf/env/template")
-    )
+    @patch("rod.scripts.init.tf.prepare.copy.PRODUCT_DIR", Path("/tmp/tf/env/product"))
     @patch("rod.scripts.init.tf.prepare.copy.copytree")
     @patch("rod.scripts.init.tf.prepare.copy.Path.exists")
     @patch("rod.scripts.init.tf.prepare.copy.formatted_tfvars")
@@ -107,16 +104,14 @@ class TestCopyTemplate(unittest.TestCase):
 
         mock_copytree.assert_has_calls(
             [
-                call(Path("/tmp/tf/env/template"), Path("/tmp/tf/env/development")),
-                call(Path("/tmp/tf/env/template"), Path("/tmp/tf/env/production")),
+                call(Path("/tmp/tf/env/product"), Path("/tmp/tf/env/development")),
+                call(Path("/tmp/tf/env/product"), Path("/tmp/tf/env/production")),
             ],
             any_order=False,
         )
         self.assertEqual(mock_copytree.call_count, 2)
 
-    @patch(
-        "rod.scripts.init.tf.prepare.copy.TEMPLATE_DIR", Path("/tmp/tf/env/template")
-    )
+    @patch("rod.scripts.init.tf.prepare.copy.PRODUCT_DIR", Path("/tmp/tf/env/product"))
     @patch("rod.scripts.init.tf.prepare.copy.copytree")
     @patch("rod.scripts.init.tf.prepare.copy.Path.exists")
     @patch("rod.scripts.init.tf.prepare.copy.formatted_tfvars")

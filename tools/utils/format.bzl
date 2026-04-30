@@ -54,6 +54,7 @@ def formatted_tfvars(state_name = None):
         replacement_dict["env.cloud.id"] = env_obj["cloud"]["id"]
         replacement_dict["env.name"] = env_obj["name"]
         replacement_dict["env.short_name"] = env_obj["short_name"]
+        replacement_dict["env.type"] = env_obj["type"]
         replacement_dict["env.registry.type"] = env_obj["registry"]["type"]
         replacement_dict["env.registry.url"] = env_obj["registry"]["url"]
         replacement_dict["env.dns.domain"] = env_obj["dns"]["domain"]

@@ -29,6 +29,6 @@ def app_envs():
     envs = {}
 
     for env_name, env_obj in build_envs().items():
-        if env_name != "int":
+        if env_obj["type"] == "product":
             envs[env_name] = env_obj
     return envs

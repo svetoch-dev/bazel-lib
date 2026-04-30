@@ -50,6 +50,7 @@ class TestFormattedTfvars(unittest.TestCase):
         self.assertEqual(prd.cloud.location.multi_region, "EU")
         self.assertEqual(prd.dns.domain, "prd.rod.svetoch.dev")
         self.assertEqual(prd.dns.type, "gcp")
+        self.assertEqual(prd.type, "product")
         self.assertEqual(prd.registry.type, "gar")
         self.assertEqual(
             prd.registry.url, "europe-west2-docker.pkg.dev/rod-production/containers"
@@ -114,6 +115,65 @@ class TestFormattedTfvars(unittest.TestCase):
     def test_repo_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
             Repo(name="test", type="gha", group="test")
+
+    def test_env_type_accepts_supported_values(self):
+        env = {
+            "name": "test",
+            "short_name": "tst",
+            "users": {},
+            "apps": {},
+            "import_secrets": {},
+            "registry": {"type": "gar", "url": "registry.example.com"},
+            "dns": {"domain": "example.com", "type": "gcp"},
+            "tf_backend": {"type": "gcs", "configs": {"bucket": "tf-state"}},
+            "cloud": {
+                "name": "gcp",
+                "id": "test",
+                "location": {
+                    "region": "europe-west2",
+                    "default_zone": "europe-west2-a",
+                },
+                "network": {
+                    "vm_cidr": "10.8.0.0/20",
+                    "k8s_pod_cidr": "10.12.0.0/14",
+                    "k8s_service_cidr": "10.9.0.0/20",
+                },
+                "buckets": {"multi_regional": True},
+            },
+            "kubernetes": {"enabled": False},
+        }
+
+        self.assertEqual(Env(type="internal", **env).type, "internal")
+        self.assertEqual(Env(type="product", **env).type, "product")
+
+    def test_env_type_rejects_unsupported_values(self):
+        with self.assertRaises(ValidationError):
+            Env(
+                name="test",
+                short_name="tst",
+                type="staging",
+                users={},
+                apps={},
+                import_secrets={},
+                registry={"type": "gar", "url": "registry.example.com"},
+                dns={"domain": "example.com", "type": "gcp"},
+                tf_backend={"type": "gcs", "configs": {"bucket": "tf-state"}},
+                cloud={
+                    "name": "gcp",
+                    "id": "test",
+                    "location": {
+                        "region": "europe-west2",
+                        "default_zone": "europe-west2-a",
+                    },
+                    "network": {
+                        "vm_cidr": "10.8.0.0/20",
+                        "k8s_pod_cidr": "10.12.0.0/14",
+                        "k8s_service_cidr": "10.9.0.0/20",
+                    },
+                    "buckets": {"multi_regional": True},
+                },
+                kubernetes={"enabled": False},
+            )
 
     def test_cloud_name_accepts_supported_values(self):
         cloud = {

@@ -94,6 +94,7 @@ class Cloud(BaseTfVarsModel):
 class Env(BaseTfVarsModel):
     name: str
     short_name: str
+    type: Literal["internal", "product"]
     initial_start: bool = False
     users: dict[str, User]
     apps: dict[str, App]

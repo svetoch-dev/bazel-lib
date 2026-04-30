@@ -25,6 +25,7 @@ cloud = Cloud(
 env = Env(
     name="<replace-me>",
     short_name="<replace-me>",
+    type="product",
     users={},
     apps={},
     initial_start=True,
@@ -68,6 +69,7 @@ class TestApply(unittest.TestCase):
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
         env_int.short_name = "int"
+        env_int.type = "internal"
 
         env_prd = env.model_copy(deep=True)
         env_prd.name = "production"
@@ -129,6 +131,7 @@ class TestApply(unittest.TestCase):
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
         env_int.short_name = "int"
+        env_int.type = "internal"
 
         env_prd = env.model_copy(deep=True)
         env_prd.name = "production"
@@ -182,6 +185,7 @@ class TestApply(unittest.TestCase):
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
         env_int.short_name = "int"
+        env_int.type = "internal"
 
         env_prd = env.model_copy(deep=True)
         env_prd.name = "production"
@@ -220,6 +224,62 @@ class TestApply(unittest.TestCase):
             ],
         )
         mock_path.assert_called_once_with("/tmp/workspace/terraform.tfvars.json")
+
+    @patch("rod.scripts.init.tf.apply.apply.Path")
+    @patch("rod.scripts.init.tf.apply.apply.apply_env")
+    @patch("rod.scripts.init.tf.apply.apply.tfvars")
+    @patch("rod.scripts.init.tf.apply.apply.os.chdir")
+    @patch("rod.scripts.init.tf.apply.apply.bazel_settings")
+    def test_apply_uses_env_type_to_apply_internal_env_first(
+        self,
+        mock_bazel_settings,
+        mock_chdir,
+        mock_tfvars,
+        mock_apply_env,
+        mock_path,
+    ):
+        mock_bazel_settings.workspace = "/tmp/workspace"
+        mock_bazel_settings.tf_env_dir = "terraform/environments"
+        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
+
+        env_int = env.model_copy(deep=True)
+        env_int.name = "internal"
+        env_int.short_name = "int"
+        env_int.type = "internal"
+
+        env_prd = env.model_copy(deep=True)
+        env_prd.name = "production"
+        env_prd.short_name = "prd"
+
+        tf_vars = tfvars.model_copy(deep=True)
+        tf_vars.envs = {"int": env_int, "prd": env_prd}
+
+        mock_tfvars.return_value = tf_vars
+        mock_apply_env.return_value = True
+
+        apply()
+
+        self.assertEqual(
+            mock_apply_env.call_args_list,
+            [
+                call(
+                    "int",
+                    exclude_targets=["//terraform/environments/int/secrets:apply"],
+                ),
+                call(
+                    "prd",
+                    exclude_targets=["//terraform/environments/prd/secrets:apply"],
+                ),
+                call(
+                    "int",
+                    exclude_targets=["//terraform/environments/int/secrets:apply"],
+                ),
+                call(
+                    "prd",
+                    exclude_targets=["//terraform/environments/prd/secrets:apply"],
+                ),
+            ],
+        )
 
 
 if __name__ == "__main__":
