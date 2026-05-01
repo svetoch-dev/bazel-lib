@@ -39,7 +39,7 @@ use_repo(tools, "helm_exec")
 bazel_dep(name = "rules_tf")
 git_override(
     module_name = "rules_tf",
-    commit = "972e20e677514021345d095f258f2e5e31d5a3c6",
+    commit = "75022e402d1acec9c16dd6dcd9a113285b283a04",
     remote = "https://github.com/ggramal/rules_tf",
 )
 
