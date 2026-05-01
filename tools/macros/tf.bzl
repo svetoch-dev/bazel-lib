@@ -149,6 +149,14 @@ def tf(
         tags = ["manual"],
     )
 
+    tf_output(
+        name = "output",
+        srcs = [":srcs"],
+        init = ":init",
+        tags = ["manual"],
+    )
+
+
     tf_binary(
         name = "tf",
         srcs = [":srcs"],
