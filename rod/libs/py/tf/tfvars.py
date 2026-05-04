@@ -66,9 +66,11 @@ class Network(BaseTfVarsModel):
     k8s_pod_cidr: str
     k8s_service_cidr: str
 
+
 class NameValue(BaseTfVarsModel):
     name: str
     value: str
+
 
 class CiApp(BaseTfVarsModel):
     repo_name: str = ""
