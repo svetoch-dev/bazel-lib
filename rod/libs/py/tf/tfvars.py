@@ -71,8 +71,8 @@ class NameValue(BaseTfVarsModel):
     value: str
 
 class CiApp(BaseTfVarsModel):
-    repo_name: str
-    repo_group: str
+    repo_name: str = ""
+    repo_group: str = ""
     cd_branch: str = ""
     cd_file: str = ""
     cd_path: str = ""
