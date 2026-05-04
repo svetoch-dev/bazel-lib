@@ -17,6 +17,7 @@ py_library(
         "@svetoch_bazel_lib//rod/libs/py/utils",
         requirement("pydantic"),
         requirement("google-cloud-storage"),
+        requirement("yandexcloud"),
     ],
 )
 
@@ -34,5 +35,6 @@ py_test(
         "@svetoch_bazel_lib//rod/libs/py/utils",
         requirement("pydantic"),
         requirement("google-cloud-storage"),
+        requirement("yandexcloud"),
     ],
 )

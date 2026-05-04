@@ -148,12 +148,19 @@ class TestPrepare(unittest.TestCase):
     def test_prepare_gcp_env(
         self, mock_formatted_tfvars, mock_prepare_gcp, mock_prepare_yc
     ):
+
+        env_dev = env.model_copy(deep=True)
+        env_dev.name = "development"
+        env_dev.short_name = "dev"
+
         cloud_gcp = cloud.model_copy(deep=True)
 
         cloud_gcp.name = "gcp"
         cloud_gcp.id = "project-123"
 
-        envs = {"dev": SimpleNamespace(cloud=cloud_gcp)}
+        env_dev.cloud = cloud_gcp
+
+        envs = {"dev": env_dev}
         mock_formatted_tfvars.return_value = SimpleNamespace(envs=envs)
         mock_prepare_gcp.return_value = True
 
@@ -168,18 +175,51 @@ class TestPrepare(unittest.TestCase):
     def test_prepare_yc_env(
         self, mock_formatted_tfvars, mock_prepare_gcp, mock_prepare_yc
     ):
+        env_dev = env.model_copy(deep=True)
+        env_dev.name = "development"
+        env_dev.type = "product"
+        env_dev.short_name = "dev"
+
         cloud_yc = cloud.model_copy(deep=True)
 
         cloud_yc.name = "yc"
         cloud_yc.id = "dadadadad"
 
-        envs = {"dev": SimpleNamespace(cloud=cloud_yc)}
+        env_dev.cloud = cloud_yc
+
+        envs = {"dev": env_dev}
+        mock_formatted_tfvars.return_value = SimpleNamespace(envs=envs)
+        mock_prepare_gcp.return_value = True
+
+        prepare()
+
+        mock_prepare_gcp.assert_not_called()
+        mock_prepare_yc.assert_not_called()
+
+    @patch("rod.scripts.init.tf.prepare.prepare.prepare_yc")
+    @patch("rod.scripts.init.tf.prepare.prepare.prepare_gcp")
+    @patch("rod.scripts.init.tf.prepare.prepare.formatted_tfvars")
+    def test_prepare_yc_not_called_for_none_int_env(
+        self, mock_formatted_tfvars, mock_prepare_gcp, mock_prepare_yc
+    ):
+        env_int = env.model_copy(deep=True)
+        env_int.name = "internal"
+        env_int.short_name = "int"
+        env_int.type = "internal"
+
+        cloud_yc = cloud.model_copy(deep=True)
+
+        cloud_yc.name = "yc"
+        cloud_yc.id = "dadadadad"
+        env_int.cloud = cloud_yc
+
+        envs = {"int": env_int}
         mock_formatted_tfvars.return_value = SimpleNamespace(envs=envs)
         mock_prepare_yc.return_value = True
 
         prepare()
 
-        mock_prepare_yc.assert_called_once_with()
+        mock_prepare_yc.assert_called_once_with("adadadadad")
         mock_prepare_gcp.assert_not_called()
 
     @patch("rod.scripts.init.tf.prepare.prepare.prepare_yc")
@@ -191,13 +231,17 @@ class TestPrepare(unittest.TestCase):
         mock_prepare_gcp,
         mock_prepare_yc,
     ):
+        env_dev = env.model_copy(deep=True)
+        env_dev.name = "development"
+        env_dev.short_name = "dev"
 
         cloud_none_existant = cloud.model_copy(deep=True)
 
         cloud_none_existant.name = "none_existant_cloud"
         cloud_none_existant.id = "dadadadad"
+        env_dev.cloud = cloud_none_existant
 
-        envs = {"dev": SimpleNamespace(cloud=cloud_none_existant)}
+        envs = {"dev": env_dev}
         mock_formatted_tfvars.return_value = SimpleNamespace(envs=envs)
 
         with self.assertRaises(NotImplementedError) as ctx:
@@ -218,21 +262,32 @@ class TestPrepare(unittest.TestCase):
         mock_prepare_gcp,
         mock_prepare_yc,
     ):
-
-        cloud_gcp_prd = cloud.model_copy(deep=True)
+        env_dev = env.model_copy(deep=True)
+        env_dev.name = "development"
+        env_dev.short_name = "dev"
         cloud_gcp_dev = cloud.model_copy(deep=True)
-        cloud_yc_stage = cloud.model_copy(deep=True)
         cloud_gcp_dev.name = "gcp"
         cloud_gcp_dev.id = "project-dev"
+        env_dev.cloud = cloud_gcp_dev
+
+        env_prd = env.model_copy(deep=True)
+        env_prd.name = "production"
+        env_prd.short_name = "prd"
+        cloud_gcp_prd = cloud.model_copy(deep=True)
         cloud_gcp_prd.name = "gcp"
         cloud_gcp_prd.id = "project-prd"
-        cloud_yc_stage.name = "yc"
-        cloud_yc_stage.id = "adadadadad"
-        envs = {
-            "dev": SimpleNamespace(cloud=cloud_gcp_dev),
-            "stage": SimpleNamespace(cloud=cloud_yc_stage),
-            "prod": SimpleNamespace(cloud=cloud_gcp_prd),
-        }
+        env_prd.cloud = cloud_gcp_prd
+
+        env_int = env.model_copy(deep=True)
+        env_int.name = "internal"
+        env_int.short_name = "int"
+        env_int.type = "internal"
+        cloud_yc_int = cloud.model_copy(deep=True)
+        cloud_yc_int.name = "yc"
+        cloud_yc_int.id = "adadadadad"
+        env_int.cloud = cloud_yc_int
+
+        envs = {"dev": env_dev, "int": env_int, "prod": env_prd}
         mock_formatted_tfvars.return_value = SimpleNamespace(envs=envs)
         mock_prepare_gcp.return_value = True
         mock_prepare_yc.return_value = True
@@ -243,7 +298,7 @@ class TestPrepare(unittest.TestCase):
             mock_prepare_gcp.call_args_list,
             [call("project-dev"), call("project-prd")],
         )
-        mock_prepare_yc.assert_called_once_with()
+        mock_prepare_yc.assert_called_once_with("adadadadad")
 
 
 if __name__ == "__main__":

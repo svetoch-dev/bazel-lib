@@ -11,3 +11,4 @@ google-cloud-run<1.0.0
 tiny-json-log<1.0.0
 pydantic<3.0.0
 pydantic-settings<3.0.0
+yandexcloud<1.0.0
