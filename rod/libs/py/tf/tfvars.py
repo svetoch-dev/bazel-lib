@@ -78,6 +78,7 @@ class App(BaseTfVarsModel):
 
 class CiApp(BaseTfVarsModel):
     repo_name: string
+    repo_group: string
     cd_branch: string = ""
     cd_file: string = ""
     cd_path: string = ""
