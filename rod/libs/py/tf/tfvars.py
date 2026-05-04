@@ -67,23 +67,26 @@ class Network(BaseTfVarsModel):
     k8s_service_cidr: str
 
 
+class CiApp(BaseTfVarsModel):
+    repo_name: str
+    repo_group: str
+    cd_branch: str = ""
+    cd_file: str = ""
+    cd_path: str = ""
+    vars: dict[str, str] = {}
+    secrets: dict[str, str] = {}
+
+
+
 class App(BaseTfVarsModel):
     name: str
     postgres: bool = False
     redis: bool = False
     rabbitmq: bool = False
     access_roles: AppAccessRoles = AppAccessRoles()
-    ci: dict[str, CiApp]
+    ci: dict[str, CiApp] = {}
 
 
-class CiApp(BaseTfVarsModel):
-    repo_name: string
-    repo_group: string
-    cd_branch: string = ""
-    cd_file: string = ""
-    cd_path: string = ""
-    vars: dict[str, str]
-    secrets: dict[str, str]
 
 class Cloud(BaseTfVarsModel):
     name: Literal["gcp", "yc"]
