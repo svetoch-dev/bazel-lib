@@ -77,7 +77,6 @@ class CiApp(BaseTfVarsModel):
     secrets: dict[str, str] = {}
 
 
-
 class App(BaseTfVarsModel):
     name: str
     postgres: bool = False
@@ -85,7 +84,6 @@ class App(BaseTfVarsModel):
     rabbitmq: bool = False
     access_roles: AppAccessRoles = AppAccessRoles()
     ci: dict[str, CiApp] = {}
-
 
 
 class Cloud(BaseTfVarsModel):
