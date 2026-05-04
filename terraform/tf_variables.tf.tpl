@@ -85,20 +85,20 @@ variable "envs" {
                     cd_file    = optional(string)
                     cd_path    = optional(string)
                     vars = optional(
-                      object(
+                      list(object(
                         {
                           name  = string
                           value = string
                         }
-                      )
+                      ))
                     )
                     secrets = optional(
-                      object(
+                      list(object(
                         {
                           name  = string
                           value = string
                         }
-                      )
+                      ))
                     )
                   }
                 )
