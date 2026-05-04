@@ -28,7 +28,7 @@ def apply() -> None:
         # initial_start = False
         # 5. Apply everything again
         env_obj.initial_start = False
-        if env_obj.short_name == "int":
+        if env_obj.type == "internal":
             int_env = env_obj.model_copy(deep=True)
 
         envs.append(env_obj)

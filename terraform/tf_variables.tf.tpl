@@ -60,6 +60,7 @@ variable "envs" {
       {
         name          = string
         short_name    = string
+        type          = string
         initial_start = optional(bool, false)
         users = map(
           object(
@@ -198,6 +199,16 @@ variable "envs" {
   validation {
     condition     = alltrue([for env_name, env_obj in var.envs : contains(["ycr", "gar"], env_obj.registry.type)])
     error_message = "envs[*].registry.type must be either \"ycr\" or \"gar\"."
+  }
+
+  validation {
+    condition     = alltrue([for env_name, env_obj in var.envs : contains(["internal", "product"], env_obj.type)])
+    error_message = "envs[*].type must be either \"internal\" or \"product\"."
+  }
+
+  validation {
+    condition     = length([for env_name, env_obj in var.envs : env_name if env_obj.type == "internal"]) == 1
+    error_message = "Exactly one envs[*].type must be \"internal\"."
   }
 
   validation {

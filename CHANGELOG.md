@@ -1,3 +1,14 @@
+# v0.18.0
+
+Braking changes:
+* `rod/lib/py/settings` `tf_template_dir` -> `tf_product_dir`
+
+Features:
+* `terraform.tfvars.json` new mandatory `var.envs[*].type` attribute
+  * use env.type attribute to find internal env
+* `libs/py/settings` add tests
+
+
 # v0.17.0
 
 ## ⚠️ Breaking Changes:
