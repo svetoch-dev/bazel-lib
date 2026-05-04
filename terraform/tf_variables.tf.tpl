@@ -76,31 +76,33 @@ variable "envs" {
               postgres = optional(bool, false)
               redis    = optional(bool, false)
               rabbitmq = optional(bool, false)
-              ci       = map(
-                object(
-                  {
-                    repo_name  = string
-                    repo_group = string
-                    cd_branch  = optional(string)
-                    cd_file    = optional(string)
-                    cd_path    = optional(string)
-                    vars = optional(
-                      object(
-                        {
-                          name  = string
-                          value = string
-                        }
+              ci       = optional(
+                map(
+                  object(
+                    {
+                      repo_name  = string
+                      repo_group = string
+                      cd_branch  = optional(string)
+                      cd_file    = optional(string)
+                      cd_path    = optional(string)
+                      vars = optional(
+                        object(
+                          {
+                            name  = string
+                            value = string
+                          }
+                        )
                       )
-                    )
-                    secrets = optional(
-                      object(
-                        {
-                          name  = string
-                          value = string
-                        }
+                      secrets = optional(
+                        object(
+                          {
+                            name  = string
+                            value = string
+                          }
+                        )
                       )
-                    )
-                  }
+                    }
+                  )
                 )
               )
               access_roles = optional(
