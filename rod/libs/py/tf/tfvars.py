@@ -66,6 +66,9 @@ class Network(BaseTfVarsModel):
     k8s_pod_cidr: str
     k8s_service_cidr: str
 
+class NameValue(BaseTfVarsModel):
+    name: str
+    value: str
 
 class CiApp(BaseTfVarsModel):
     repo_name: str
@@ -73,8 +76,8 @@ class CiApp(BaseTfVarsModel):
     cd_branch: str = ""
     cd_file: str = ""
     cd_path: str = ""
-    vars: dict[str, str] = {}
-    secrets: dict[str, str] = {}
+    vars: List[NameValue] = Field(default_factory=list)
+    secrets: List[NameValue] = Field(default_factory=list)
 
 
 class App(BaseTfVarsModel):
@@ -83,7 +86,7 @@ class App(BaseTfVarsModel):
     redis: bool = False
     rabbitmq: bool = False
     access_roles: AppAccessRoles = AppAccessRoles()
-    ci: dict[str, CiApp] = {}
+    ci: CiApp = Field(default_factory=list)
 
 
 class Cloud(BaseTfVarsModel):
