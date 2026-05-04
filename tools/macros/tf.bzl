@@ -9,6 +9,7 @@ load(
     "tf_fmt_test",
     "tf_init",
     "tf_plan",
+    "tf_output",
     "tf_validate_test",
 )
 load("@svetoch_bazel_lib//tools/rules:json_gen.bzl", "json_gen")
@@ -155,7 +156,6 @@ def tf(
         init = ":init",
         tags = ["manual"],
     )
-
 
     tf_binary(
         name = "tf",
