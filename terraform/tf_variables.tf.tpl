@@ -26,7 +26,6 @@ variable "ci" {
   type = object(
     {
       type                 = string
-      group                = string
       bazelisk_img_version = optional(string,"")
     }
   )
@@ -80,10 +79,11 @@ variable "envs" {
               ci       = map(
                 object(
                   {
-                    repo_name = string
-                    cd_branch = optional(string)
-                    cd_file   = optional(string)
-                    cd_path   = optional(string)
+                    repo_name  = string
+                    repo_group = string
+                    cd_branch  = optional(string)
+                    cd_file    = optional(string)
+                    cd_path    = optional(string)
                     vars = optional(
                       object(
                         {
