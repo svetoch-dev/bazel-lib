@@ -132,7 +132,6 @@ class Repo(BaseTfVarsModel):
 
 class Ci(BaseTfVarsModel):
     type: Literal["gl", "gha"]
-    group: str
     bazelisk_img_version: str = ""
 
 
