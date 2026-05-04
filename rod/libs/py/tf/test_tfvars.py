@@ -9,6 +9,7 @@ from rod.libs.py.tf.tfvars import (
     Repo,
     tfvars,
     Env,
+    NameValue,
     CiApp,
     App,
     AppAccessRoles,
