@@ -42,7 +42,6 @@ tfvars = TfVars(
     repo={"type": "github", "group": "test", "name": "test"},
     ci={
         "type": "gha",
-        "group": "test",
     },
     envs={"int": env},
 )
