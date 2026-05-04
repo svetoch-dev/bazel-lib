@@ -76,8 +76,8 @@ class CiApp(BaseTfVarsModel):
     cd_branch: str = ""
     cd_file: str = ""
     cd_path: str = ""
-    vars: List[NameValue] = []
-    secrets: List[NameValue] = []
+    vars: list[NameValue] = []
+    secrets: list[NameValue] = []
 
 
 class App(BaseTfVarsModel):
