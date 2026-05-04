@@ -76,8 +76,8 @@ class CiApp(BaseTfVarsModel):
     cd_branch: str = ""
     cd_file: str = ""
     cd_path: str = ""
-    vars: List[NameValue] = Field(default_factory=list)
-    secrets: List[NameValue] = Field(default_factory=list)
+    vars: List[NameValue] = []
+    secrets: List[NameValue] = []
 
 
 class App(BaseTfVarsModel):
@@ -86,7 +86,7 @@ class App(BaseTfVarsModel):
     redis: bool = False
     rabbitmq: bool = False
     access_roles: AppAccessRoles = AppAccessRoles()
-    ci: CiApp = Field(default_factory=list)
+    ci: CiApp = CiApp()
 
 
 class Cloud(BaseTfVarsModel):
