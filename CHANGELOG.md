@@ -1,3 +1,12 @@
+# v0.19.0
+
+Braking changes:
+* `ci.group` attributes are moved to `...app.ci.repo_group`
+
+Features:
+* `tools/macros/tf.bzl` can render variable `ci.type`
+* `terraform/tf_variables.tf.tpl` new app attribute - `ci`
+
 # v0.18.0
 
 Braking changes:
