@@ -54,7 +54,7 @@ def tf(
             "{tf_backend.type}": tf_backend["type"],
             "{env.cloud.name}": tf_env["cloud"]["name"],
             "{repo.type}": tf_vars["repo"]["type"],
-            "{ci.type)": tf_vars["ci"]["type"],
+            "{ci.type}": tf_vars["ci"]["type"],
         },
         template = ":main.tf.tpl",
         out = "main.tf",
