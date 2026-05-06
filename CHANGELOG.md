@@ -1,3 +1,22 @@
+# v0.19.0
+
+Features:
+* `rod/libs/py/settings`
+  * YcSettings class
+  * BazelSettings new `rc_cloud*` properties that are strings with paths to bazelrc files
+* `rod/libs/py/yc/sa`
+  * `sa_create` function that creates yandex cloud service account
+  * `sa_access_key_create` functions that create yandex cloud sevice account access key
+* `rod/scripts/init/tf/prepare/yc` yandex cloud prepare script that
+  * creates yandex sa for tf state bucket access
+  * creates access key for yandex sa
+  * creates `.bazelrc.cloud` file with to populate `AWS_*` env vars needed for accessing tf state
+* `tools/macros/tf`
+  * add `tf_output` to tf macro
+* `rod/libs/py/bazel/rc` functions that serialize bazelrc files to objects and desrilize bazelrc objects to bazelrc files
+
+
+
 # v0.18.0
 
 Braking changes:
