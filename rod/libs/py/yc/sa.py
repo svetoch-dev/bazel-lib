@@ -72,6 +72,7 @@ def sa_create(
     logger.info(f"Service Account {sa_name} created successfully")
     return result.response
 
+
 def sa_create_access_key(
     sa_id: str,
     token: str,
