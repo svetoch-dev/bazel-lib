@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field, computed_field
+from datetime import datetime
 
 
 class YcSettings(BaseSettings):
@@ -7,6 +8,9 @@ class YcSettings(BaseSettings):
         validation_alias="YC_TOKEN",
     )
     tf_state_sa: str = "tf-state"
+    user: str = "not identified"
+
+    date: datetime = datetime.now()
 
 
 class LogSettings(BaseSettings):
@@ -23,6 +27,9 @@ class BazelSettings(BaseSettings):
 
     tf_env_dir_override: str | None = None
     tf_product_dir_override: str | None = None
+    rc_cloud_yc_override: str | None = None
+    rc_cloud_gcp_override: str | None = None
+    rc_cloud_override: str | None = None
 
     @computed_field
     @property
@@ -52,6 +59,30 @@ class BazelSettings(BaseSettings):
     # in the root of every project
     def tfvars_file(self) -> str:
         return f"{self.workspace}/terraform.tfvars.json"
+
+    @computed_field
+    @property
+    # Relative to workspace root
+    def rc_cloud(self) -> str:
+        if self.rc_cloud_override:
+            return self.rc_cloud_override
+        return f"{self.workspace}/.bazelrc.cloud"
+
+    @computed_field
+    @property
+    # Relative to workspace root
+    def rc_cloud_yc(self) -> str:
+        if self.rc_cloud_yc_override:
+            return self.rc_cloud_yc_override
+        return f"{self.workspace}/.bazelrc.cloud.yc"
+
+    @computed_field
+    @property
+    # Relative to workspace root
+    def rc_cloud_gcp(self) -> str:
+        if self.rc_cloud_gcp_override:
+            return self.rc_cloud_gcp_override
+        return f"{self.workspace}/.bazelrc.cloud.gcp"
 
 
 log_settings = LogSettings()
