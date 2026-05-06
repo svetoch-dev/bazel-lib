@@ -3,11 +3,15 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from rod.libs.py.yc.sa import (
+    AccessKey,
+    AccessKeyServiceStub,
+    CreateAccessKeyRequest,
     CreateServiceAccountRequest,
     ListServiceAccountsRequest,
     ServiceAccount,
     ServiceAccountServiceStub,
     sa_create,
+    sa_create_access_key,
 )
 
 
@@ -82,6 +86,42 @@ class TestSaCreate(unittest.TestCase):
             operation,
             response_type=ServiceAccount,
         )
+
+
+class TestSaCreateAccessKey(unittest.TestCase):
+    @patch("rod.libs.py.yc.sa.SDK")
+    def test_creates_access_key(self, mock_sdk_cls):
+        sa_id = "service-account-id"
+        token = "iam-token"
+        description = "terraform state access"
+
+        access_key = AccessKey(id="access-key-id")
+        secret = "secret-value"
+        access_key_service = MagicMock()
+        access_key_service.Create.return_value = SimpleNamespace(
+            access_key=access_key,
+            secret=secret,
+        )
+
+        sdk = MagicMock()
+        sdk.client.return_value = access_key_service
+        mock_sdk_cls.return_value = sdk
+
+        result = sa_create_access_key(
+            sa_id,
+            token,
+            description,
+            logger=MagicMock(),
+        )
+
+        self.assertEqual(result, (access_key, secret))
+        mock_sdk_cls.assert_called_once_with(iam_token=token)
+        sdk.client.assert_called_once_with(AccessKeyServiceStub)
+        access_key_service.Create.assert_called_once()
+        create_request = access_key_service.Create.call_args.args[0]
+        self.assertIsInstance(create_request, CreateAccessKeyRequest)
+        self.assertEqual(create_request.service_account_id, sa_id)
+        self.assertEqual(create_request.description, description)
 
 
 if __name__ == "__main__":
