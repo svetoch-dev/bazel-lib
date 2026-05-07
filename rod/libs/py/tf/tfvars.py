@@ -68,7 +68,7 @@ class Network(BaseTfVarsModel):
 
 
 class AppRepo(BaseTfVarsModel):
-    name: str
+    name: str = ""
     group: str = ""
 
 
