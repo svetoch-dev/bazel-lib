@@ -67,19 +67,15 @@ class Network(BaseTfVarsModel):
     k8s_service_cidr: str
 
 
-class NameValue(BaseTfVarsModel):
+class AppRepo(BaseTfVarsModel):
     name: str
-    value: str
+    group: str = ""
 
 
-class CiApp(BaseTfVarsModel):
-    repo_name: str = ""
-    repo_group: str = ""
-    cd_branch: str = ""
-    cd_file: str = ""
-    cd_path: str = ""
-    vars: list[NameValue] = []
-    secrets: list[NameValue] = []
+class AppCD(BaseTfVarsModel):
+    branch: str = ""
+    file: str = ""
+    tag_path: str = ""
 
 
 class App(BaseTfVarsModel):
@@ -88,7 +84,8 @@ class App(BaseTfVarsModel):
     redis: bool = False
     rabbitmq: bool = False
     access_roles: AppAccessRoles = AppAccessRoles()
-    ci: CiApp = CiApp()
+    repo: AppRepo = AppRepo()
+    cd: AppCD = AppCD()
 
 
 class Cloud(BaseTfVarsModel):
