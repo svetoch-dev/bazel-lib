@@ -9,7 +9,18 @@ py_library(
     srcs = ["sa.py"],
     visibility = ["//visibility:public"],
     deps = [
+        ":client",
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("yandexcloud"),
+    ],
+)
+
+py_library(
+    name = "client",
+    srcs = ["client.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("requests"),
         requirement("yandexcloud"),
     ],
 )
@@ -21,6 +32,7 @@ py_test(
     ),
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("requests"),
         requirement("yandexcloud"),
     ],
 )

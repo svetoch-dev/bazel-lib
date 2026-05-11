@@ -1,16 +1,13 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field, computed_field
-from datetime import datetime
 
 
 class YcSettings(BaseSettings):
-    token: str = Field(
-        validation_alias="YC_TOKEN",
-    )
     tf_state_sa: str = "tf-state"
-    user: str = "not identified"
-
-    date: datetime = datetime.now()
+    caller: str = Field(
+        validation_alias="USER",
+        default="not identified",
+    )
 
 
 class LogSettings(BaseSettings):

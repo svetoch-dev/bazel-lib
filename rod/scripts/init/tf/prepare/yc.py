@@ -3,6 +3,7 @@ from rod.libs.py.bazel.rc import bazelrc_parse, bazelrc_create
 from rod.libs.py.settings import YcSettings, bazel_settings
 from rod.libs.py.utils.logger import CliLogger
 from pathlib import Path
+from datetime import datetime
 
 
 def prepare_yc(folder_id: str) -> bool:
@@ -18,11 +19,10 @@ def prepare_yc(folder_id: str) -> bool:
         f"{bazel_settings.rc_cloud} not found. Trying to create it by creating sa and access_key"
     )
     yc_settings = YcSettings()
-    sa = sa_create(folder_id, yc_settings.token, yc_settings.tf_state_sa)
+    sa = sa_create(folder_id, yc_settings.tf_state_sa)
     access_key, secret = sa_create_access_key(
-       sa.id,
-       yc_settings.token,
-       f"create by {yc_settings.user} user at {yc_settings.date}",
+        sa.id,
+        f"create by {yc_settings.caller} user at {datetime.now()}",
     )
 
     bazelrc_objects = bazelrc_parse(bazel_settings.rc_cloud_yc)
