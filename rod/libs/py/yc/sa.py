@@ -3,7 +3,7 @@ from yandex.cloud.iam.v1.service_account_service_pb2 import (
     CreateServiceAccountRequest,
     ListServiceAccountsRequest,
 )
-from yandex.cloud.iam.v1.service_account_pb2 import ServiceAccount
+from yandex.cloud.iam.v1.service_account_pb2 import ServiceAccount as YcServiceAccount
 from yandex.cloud.iam.v1.service_account_service_pb2_grpc import (
     ServiceAccountServiceStub,
 )
@@ -18,138 +18,109 @@ from rod.libs.py.utils.logger import CliLogger, BaseLogger
 from rod.libs.py.yc.client import sdk_get
 
 
-def _find_sa_by_name(
-    sa_service: ServiceAccountServiceStub,
-    folder_id: str,
-    sa_name: str,
-) -> Optional[ServiceAccount]:
-    """Return a service account whose name matches ``sa_name``.
+class ServiceAccount:
+    """Manage a Yandex Cloud service account in a folder.
 
-    Only the first page is requested because callers use this helper for
-    project setup folders where the service-account count is expected to be
-    below the requested page size.
+    By default, the account is created when it is missing. Set
+    ``create_if_missing`` to False when the caller only needs to look up an
+    existing account.
     """
-    response = sa_service.List(
-        ListServiceAccountsRequest(
-            folder_id=folder_id,
-            page_size=1000,
+
+    def __init__(
+        self,
+        folder_id: str,
+        name: str,
+        token: str = None,
+        logger: BaseLogger = CliLogger("rod.libs.py.yc.sa.ServiceAccount"),
+        create_if_missing: bool = True,
+    ):
+        self.sdk = sdk_get(token)
+        self.folder_id = folder_id
+        self.name = name
+        self.logger = logger
+
+        self._sa = self._find()
+        if self._sa:
+            self.logger.info(f"service account {self.name} found")
+        elif create_if_missing:
+            self.logger.info(f"service account {self.name} not found creating")
+            self._sa = self.create()
+        else:
+            self.logger.info(f"service account {self.name} not found")
+
+    def __getattr__(self, name):
+        return getattr(self._sa, name)
+
+    def __bool__(self):
+        return self._sa is not None
+
+    def _find(self) -> Optional[YcServiceAccount]:
+        """Return the service account whose name matches this instance.
+
+        Only the first page is requested because callers use this helper for
+        project setup folders where the service-account count is expected to be
+        below the requested page size.
+        """
+        sa_service = self.sdk.client(ServiceAccountServiceStub)
+        response = sa_service.List(
+            ListServiceAccountsRequest(
+                folder_id=self.folder_id,
+                page_size=1000,
+            )
         )
-    )
 
-    return next((x for x in response.service_accounts if x.name == sa_name), None)
+        return next((x for x in response.service_accounts if x.name == self.name), None)
 
+    def create(self) -> YcServiceAccount:
+        """Create the configured Yandex Cloud service account.
 
-def sa_get(
-    folder_id: str,
-    sa_name: str,
-    token: str = None,
-    logger: BaseLogger = CliLogger("rod.libs.py.yc.sa.sa_get"),
-) -> Optional[ServiceAccount]:
-    """Get a Yandex Cloud service account by name from a folder.
+        Returns:
+            The newly created service account returned by Yandex Cloud.
+        """
+        sa_service = self.sdk.client(ServiceAccountServiceStub)
 
-    The API client is created from ``sdk_get``, so authentication follows the
-    shared YC resolution order: explicit token, ``YC_TOKEN``, then instance
-    metadata.
-
-    Args:
-        folder_id: Folder ID where the service account should exist.
-        sa_name: Name of the service account to return.
-        token: Optional IAM token used to authenticate Yandex Cloud API requests.
-        logger: Logger used to print status messages.
-
-    Returns:
-        The matching service account, or None when it is not found.
-    """
-    sdk = sdk_get(token)
-    sa_service = sdk.client(ServiceAccountServiceStub)
-    sa = _find_sa_by_name(sa_service, folder_id, sa_name)
-
-    if sa:
-        logger.info(f"service account {sa_name} found")
-    else:
-        logger.info(f"service account {sa_name} not found")
-
-    return sa
-
-
-def sa_create(
-    folder_id: str,
-    sa_name: str,
-    token: str = None,
-    logger: BaseLogger = CliLogger("rod.libs.py.yc.sa.create_sa"),
-) -> ServiceAccount:
-    """Create a Yandex Cloud service account if it does not already exist.
-
-    If a service account with the requested name already exists in the folder,
-    returns the existing account instead of creating a new one. The API client
-    and operation waiter share the SDK returned by ``sdk_get``.
-
-    Args:
-        folder_id: Folder ID where the service account should exist.
-        sa_name: Name of the service account to create or return.
-        token: Optional IAM token used to authenticate Yandex Cloud API requests.
-        logger: Logger used to print status messages.
-
-    Returns:
-        The existing or newly created service account.
-    """
-    sdk = sdk_get(token)
-    sa_service = sdk.client(ServiceAccountServiceStub)
-    sa = _find_sa_by_name(sa_service, folder_id, sa_name)
-
-    if sa:
-        logger.info(f"service account {sa_name} already exists")
-        return sa
-
-    operation = sa_service.Create(
-        CreateServiceAccountRequest(
-            folder_id=folder_id,
-            name=sa_name,
-            description="Description sa needed for accessing tf state",
+        operation = sa_service.Create(
+            CreateServiceAccountRequest(
+                folder_id=self.folder_id,
+                name=self.name,
+                description="Description sa needed for accessing tf state",
+            )
         )
-    )
 
-    result = sdk.wait_operation_and_get_result(
-        operation,
-        response_type=ServiceAccount,
-    )
-
-    logger.info(f"Service Account {sa_name} created successfully")
-    return result.response
-
-
-def sa_create_access_key(
-    sa_id: str,
-    description: str = "",
-    token: str = None,
-    logger: BaseLogger = CliLogger("rod.libs.py.yc.sa.create_sa"),
-) -> Tuple[AccessKey, str]:
-    """Create an AWS-compatible access key for a Yandex Cloud service account.
-
-    The generated secret key is only available in the create response, so
-    callers must persist it immediately if they need to use it later. The access
-    key client is created from ``sdk_get`` and shares the common YC auth
-    resolution order.
-
-    Args:
-        sa_id: Service account ID for which the access key should be created.
-        description: Description to store on the created access key.
-        token: Optional IAM token used to authenticate Yandex Cloud API requests.
-        logger: Logger used to print status messages.
-
-    Returns:
-        A tuple containing the created access key metadata and generated secret key.
-    """
-    sdk = sdk_get(token)
-    access_key_service = sdk.client(AccessKeyServiceStub)
-
-    result = access_key_service.Create(
-        CreateAccessKeyRequest(
-            service_account_id=sa_id,
-            description=description,
+        result = self.sdk.wait_operation_and_get_result(
+            operation,
+            response_type=YcServiceAccount,
         )
-    )
 
-    logger.info(f"Created access key with id={result.access_key.id} for sa_id={sa_id}")
+        self.logger.info(f"Service Account {self.name} created successfully")
+        return result.response
 
-    return result.access_key, result.secret
+    def create_access_key(
+        self,
+        description: str = "",
+    ) -> Tuple[AccessKey, str]:
+        """Create an AWS-compatible access key for this service account.
+
+        The generated secret key is only available in the create response, so
+        callers must persist it immediately if they need to use it later.
+
+        Args:
+            description: Description to store on the created access key.
+
+        Returns:
+            A tuple containing the created access key metadata and generated secret key.
+        """
+        access_key_service = self.sdk.client(AccessKeyServiceStub)
+
+        result = access_key_service.Create(
+            CreateAccessKeyRequest(
+                service_account_id=self.id,
+                description=description,
+            )
+        )
+
+        self.logger.info(
+            f"Created access key with id={result.access_key.id} for sa_id={self.id}"
+        )
+
+        return result.access_key, result.secret

@@ -1,7 +1,7 @@
 import os
 import unittest
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from rod.libs.py.yc.client import AuthError, YcSettings, sdk_get
 from rod.libs.py.yc.sa import (
@@ -12,9 +12,7 @@ from rod.libs.py.yc.sa import (
     ListServiceAccountsRequest,
     ServiceAccount,
     ServiceAccountServiceStub,
-    sa_create,
-    sa_create_access_key,
-    sa_get,
+    YcServiceAccount,
 )
 
 
@@ -94,15 +92,15 @@ class TestYcSettings(unittest.TestCase):
         self.assertFalse(YcSettings().metadata_available())
 
 
-class TestSaGet(unittest.TestCase):
+class TestServiceAccount(unittest.TestCase):
     @patch("rod.libs.py.yc.sa.sdk_get")
     def test_returns_matching_service_account(self, mock_sdk_get):
         folder_id = "folder-id"
         token = "iam-token"
         sa_name = "terraform-sa"
 
-        matching_sa = ServiceAccount(name=sa_name)
-        other_sa = ServiceAccount(name="other-sa")
+        matching_sa = YcServiceAccount(name=sa_name, id="matching-id")
+        other_sa = YcServiceAccount(name="other-sa")
         sa_service = MagicMock()
         sa_service.List.return_value = SimpleNamespace(
             service_accounts=[other_sa, matching_sa]
@@ -111,9 +109,10 @@ class TestSaGet(unittest.TestCase):
         sdk.client.return_value = sa_service
         mock_sdk_get.return_value = sdk
 
-        result = sa_get(folder_id, sa_name, token=token, logger=MagicMock())
+        result = ServiceAccount(folder_id, sa_name, token=token, logger=MagicMock())
 
-        self.assertIs(result, matching_sa)
+        self.assertTrue(result)
+        self.assertEqual(result.id, "matching-id")
         mock_sdk_get.assert_called_once_with(token)
         sdk.client.assert_called_once_with(ServiceAccountServiceStub)
         sa_service.List.assert_called_once()
@@ -123,54 +122,34 @@ class TestSaGet(unittest.TestCase):
         self.assertEqual(list_request.page_size, 1000)
 
     @patch("rod.libs.py.yc.sa.sdk_get")
-    def test_returns_none_when_service_account_missing(self, mock_sdk_get):
+    def test_returns_false_when_service_account_missing_without_create(
+        self,
+        mock_sdk_get,
+    ):
         folder_id = "folder-id"
         token = "iam-token"
         sa_name = "terraform-sa"
 
         sa_service = MagicMock()
         sa_service.List.return_value = SimpleNamespace(
-            service_accounts=[ServiceAccount(name="other-sa")]
+            service_accounts=[YcServiceAccount(name="other-sa")]
         )
         sdk = MagicMock()
         sdk.client.return_value = sa_service
         mock_sdk_get.return_value = sdk
 
-        result = sa_get(folder_id, sa_name, token=token, logger=MagicMock())
-
-        self.assertIsNone(result)
-        mock_sdk_get.assert_called_once_with(token)
-        sdk.client.assert_called_once_with(ServiceAccountServiceStub)
-        sa_service.List.assert_called_once()
-
-
-class TestSaCreate(unittest.TestCase):
-    @patch("rod.libs.py.yc.sa.sdk_get")
-    def test_returns_existing_service_account(self, mock_sdk_get):
-        folder_id = "folder-id"
-        token = "iam-token"
-        sa_name = "terraform-sa"
-
-        existing_sa = ServiceAccount(name=sa_name)
-        other_sa = ServiceAccount(name="other-sa")
-        sa_service = MagicMock()
-        sa_service.List.return_value = SimpleNamespace(
-            service_accounts=[other_sa, existing_sa]
+        result = ServiceAccount(
+            folder_id,
+            sa_name,
+            token=token,
+            logger=MagicMock(),
+            create_if_missing=False,
         )
-        sdk = MagicMock()
-        sdk.client.return_value = sa_service
-        mock_sdk_get.return_value = sdk
 
-        result = sa_create(folder_id, sa_name, token=token, logger=MagicMock())
-
-        self.assertIs(result, existing_sa)
+        self.assertFalse(result)
         mock_sdk_get.assert_called_once_with(token)
         sdk.client.assert_called_once_with(ServiceAccountServiceStub)
         sa_service.List.assert_called_once()
-        list_request = sa_service.List.call_args.args[0]
-        self.assertIsInstance(list_request, ListServiceAccountsRequest)
-        self.assertEqual(list_request.folder_id, folder_id)
-        self.assertEqual(list_request.page_size, 1000)
         sa_service.Create.assert_not_called()
         sdk.wait_operation_and_get_result.assert_not_called()
 
@@ -180,11 +159,11 @@ class TestSaCreate(unittest.TestCase):
         token = "iam-token"
         sa_name = "terraform-sa"
 
-        created_sa = ServiceAccount(name=sa_name)
+        created_sa = YcServiceAccount(name=sa_name, id="created-id")
         operation = MagicMock()
         sa_service = MagicMock()
         sa_service.List.return_value = SimpleNamespace(
-            service_accounts=[ServiceAccount(name="other-sa")]
+            service_accounts=[YcServiceAccount(name="other-sa")]
         )
         sa_service.Create.return_value = operation
         sdk = MagicMock()
@@ -194,11 +173,15 @@ class TestSaCreate(unittest.TestCase):
         )
         mock_sdk_get.return_value = sdk
 
-        result = sa_create(folder_id, sa_name, token=token, logger=MagicMock())
+        result = ServiceAccount(folder_id, sa_name, token=token, logger=MagicMock())
 
-        self.assertIs(result, created_sa)
+        self.assertTrue(result)
+        self.assertEqual(result.id, "created-id")
         mock_sdk_get.assert_called_once_with(token)
-        sdk.client.assert_called_once_with(ServiceAccountServiceStub)
+        self.assertEqual(
+            sdk.client.call_args_list,
+            [call(ServiceAccountServiceStub), call(ServiceAccountServiceStub)],
+        )
         sa_service.List.assert_called_once()
         sa_service.Create.assert_called_once()
         create_request = sa_service.Create.call_args.args[0]
@@ -211,38 +194,49 @@ class TestSaCreate(unittest.TestCase):
         )
         sdk.wait_operation_and_get_result.assert_called_once_with(
             operation,
-            response_type=ServiceAccount,
+            response_type=YcServiceAccount,
         )
 
-
-class TestSaCreateAccessKey(unittest.TestCase):
     @patch("rod.libs.py.yc.sa.sdk_get")
     def test_creates_access_key(self, mock_sdk_get):
+        folder_id = "folder-id"
         sa_id = "service-account-id"
         token = "iam-token"
+        sa_name = "terraform-sa"
         description = "terraform state access"
 
         access_key = AccessKey(id="access-key-id")
         secret = "secret-value"
+        sa_service = MagicMock()
+        sa_service.List.return_value = SimpleNamespace(
+            service_accounts=[YcServiceAccount(name=sa_name, id=sa_id)]
+        )
         access_key_service = MagicMock()
         access_key_service.Create.return_value = SimpleNamespace(
             access_key=access_key,
             secret=secret,
         )
         sdk = MagicMock()
-        sdk.client.return_value = access_key_service
+        sdk.client.side_effect = [sa_service, access_key_service]
         mock_sdk_get.return_value = sdk
 
-        result = sa_create_access_key(
-            sa_id,
-            description=description,
+        service_account = ServiceAccount(
+            folder_id,
+            sa_name,
             token=token,
             logger=MagicMock(),
         )
+        result = service_account.create_access_key(description=description)
 
         self.assertEqual(result, (access_key, secret))
         mock_sdk_get.assert_called_once_with(token)
-        sdk.client.assert_called_once_with(AccessKeyServiceStub)
+        self.assertEqual(
+            sdk.client.call_args_list,
+            [
+                call(ServiceAccountServiceStub),
+                call(AccessKeyServiceStub),
+            ],
+        )
         access_key_service.Create.assert_called_once()
         create_request = access_key_service.Create.call_args.args[0]
         self.assertIsInstance(create_request, CreateAccessKeyRequest)

@@ -1,6 +1,6 @@
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch, call
+from unittest.mock import MagicMock, patch, call
 from pathlib import Path
 
 from rod.scripts.init.tf.prepare.prepare import prepare
@@ -306,16 +306,14 @@ class TestPrepare(unittest.TestCase):
 class TestPrepareYc(unittest.TestCase):
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_create")
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_parse")
-    @patch("rod.scripts.init.tf.prepare.yc.sa_create_access_key")
-    @patch("rod.scripts.init.tf.prepare.yc.sa_create")
+    @patch("rod.scripts.init.tf.prepare.yc.ServiceAccount")
     @patch("rod.scripts.init.tf.prepare.yc.Path.exists")
     @patch("rod.scripts.init.tf.prepare.yc.bazel_settings")
     def test_prepare_yc_exits_when_cloud_rc_exists(
         self,
         mock_bazel_settings,
         mock_exists,
-        mock_sa_create,
-        mock_sa_create_access_key,
+        mock_service_account_cls,
         mock_bazelrc_parse,
         mock_bazelrc_create,
     ):
@@ -324,15 +322,13 @@ class TestPrepareYc(unittest.TestCase):
 
         prepare_yc("folder-123")
 
-        mock_sa_create.assert_not_called()
-        mock_sa_create_access_key.assert_not_called()
+        mock_service_account_cls.assert_not_called()
         mock_bazelrc_parse.assert_not_called()
         mock_bazelrc_create.assert_not_called()
 
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_create")
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_parse")
-    @patch("rod.scripts.init.tf.prepare.yc.sa_create_access_key")
-    @patch("rod.scripts.init.tf.prepare.yc.sa_create")
+    @patch("rod.scripts.init.tf.prepare.yc.ServiceAccount")
     @patch("rod.scripts.init.tf.prepare.yc.YcSettings")
     @patch("rod.scripts.init.tf.prepare.yc.datetime")
     @patch("rod.scripts.init.tf.prepare.yc.Path.exists")
@@ -343,8 +339,7 @@ class TestPrepareYc(unittest.TestCase):
         mock_exists,
         mock_datetime,
         mock_yc_settings,
-        mock_sa_create,
-        mock_sa_create_access_key,
+        mock_service_account_cls,
         mock_bazelrc_parse,
         mock_bazelrc_create,
     ):
@@ -358,11 +353,12 @@ class TestPrepareYc(unittest.TestCase):
             caller="test-user",
         )
         mock_datetime.now.return_value = "2026-05-07"
-        mock_sa_create.return_value = SimpleNamespace(id="sa-id")
-        mock_sa_create_access_key.return_value = (
+        service_account = MagicMock()
+        service_account.create_access_key.return_value = (
             SimpleNamespace(key_id="access-key-id"),
             "secret-key-value",
         )
+        mock_service_account_cls.return_value = service_account
 
         bazelrc_objects = [
             bazelrc_str_to_obj("build --action_env AWS_ACCESS_KEY_ID"),
@@ -375,12 +371,11 @@ class TestPrepareYc(unittest.TestCase):
 
         prepare_yc("folder-123")
 
-        mock_sa_create.assert_called_once_with(
+        mock_service_account_cls.assert_called_once_with(
             "folder-123",
             "tf-state-sa",
         )
-        mock_sa_create_access_key.assert_called_once_with(
-            "sa-id",
+        service_account.create_access_key.assert_called_once_with(
             "create by test-user user at 2026-05-07",
         )
         mock_bazelrc_parse.assert_called_once_with("/tmp/.bazelrc.cloud.yc")
