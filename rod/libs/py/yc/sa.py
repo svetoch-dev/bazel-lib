@@ -3,7 +3,8 @@ from yandex.cloud.iam.v1.service_account_service_pb2 import (
     CreateServiceAccountRequest,
     ListServiceAccountsRequest,
 )
-from yandex.cloud.iam.v1.service_account_pb2 import ServiceAccount as YcServiceAccount
+from yandex.cloud.iam.v1.service_account_pb2 import ServiceAccount
+
 from yandex.cloud.iam.v1.service_account_service_pb2_grpc import (
     ServiceAccountServiceStub,
 )
@@ -57,7 +58,7 @@ class YcServiceAccount:
     def __bool__(self):
         return self._sa is not None
 
-    def _find(self) -> Optional[YcServiceAccount]:
+    def _find(self) -> Optional[ServiceAccount]:
         """Return the service account whose name matches this instance.
 
         Only the first page is requested because callers use this helper for
@@ -74,7 +75,7 @@ class YcServiceAccount:
 
         return next((x for x in response.service_accounts if x.name == self.name), None)
 
-    def create(self) -> YcServiceAccount:
+    def create(self) -> ServiceAccount:
         """Create the configured Yandex Cloud service account.
 
         Returns:
@@ -92,7 +93,7 @@ class YcServiceAccount:
 
         result = self.sdk.wait_operation_and_get_result(
             operation,
-            response_type=YcServiceAccount,
+            response_type=ServiceAccount,
         )
 
         self.logger.info(f"Service Account {self.name} created successfully")

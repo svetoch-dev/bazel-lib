@@ -7,12 +7,13 @@ import sys
 
 
 def create_state() -> None:
-    """
-    Create tf state backends for each env
-    """
-
+    """Create Terraform state backends for all configured environments."""
     tfvars = formatted_tfvars()
-    int_env = next(env_obj for env_name, env_obj in tfvars.envs.items() if env_obj.type == "internal")
+    int_env = next(
+        env_obj
+        for env_name, env_obj in tfvars.envs.items()
+        if env_obj.type == "internal"
+    )
     for env_name, env_obj in tfvars.envs.items():
         if env_obj.tf_backend.type == "gcs":
             created = create_gcs_tf_state(

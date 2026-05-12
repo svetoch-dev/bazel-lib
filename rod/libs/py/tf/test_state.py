@@ -1,26 +1,12 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from google.api_core.exceptions import NotFound
-import grpc
+from yandex.cloud.storage.v1.bucket_pb2 import VERSIONING_ENABLED
 
 from rod.libs.py.tf.state import (
-    ADD,
-    VERSIONING_ENABLED,
-    Bucket,
-    BucketServiceStub,
-    CreateBucketRequest,
-    Empty,
-    GetBucketRequest,
-    UpdateAccessBindingsRequest,
-    UpdateBucketRequest,
     create_gcs_tf_state,
     create_yc_s3_tf_state,
 )
-
-
-class NotFoundRpcError(grpc.RpcError):
-    def code(self):
-        return grpc.StatusCode.NOT_FOUND
 
 
 class TestCreateGcsTfState(unittest.TestCase):
@@ -120,155 +106,77 @@ class TestCreateGcsTfState(unittest.TestCase):
 
 
 class TestCreateYcS3TfState(unittest.TestCase):
-    @patch("rod.libs.py.tf.state.sdk_get")
-    def test_grants_access_when_bucket_already_exists(self, mock_sdk_get):
-        token = "iam-token"
+    @patch("rod.libs.py.tf.state.YcBucket")
+    def test_configures_bucket_lifecycle_and_access(self, mock_bucket_cls):
         folder_id = "folder-id"
         bucket_name = "tf-state-bucket"
         service_account_id = "service-account-id"
 
-        bucket_service = MagicMock()
-        access_operation = MagicMock()
-        bucket_service.UpdateAccessBindings.return_value = access_operation
-
-        sdk = MagicMock()
-        sdk.client.return_value = bucket_service
-        mock_sdk_get.return_value = sdk
+        bucket = MagicMock()
+        mock_bucket_cls.return_value = bucket
+        logger = MagicMock()
 
         result = create_yc_s3_tf_state(
             folder_id,
             bucket_name,
             service_account_id,
-            token=token,
-            logger=MagicMock(),
+            logger=logger,
         )
 
         self.assertTrue(result)
-        mock_sdk_get.assert_called_once_with(token)
-        sdk.client.assert_called_once_with(BucketServiceStub)
-        bucket_service.Get.assert_called_once()
-        get_request = bucket_service.Get.call_args.args[0]
-        self.assertIsInstance(get_request, GetBucketRequest)
-        self.assertEqual(get_request.name, bucket_name)
-        bucket_service.Create.assert_not_called()
-
-        bucket_service.UpdateAccessBindings.assert_called_once()
-        access_request = bucket_service.UpdateAccessBindings.call_args.args[0]
-        self.assertIsInstance(access_request, UpdateAccessBindingsRequest)
-        self.assertEqual(access_request.resource_id, bucket_name)
-        self.assertEqual(len(access_request.access_binding_deltas), 1)
-
-        delta = access_request.access_binding_deltas[0]
-        self.assertEqual(delta.action, ADD)
-        self.assertEqual(delta.access_binding.role_id, "storage.admin")
-        self.assertEqual(delta.access_binding.subject.id, service_account_id)
-        self.assertEqual(delta.access_binding.subject.type, "serviceAccount")
-        sdk.wait_operation_and_get_result.assert_called_once_with(
-            access_operation,
-            response_type=Empty,
+        mock_bucket_cls.assert_called_once()
+        self.assertEqual(
+            mock_bucket_cls.call_args.args,
+            (folder_id, bucket_name),
+        )
+        self.assertIs(mock_bucket_cls.call_args.kwargs["logger"], logger)
+        self.assertEqual(
+            mock_bucket_cls.call_args.kwargs["configs"].versioning, VERSIONING_ENABLED
         )
 
-    @patch("rod.libs.py.tf.state.sdk_get")
-    def test_creates_bucket_when_not_found(self, mock_sdk_get):
-        token = "iam-token"
-        folder_id = "folder-id"
-        bucket_name = "tf-state-bucket"
-        service_account_id = "service-account-id"
-
-        bucket_service = MagicMock()
-        bucket_service.Get.side_effect = NotFoundRpcError()
-        create_operation = MagicMock()
-        update_operation = MagicMock()
-        access_operation = MagicMock()
-        bucket_service.Create.return_value = create_operation
-        bucket_service.Update.return_value = update_operation
-        bucket_service.UpdateAccessBindings.return_value = access_operation
-
-        sdk = MagicMock()
-        sdk.client.return_value = bucket_service
-        mock_sdk_get.return_value = sdk
-
-        result = create_yc_s3_tf_state(
-            folder_id,
-            bucket_name,
-            service_account_id,
-            token=token,
-            logger=MagicMock(),
-        )
-
-        self.assertTrue(result)
-        bucket_service.Create.assert_called_once()
-        create_request = bucket_service.Create.call_args.args[0]
-        self.assertIsInstance(create_request, CreateBucketRequest)
-        self.assertEqual(create_request.name, bucket_name)
-        self.assertEqual(create_request.folder_id, folder_id)
-        self.assertEqual(create_request.default_storage_class, "STANDARD")
-        self.assertFalse(create_request.anonymous_access_flags.read.value)
-        self.assertFalse(create_request.anonymous_access_flags.list.value)
-        self.assertFalse(create_request.anonymous_access_flags.config_read.value)
-        self.assertEqual(create_request.versioning, VERSIONING_ENABLED)
-
-        bucket_service.Update.assert_called_once()
-        update_request = bucket_service.Update.call_args.args[0]
-        self.assertIsInstance(update_request, UpdateBucketRequest)
-        self.assertEqual(update_request.name, bucket_name)
-        self.assertEqual(update_request.update_mask.paths, ["lifecycle_rules"])
-        self.assertEqual(len(update_request.lifecycle_rules), 1)
-
-        lifecycle_rule = update_request.lifecycle_rules[0]
+        bucket.add_lifecycle_rule.assert_called_once()
+        lifecycle_rule = bucket.add_lifecycle_rule.call_args.args[0]
         self.assertEqual(lifecycle_rule.id.value, "delete-old-noncurrent-versions")
         self.assertTrue(lifecycle_rule.enabled)
         self.assertEqual(
             lifecycle_rule.noncurrent_expiration.noncurrent_days.value,
             200,
         )
-        self.assertEqual(
-            sdk.wait_operation_and_get_result.call_args_list[0].args,
-            (create_operation,),
-        )
-        self.assertEqual(
-            sdk.wait_operation_and_get_result.call_args_list[0].kwargs,
-            {"response_type": Bucket},
-        )
-        self.assertEqual(
-            sdk.wait_operation_and_get_result.call_args_list[1].args,
-            (update_operation,),
-        )
-        self.assertEqual(
-            sdk.wait_operation_and_get_result.call_args_list[1].kwargs,
-            {"response_type": Bucket},
-        )
-        self.assertEqual(
-            sdk.wait_operation_and_get_result.call_args_list[2].args,
-            (access_operation,),
-        )
-        self.assertEqual(
-            sdk.wait_operation_and_get_result.call_args_list[2].kwargs,
-            {"response_type": Empty},
-        )
 
-    @patch("rod.libs.py.tf.state.sdk_get")
-    def test_returns_false_on_unexpected_exception(self, mock_sdk_get):
-        token = "iam-token"
-        folder_id = "folder-id"
-        bucket_name = "tf-state-bucket"
-        service_account_id = "service-account-id"
+        bucket.add_admin.assert_called_once()
+        subject = bucket.add_admin.call_args.args[0]
+        self.assertEqual(subject.id, service_account_id)
+        self.assertEqual(subject.type, "serviceAccount")
 
-        bucket_service = MagicMock()
-        bucket_service.Get.side_effect = RuntimeError("boom")
-
-        sdk = MagicMock()
-        sdk.client.return_value = bucket_service
-        mock_sdk_get.return_value = sdk
+    @patch("rod.libs.py.tf.state.YcBucket")
+    def test_returns_false_when_bucket_setup_fails(self, mock_bucket_cls):
+        mock_bucket_cls.side_effect = RuntimeError("boom")
+        logger = MagicMock()
 
         result = create_yc_s3_tf_state(
-            folder_id,
-            bucket_name,
-            service_account_id,
-            token=token,
-            logger=MagicMock(),
+            "folder-id",
+            "tf-state-bucket",
+            "service-account-id",
+            logger=logger,
         )
 
         self.assertFalse(result)
-        bucket_service.Create.assert_not_called()
-        bucket_service.UpdateAccessBindings.assert_not_called()
+        logger.error.assert_called_once()
+
+    @patch("rod.libs.py.tf.state.YcBucket")
+    def test_returns_false_when_access_binding_fails(self, mock_bucket_cls):
+        bucket = MagicMock()
+        bucket.add_admin.side_effect = RuntimeError("boom")
+        mock_bucket_cls.return_value = bucket
+        logger = MagicMock()
+
+        result = create_yc_s3_tf_state(
+            "folder-id",
+            "tf-state-bucket",
+            "service-account-id",
+            logger=logger,
+        )
+
+        self.assertFalse(result)
+        bucket.add_lifecycle_rule.assert_called_once()
+        logger.error.assert_called_once()

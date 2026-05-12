@@ -7,13 +7,14 @@ from datetime import datetime
 
 
 def prepare_yc(folder_id: str) -> bool:
+    """Create the Yandex Cloud credentials rc file when it is missing."""
     logger = CliLogger("rod.scripts.init.tf.prepare.yc")
 
     rc_cloud = Path(bazel_settings.rc_cloud)
 
     if rc_cloud.exists():
         logger.info(f"{bazel_settings.rc_cloud} exists exiting")
-        return
+        return True
 
     logger.info(
         f"{bazel_settings.rc_cloud} not found. Trying to create it by creating sa and access_key"
@@ -40,3 +41,4 @@ def prepare_yc(folder_id: str) -> bool:
                 obj.o_run_env = "AWS_SECRET_ACCESS_KEY=" + secret
 
     bazelrc_create(bazel_settings.rc_cloud, bazelrc_objects)
+    return True

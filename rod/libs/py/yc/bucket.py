@@ -1,14 +1,14 @@
 import grpc
-from google.protobuf.wrappers_pb2 import BoolValue
+from dataclasses import dataclass, field
 from google.protobuf.field_mask_pb2 import FieldMask
+from google.protobuf.wrappers_pb2 import BoolValue
 from yandex.cloud.storage.v1.bucket_pb2 import (
     VERSIONING_DISABLED,
     AnonymousAccessFlags,
-    Versioning,
-    LifecycleRule,
     Bucket,
+    LifecycleRule,
+    Versioning,
 )
-
 from yandex.cloud.access.access_pb2 import (
     ADD,
     AccessBinding,
@@ -23,13 +23,14 @@ from yandex.cloud.storage.v1.bucket_service_pb2 import (
 )
 from yandex.cloud.storage.v1.bucket_service_pb2_grpc import BucketServiceStub
 
-
 from rod.libs.py.utils.logger import BaseLogger, CliLogger
 from rod.libs.py.yc.client import sdk_get
-from dataclasses import dataclass, field
+
 
 @dataclass
 class YcBucketConfigs:
+    """Configuration values used when creating a Yandex Object Storage bucket."""
+
     default_storage_class: str = "STANDARD"
     anonymous_access_flags: AnonymousAccessFlags = field(
         default_factory=lambda: AnonymousAccessFlags(
@@ -39,7 +40,6 @@ class YcBucketConfigs:
         )
     )
     versioning: Versioning = VERSIONING_DISABLED
-
 
 
 class YcBucket:
@@ -108,7 +108,6 @@ class YcBucket:
             )
         )
 
-
         result = self.sdk.wait_operation_and_get_result(
             operation,
             response_type=Bucket,
@@ -117,20 +116,20 @@ class YcBucket:
         return result.response
 
     def add_lifecycle_rule(self, rule: LifecycleRule) -> None:
+        """Replace bucket lifecycle rules with the provided rule."""
         bucket_service = self.sdk.client(BucketServiceStub)
         operation = bucket_service.Update(
             UpdateBucketRequest(
                 name=self.name,
                 update_mask=FieldMask(paths=["lifecycle_rules"]),
-                lifecycle_rules=[
-                    rule
-                ],
+                lifecycle_rules=[rule],
             )
         )
         self.sdk.wait_operation_and_get_result(operation, response_type=Bucket)
         self.logger.info(f"bucket {self.name} rule updated successfully")
 
     def add_admin(self, subject: Subject) -> None:
+        """Grant storage.admin on this bucket to the given subject."""
         bucket_service = self.sdk.client(BucketServiceStub)
         operation = bucket_service.UpdateAccessBindings(
             UpdateAccessBindingsRequest(
@@ -151,5 +150,3 @@ class YcBucket:
             f"granted storage.admin on yc s3 tf state bucket {self.name} "
             f"to {subject}."
         )
-
-   

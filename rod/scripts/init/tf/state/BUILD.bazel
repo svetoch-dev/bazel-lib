@@ -14,8 +14,8 @@ py_binary(
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/tf",
         "@svetoch_bazel_lib//rod/libs/py/utils",
-        "@svetoch_bazel_lib//rod/libs/py/yc:sa",
         "@svetoch_bazel_lib//rod/libs/py/yc:bucket",
+        "@svetoch_bazel_lib//rod/libs/py/yc:sa",
     ],
 )
 
@@ -28,6 +28,7 @@ py_test(
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/tf",
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/yc:bucket",
         "@svetoch_bazel_lib//rod/libs/py/yc:sa",
     ],
 )

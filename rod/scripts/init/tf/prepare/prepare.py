@@ -16,7 +16,7 @@ def prepare() -> None:
                 sys.exit(1)
         elif env_obj.cloud.name == "yc":
             if env_obj.type != "internal":
-               continue 
+                continue
             prepared = prepare_yc(env_obj.cloud.folder_id)
             if not prepared:
                 sys.exit(1)

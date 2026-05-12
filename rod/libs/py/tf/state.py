@@ -1,7 +1,6 @@
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 from rod.libs.py.utils.logger import CliLogger, BaseLogger
-from rod.libs.py.yc.client import sdk_get
 from rod.libs.py.yc.bucket import YcBucketConfigs, YcBucket
 
 from yandex.cloud.storage.v1.bucket_pb2 import VERSIONING_ENABLED, LifecycleRule
@@ -69,10 +68,13 @@ def create_yc_s3_tf_state(
     folder_id: str,
     bucket_name: str,
     sa_id: str,
-    logger: BaseLogger = None ,
+    logger: BaseLogger = None,
 ) -> bool:
-    """
-    Ensure that a Yandex Object Storage bucket for Terraform state exists.
+    """Ensure that a Yandex Object Storage bucket for Terraform state exists.
+
+    The bucket is created with versioning enabled, receives a lifecycle rule
+    that removes old noncurrent object versions, and grants storage.admin to
+    the service account that will read and write Terraform state.
 
     Args:
         folder_id: Yandex Cloud folder ID where the bucket should exist.
@@ -85,7 +87,7 @@ def create_yc_s3_tf_state(
         account admin binding is applied. False on unexpected errors.
     """
     if not logger:
-       logger = CliLogger("rod.libs.py.tf.state.create_yc_s3_tf_state")
+        logger = CliLogger("rod.libs.py.tf.state.create_yc_s3_tf_state")
 
     try:
         configs = YcBucketConfigs()

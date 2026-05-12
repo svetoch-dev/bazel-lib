@@ -4,13 +4,17 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
 
 import grpc
-from rod.libs.py.yc.bucket import (
+from yandex.cloud.storage.v1.bucket_pb2 import (
     VERSIONING_ENABLED,
     Bucket,
+)
+
+from rod.libs.py.yc.bucket import (
     BucketServiceStub,
     CreateBucketRequest,
     GetBucketRequest,
     YcBucket,
+    YcBucketConfigs,
 )
 from rod.libs.py.yc.client import AuthError, YcSettings, sdk_get
 from rod.libs.py.yc.sa import (
@@ -19,9 +23,9 @@ from rod.libs.py.yc.sa import (
     CreateAccessKeyRequest,
     CreateServiceAccountRequest,
     ListServiceAccountsRequest,
-    ServiceAccount,
     ServiceAccountServiceStub,
     YcServiceAccount,
+    ServiceAccount,
 )
 
 
@@ -116,8 +120,8 @@ class TestServiceAccount(unittest.TestCase):
         token = "iam-token"
         sa_name = "terraform-sa"
 
-        matching_sa = YcServiceAccount(name=sa_name, id="matching-id")
-        other_sa = YcServiceAccount(name="other-sa")
+        matching_sa = ServiceAccount(name=sa_name, id="matching-id")
+        other_sa = ServiceAccount(name="other-sa")
         sa_service = MagicMock()
         sa_service.List.return_value = SimpleNamespace(
             service_accounts=[other_sa, matching_sa]
@@ -126,7 +130,7 @@ class TestServiceAccount(unittest.TestCase):
         sdk.client.return_value = sa_service
         mock_sdk_get.return_value = sdk
 
-        result = ServiceAccount(folder_id, sa_name, token=token, logger=MagicMock())
+        result = YcServiceAccount(folder_id, sa_name, token=token, logger=MagicMock())
 
         self.assertTrue(result)
         self.assertEqual(result.id, "matching-id")
@@ -149,13 +153,13 @@ class TestServiceAccount(unittest.TestCase):
 
         sa_service = MagicMock()
         sa_service.List.return_value = SimpleNamespace(
-            service_accounts=[YcServiceAccount(name="other-sa")]
+            service_accounts=[ServiceAccount(name="other-sa")]
         )
         sdk = MagicMock()
         sdk.client.return_value = sa_service
         mock_sdk_get.return_value = sdk
 
-        result = ServiceAccount(
+        result = YcServiceAccount(
             folder_id,
             sa_name,
             token=token,
@@ -176,11 +180,11 @@ class TestServiceAccount(unittest.TestCase):
         token = "iam-token"
         sa_name = "terraform-sa"
 
-        created_sa = YcServiceAccount(name=sa_name, id="created-id")
+        created_sa = ServiceAccount(name=sa_name, id="created-id")
         operation = MagicMock()
         sa_service = MagicMock()
         sa_service.List.return_value = SimpleNamespace(
-            service_accounts=[YcServiceAccount(name="other-sa")]
+            service_accounts=[ServiceAccount(name="other-sa")]
         )
         sa_service.Create.return_value = operation
         sdk = MagicMock()
@@ -190,7 +194,7 @@ class TestServiceAccount(unittest.TestCase):
         )
         mock_sdk_get.return_value = sdk
 
-        result = ServiceAccount(folder_id, sa_name, token=token, logger=MagicMock())
+        result = YcServiceAccount(folder_id, sa_name, token=token, logger=MagicMock())
 
         self.assertTrue(result)
         self.assertEqual(result.id, "created-id")
@@ -211,7 +215,7 @@ class TestServiceAccount(unittest.TestCase):
         )
         sdk.wait_operation_and_get_result.assert_called_once_with(
             operation,
-            response_type=YcServiceAccount,
+            response_type=ServiceAccount,
         )
 
     @patch("rod.libs.py.yc.sa.sdk_get")
@@ -226,7 +230,7 @@ class TestServiceAccount(unittest.TestCase):
         secret = "secret-value"
         sa_service = MagicMock()
         sa_service.List.return_value = SimpleNamespace(
-            service_accounts=[YcServiceAccount(name=sa_name, id=sa_id)]
+            service_accounts=[ServiceAccount(name=sa_name, id=sa_id)]
         )
         access_key_service = MagicMock()
         access_key_service.Create.return_value = SimpleNamespace(
@@ -237,7 +241,7 @@ class TestServiceAccount(unittest.TestCase):
         sdk.client.side_effect = [sa_service, access_key_service]
         mock_sdk_get.return_value = sdk
 
-        service_account = ServiceAccount(
+        service_account = YcServiceAccount(
             folder_id,
             sa_name,
             token=token,
@@ -268,14 +272,14 @@ class TestBucket(unittest.TestCase):
         token = "iam-token"
         bucket_name = "terraform-state"
 
-        existing_bucket = YcBucket(name=bucket_name, folder_id=folder_id)
+        existing_bucket = Bucket(name=bucket_name, folder_id=folder_id)
         bucket_service = MagicMock()
         bucket_service.Get.return_value = existing_bucket
         sdk = MagicMock()
         sdk.client.return_value = bucket_service
         mock_sdk_get.return_value = sdk
 
-        result = Bucket(folder_id, bucket_name, token=token, logger=MagicMock())
+        result = YcBucket(folder_id, bucket_name, token=token, logger=MagicMock())
 
         self.assertTrue(result)
         self.assertEqual(result.folder_id, folder_id)
@@ -294,7 +298,8 @@ class TestBucket(unittest.TestCase):
         token = "iam-token"
         bucket_name = "terraform-state"
 
-        created_bucket = YcBucket(name=bucket_name, folder_id=folder_id)
+        configs = YcBucketConfigs(versioning=VERSIONING_ENABLED)
+        created_bucket = Bucket(name=bucket_name, folder_id=folder_id)
         operation = MagicMock()
         bucket_service = MagicMock()
         bucket_service.Get.side_effect = RpcError(grpc.StatusCode.NOT_FOUND)
@@ -306,7 +311,13 @@ class TestBucket(unittest.TestCase):
         )
         mock_sdk_get.return_value = sdk
 
-        result = Bucket(folder_id, bucket_name, token=token, logger=MagicMock())
+        result = YcBucket(
+            folder_id,
+            bucket_name,
+            token=token,
+            configs=configs,
+            logger=MagicMock(),
+        )
 
         self.assertTrue(result)
         self.assertEqual(result.folder_id, folder_id)
@@ -328,7 +339,7 @@ class TestBucket(unittest.TestCase):
         self.assertEqual(create_request.versioning, VERSIONING_ENABLED)
         sdk.wait_operation_and_get_result.assert_called_once_with(
             operation,
-            response_type=YcBucket,
+            response_type=Bucket,
         )
 
     @patch("rod.libs.py.yc.bucket.sdk_get")
@@ -340,7 +351,7 @@ class TestBucket(unittest.TestCase):
         mock_sdk_get.return_value = sdk
 
         with self.assertRaises(grpc.RpcError):
-            Bucket("folder-id", "terraform-state", logger=MagicMock())
+            YcBucket("folder-id", "terraform-state", logger=MagicMock())
 
         bucket_service.Create.assert_not_called()
         sdk.wait_operation_and_get_result.assert_not_called()

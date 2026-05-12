@@ -306,7 +306,7 @@ class TestPrepare(unittest.TestCase):
 class TestPrepareYc(unittest.TestCase):
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_create")
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_parse")
-    @patch("rod.scripts.init.tf.prepare.yc.ServiceAccount")
+    @patch("rod.scripts.init.tf.prepare.yc.YcServiceAccount")
     @patch("rod.scripts.init.tf.prepare.yc.Path.exists")
     @patch("rod.scripts.init.tf.prepare.yc.bazel_settings")
     def test_prepare_yc_exits_when_cloud_rc_exists(
@@ -328,7 +328,7 @@ class TestPrepareYc(unittest.TestCase):
 
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_create")
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_parse")
-    @patch("rod.scripts.init.tf.prepare.yc.ServiceAccount")
+    @patch("rod.scripts.init.tf.prepare.yc.YcServiceAccount")
     @patch("rod.scripts.init.tf.prepare.yc.YcSettings")
     @patch("rod.scripts.init.tf.prepare.yc.datetime")
     @patch("rod.scripts.init.tf.prepare.yc.Path.exists")
