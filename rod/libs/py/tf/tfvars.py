@@ -67,12 +67,25 @@ class Network(BaseTfVarsModel):
     k8s_service_cidr: str
 
 
+class AppRepo(BaseTfVarsModel):
+    name: str = ""
+    group: str = ""
+
+
+class AppCD(BaseTfVarsModel):
+    branch: str = ""
+    file: str = ""
+    tag_path: str = ""
+
+
 class App(BaseTfVarsModel):
     name: str
     postgres: bool = False
     redis: bool = False
     rabbitmq: bool = False
     access_roles: AppAccessRoles = AppAccessRoles()
+    repo: AppRepo = AppRepo()
+    cd: AppCD = AppCD()
 
 
 class Cloud(BaseTfVarsModel):
@@ -119,7 +132,6 @@ class Repo(BaseTfVarsModel):
 
 class Ci(BaseTfVarsModel):
     type: Literal["gl", "gha"]
-    group: str
     bazelisk_img_version: str = ""
 
 
