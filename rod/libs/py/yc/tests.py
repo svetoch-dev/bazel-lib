@@ -3,6 +3,15 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
 
+import grpc
+from rod.libs.py.yc.bucket import (
+    VERSIONING_ENABLED,
+    Bucket,
+    BucketServiceStub,
+    CreateBucketRequest,
+    GetBucketRequest,
+    YcBucket,
+)
 from rod.libs.py.yc.client import AuthError, YcSettings, sdk_get
 from rod.libs.py.yc.sa import (
     AccessKey,
@@ -14,6 +23,14 @@ from rod.libs.py.yc.sa import (
     ServiceAccountServiceStub,
     YcServiceAccount,
 )
+
+
+class RpcError(grpc.RpcError):
+    def __init__(self, code):
+        self._code = code
+
+    def code(self):
+        return self._code
 
 
 class TestSdkGet(unittest.TestCase):
@@ -242,6 +259,91 @@ class TestServiceAccount(unittest.TestCase):
         self.assertIsInstance(create_request, CreateAccessKeyRequest)
         self.assertEqual(create_request.service_account_id, sa_id)
         self.assertEqual(create_request.description, description)
+
+
+class TestBucket(unittest.TestCase):
+    @patch("rod.libs.py.yc.bucket.sdk_get")
+    def test_returns_existing_bucket(self, mock_sdk_get):
+        folder_id = "folder-id"
+        token = "iam-token"
+        bucket_name = "terraform-state"
+
+        existing_bucket = YcBucket(name=bucket_name, folder_id=folder_id)
+        bucket_service = MagicMock()
+        bucket_service.Get.return_value = existing_bucket
+        sdk = MagicMock()
+        sdk.client.return_value = bucket_service
+        mock_sdk_get.return_value = sdk
+
+        result = Bucket(folder_id, bucket_name, token=token, logger=MagicMock())
+
+        self.assertTrue(result)
+        self.assertEqual(result.folder_id, folder_id)
+        mock_sdk_get.assert_called_once_with(token)
+        sdk.client.assert_called_once_with(BucketServiceStub)
+        bucket_service.Get.assert_called_once()
+        get_request = bucket_service.Get.call_args.args[0]
+        self.assertIsInstance(get_request, GetBucketRequest)
+        self.assertEqual(get_request.name, bucket_name)
+        bucket_service.Create.assert_not_called()
+        sdk.wait_operation_and_get_result.assert_not_called()
+
+    @patch("rod.libs.py.yc.bucket.sdk_get")
+    def test_creates_bucket_when_missing(self, mock_sdk_get):
+        folder_id = "folder-id"
+        token = "iam-token"
+        bucket_name = "terraform-state"
+
+        created_bucket = YcBucket(name=bucket_name, folder_id=folder_id)
+        operation = MagicMock()
+        bucket_service = MagicMock()
+        bucket_service.Get.side_effect = RpcError(grpc.StatusCode.NOT_FOUND)
+        bucket_service.Create.return_value = operation
+        sdk = MagicMock()
+        sdk.client.return_value = bucket_service
+        sdk.wait_operation_and_get_result.return_value = SimpleNamespace(
+            response=created_bucket,
+        )
+        mock_sdk_get.return_value = sdk
+
+        result = Bucket(folder_id, bucket_name, token=token, logger=MagicMock())
+
+        self.assertTrue(result)
+        self.assertEqual(result.folder_id, folder_id)
+        mock_sdk_get.assert_called_once_with(token)
+        self.assertEqual(
+            sdk.client.call_args_list,
+            [call(BucketServiceStub), call(BucketServiceStub)],
+        )
+        bucket_service.Get.assert_called_once()
+        bucket_service.Create.assert_called_once()
+        create_request = bucket_service.Create.call_args.args[0]
+        self.assertIsInstance(create_request, CreateBucketRequest)
+        self.assertEqual(create_request.folder_id, folder_id)
+        self.assertEqual(create_request.name, bucket_name)
+        self.assertEqual(create_request.default_storage_class, "STANDARD")
+        self.assertFalse(create_request.anonymous_access_flags.read.value)
+        self.assertFalse(create_request.anonymous_access_flags.list.value)
+        self.assertFalse(create_request.anonymous_access_flags.config_read.value)
+        self.assertEqual(create_request.versioning, VERSIONING_ENABLED)
+        sdk.wait_operation_and_get_result.assert_called_once_with(
+            operation,
+            response_type=YcBucket,
+        )
+
+    @patch("rod.libs.py.yc.bucket.sdk_get")
+    def test_reraises_non_not_found_get_errors(self, mock_sdk_get):
+        bucket_service = MagicMock()
+        bucket_service.Get.side_effect = RpcError(grpc.StatusCode.PERMISSION_DENIED)
+        sdk = MagicMock()
+        sdk.client.return_value = bucket_service
+        mock_sdk_get.return_value = sdk
+
+        with self.assertRaises(grpc.RpcError):
+            Bucket("folder-id", "terraform-state", logger=MagicMock())
+
+        bucket_service.Create.assert_not_called()
+        sdk.wait_operation_and_get_result.assert_not_called()
 
 
 if __name__ == "__main__":

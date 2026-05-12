@@ -18,7 +18,7 @@ from rod.libs.py.utils.logger import CliLogger, BaseLogger
 from rod.libs.py.yc.client import sdk_get
 
 
-class ServiceAccount:
+class YcServiceAccount:
     """Manage a Yandex Cloud service account in a folder.
 
     By default, the account is created when it is missing. Set
@@ -31,9 +31,12 @@ class ServiceAccount:
         folder_id: str,
         name: str,
         token: str = None,
-        logger: BaseLogger = CliLogger("rod.libs.py.yc.sa.ServiceAccount"),
+        logger: BaseLogger = None,
         create_if_missing: bool = True,
     ):
+        if not logger:
+            logger = CliLogger("rod.libs.py.yc.sa.ServiceAccount")
+
         self.sdk = sdk_get(token)
         self.folder_id = folder_id
         self.name = name

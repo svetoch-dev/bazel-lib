@@ -54,10 +54,14 @@ class TestCreateState(unittest.TestCase):
         )
 
     @patch("rod.scripts.init.tf.state.create.create_yc_s3_tf_state")
+    @patch("rod.scripts.init.tf.state.create.ServiceAccount")
+    @patch("rod.scripts.init.tf.state.create.YcSettings")
     @patch("rod.scripts.init.tf.state.create.formatted_tfvars")
     def test_creates_yc_s3_state_for_yc_s3_backend(
         self,
         mock_formatted_tfvars,
+        mock_yc_settings_cls,
+        mock_service_account_cls,
         mock_create_yc_s3_tf_state,
     ):
         cloud_yc = cloud.model_copy(deep=True)
@@ -65,16 +69,67 @@ class TestCreateState(unittest.TestCase):
 
         cloud_yc.id = "asadadadad"
         cloud_yc.name = "yc"
+        cloud_yc.folder_id = "folder-id"
         cloud_yc.location.region = "ru-central1"
         tf_backend_ycs3.type = "s3"
 
         env_obj = SimpleNamespace(tf_backend=tf_backend_ycs3, cloud=cloud_yc)
         mock_formatted_tfvars.return_value = SimpleNamespace(envs={"dev": env_obj})
+        mock_yc_settings_cls.return_value = SimpleNamespace(
+            token="iam-token",
+            tf_state_sa="tf-state-sa",
+        )
+        mock_service_account_cls.return_value = SimpleNamespace(id="service-account-id")
         mock_create_yc_s3_tf_state.return_value = True
 
         create_state()
 
-        mock_create_yc_s3_tf_state.assert_called_once_with()
+        mock_service_account_cls.assert_called_once_with(
+            "folder-id",
+            "tf-state-sa",
+            create_if_missing=False,
+        )
+        mock_create_yc_s3_tf_state.assert_called_once_with(
+            "folder-id",
+            "my-tf-state-bucket",
+            "service-account-id",
+        )
+
+    @patch("rod.scripts.init.tf.state.create.create_yc_s3_tf_state")
+    @patch("rod.scripts.init.tf.state.create.ServiceAccount")
+    @patch("rod.scripts.init.tf.state.create.YcSettings")
+    @patch("rod.scripts.init.tf.state.create.formatted_tfvars")
+    def test_exits_when_yc_s3_service_account_is_missing(
+        self,
+        mock_formatted_tfvars,
+        mock_yc_settings_cls,
+        mock_service_account_cls,
+        mock_create_yc_s3_tf_state,
+    ):
+        cloud_yc = cloud.model_copy(deep=True)
+        tf_backend_ycs3 = tf_backend.model_copy(deep=True)
+
+        cloud_yc.name = "yc"
+        cloud_yc.folder_id = "folder-id"
+        tf_backend_ycs3.type = "s3"
+
+        env_obj = SimpleNamespace(tf_backend=tf_backend_ycs3, cloud=cloud_yc)
+        mock_formatted_tfvars.return_value = SimpleNamespace(envs={"dev": env_obj})
+        mock_yc_settings_cls.return_value = SimpleNamespace(tf_state_sa="tf-state-sa")
+        service_account = MagicMock()
+        service_account.__bool__.return_value = False
+        mock_service_account_cls.return_value = service_account
+
+        with self.assertRaises(SystemExit) as ctx:
+            create_state()
+
+        self.assertEqual(ctx.exception.code, 1)
+        mock_service_account_cls.assert_called_once_with(
+            "folder-id",
+            "tf-state-sa",
+            create_if_missing=False,
+        )
+        mock_create_yc_s3_tf_state.assert_not_called()
 
     @patch("rod.scripts.init.tf.state.create.create_gcs_tf_state")
     @patch("rod.scripts.init.tf.state.create.formatted_tfvars")

@@ -16,6 +16,19 @@ py_library(
 )
 
 py_library(
+    name = "bucket",
+    srcs = ["bucket.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":client",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("grpcio"),
+        requirement("protobuf"),
+        requirement("yandexcloud"),
+    ],
+)
+
+py_library(
     name = "client",
     srcs = ["client.py"],
     visibility = ["//visibility:public"],
@@ -32,6 +45,8 @@ py_test(
     ),
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("grpcio"),
+        requirement("protobuf"),
         requirement("requests"),
         requirement("yandexcloud"),
     ],

@@ -20,3 +20,4 @@ MODULE.bazel.lock
 
 ## Python ##
 venv
+__pycache__
