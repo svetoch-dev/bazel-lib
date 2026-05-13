@@ -89,7 +89,9 @@ class YcBucket:
         bucket_service = self.sdk.client(BucketServiceStub)
 
         try:
-            return bucket_service.Get(GetBucketRequest(name=self.name))
+            return bucket_service.Get(
+                GetBucketRequest(name=self.name, view=GetBucketRequest.VIEW_FULL)
+            )
         except grpc.RpcError as e:
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 return None
@@ -116,13 +118,25 @@ class YcBucket:
         return result.response
 
     def add_lifecycle_rule(self, rule: LifecycleRule) -> None:
-        """Replace bucket lifecycle rules with the provided rule."""
+        """Add a lifecycle rule unless an equivalent rule already exists."""
         bucket_service = self.sdk.client(BucketServiceStub)
+        # Normalize lifecycle rules before comparing protobuf messages.
+        # GetBucketRequest returns rules that apply to all bucket objects with
+        # rule.filter explicitly set to an empty value, so set the same empty filter
+        # on rules where it is missing.
+        if not rule.HasField("filter"):
+            rule.filter.SetInParent()
+
+        if rule in self.lifecycle_rules:
+            self.logger.info(f"rule is already in bucket {self.name} lifecycle_rules")
+            return
+
+        self.lifecycle_rules.append(rule)
         operation = bucket_service.Update(
             UpdateBucketRequest(
                 name=self.name,
                 update_mask=FieldMask(paths=["lifecycle_rules"]),
-                lifecycle_rules=[rule],
+                lifecycle_rules=self.lifecycle_rules,
             )
         )
         self.sdk.wait_operation_and_get_result(operation, response_type=Bucket)

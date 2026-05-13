@@ -73,8 +73,9 @@ def create_yc_s3_tf_state(
     """Ensure that a Yandex Object Storage bucket for Terraform state exists.
 
     The bucket is created with versioning enabled, receives a lifecycle rule
-    that removes old noncurrent object versions, and grants storage.admin to
-    the service account that will read and write Terraform state.
+    that removes old noncurrent object versions when the rule is not already
+    present, and grants storage.admin to the service account that will read and
+    write Terraform state.
 
     Args:
         folder_id: Yandex Cloud folder ID where the bucket should exist.
@@ -84,15 +85,16 @@ def create_yc_s3_tf_state(
 
     Returns:
         True if the bucket exists or is created successfully and the service
-        account admin binding is applied. False on unexpected errors.
+        account admin binding is applied. False if bucket setup, lifecycle
+        configuration, or the access binding update fails.
     """
     if not logger:
         logger = CliLogger("rod.libs.py.tf.state.create_yc_s3_tf_state")
 
-    try:
-        configs = YcBucketConfigs()
-        configs.versioning = VERSIONING_ENABLED
+    configs = YcBucketConfigs()
+    configs.versioning = VERSIONING_ENABLED
 
+    try:
         bucket = YcBucket(folder_id, bucket_name, configs=configs, logger=logger)
 
         noncurrent_rule = LifecycleRule(
@@ -104,7 +106,6 @@ def create_yc_s3_tf_state(
         )
 
         bucket.add_lifecycle_rule(noncurrent_rule)
-
     except Exception as e:
         logger.error(f"yc s3 tf state bucket {bucket_name} creation error: {e}")
         return False

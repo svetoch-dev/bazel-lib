@@ -4,9 +4,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
 
 import grpc
+from google.protobuf.wrappers_pb2 import Int64Value, StringValue
 from yandex.cloud.storage.v1.bucket_pb2 import (
     VERSIONING_ENABLED,
     Bucket,
+    LifecycleRule,
 )
 
 from rod.libs.py.yc.bucket import (
@@ -289,6 +291,7 @@ class TestBucket(unittest.TestCase):
         get_request = bucket_service.Get.call_args.args[0]
         self.assertIsInstance(get_request, GetBucketRequest)
         self.assertEqual(get_request.name, bucket_name)
+        self.assertEqual(get_request.view, GetBucketRequest.VIEW_FULL)
         bucket_service.Create.assert_not_called()
         sdk.wait_operation_and_get_result.assert_not_called()
 
@@ -354,6 +357,92 @@ class TestBucket(unittest.TestCase):
             YcBucket("folder-id", "terraform-state", logger=MagicMock())
 
         bucket_service.Create.assert_not_called()
+        sdk.wait_operation_and_get_result.assert_not_called()
+
+    @patch("rod.libs.py.yc.bucket.sdk_get")
+    def test_add_lifecycle_rule_preserves_existing_rules(self, mock_sdk_get):
+        folder_id = "folder-id"
+        bucket_name = "terraform-state"
+
+        existing_rule = LifecycleRule(
+            id=StringValue(value="keep-recent-versions"),
+            enabled=True,
+            noncurrent_expiration=LifecycleRule.NoncurrentExpiration(
+                noncurrent_days=Int64Value(value=30),
+            ),
+        )
+        new_rule = LifecycleRule(
+            id=StringValue(value="delete-old-noncurrent-versions"),
+            enabled=True,
+            noncurrent_expiration=LifecycleRule.NoncurrentExpiration(
+                noncurrent_days=Int64Value(value=200),
+            ),
+        )
+        existing_bucket = Bucket(
+            name=bucket_name,
+            folder_id=folder_id,
+            lifecycle_rules=[existing_rule],
+        )
+        operation = MagicMock()
+        bucket_service = MagicMock()
+        bucket_service.Get.return_value = existing_bucket
+        bucket_service.Update.return_value = operation
+        sdk = MagicMock()
+        sdk.client.return_value = bucket_service
+        mock_sdk_get.return_value = sdk
+
+        bucket = YcBucket(folder_id, bucket_name, logger=MagicMock())
+        bucket.add_lifecycle_rule(new_rule)
+
+        bucket_service.Update.assert_called_once()
+        update_request = bucket_service.Update.call_args.args[0]
+        self.assertEqual(update_request.name, bucket_name)
+        self.assertEqual(update_request.update_mask.paths, ["lifecycle_rules"])
+        self.assertEqual(
+            [rule.id.value for rule in update_request.lifecycle_rules],
+            ["keep-recent-versions", "delete-old-noncurrent-versions"],
+        )
+        sdk.wait_operation_and_get_result.assert_called_once_with(
+            operation,
+            response_type=Bucket,
+        )
+
+    @patch("rod.libs.py.yc.bucket.sdk_get")
+    def test_add_lifecycle_rule_skips_equivalent_existing_rule(self, mock_sdk_get):
+        folder_id = "folder-id"
+        bucket_name = "terraform-state"
+
+        existing_rule = LifecycleRule(
+            id=StringValue(value="delete-old-noncurrent-versions"),
+            enabled=True,
+            noncurrent_expiration=LifecycleRule.NoncurrentExpiration(
+                noncurrent_days=Int64Value(value=200),
+            ),
+        )
+        existing_rule.filter.SetInParent()
+        new_rule = LifecycleRule(
+            id=StringValue(value="delete-old-noncurrent-versions"),
+            enabled=True,
+            noncurrent_expiration=LifecycleRule.NoncurrentExpiration(
+                noncurrent_days=Int64Value(value=200),
+            ),
+        )
+        existing_bucket = Bucket(
+            name=bucket_name,
+            folder_id=folder_id,
+            lifecycle_rules=[existing_rule],
+        )
+        bucket_service = MagicMock()
+        bucket_service.Get.return_value = existing_bucket
+        sdk = MagicMock()
+        sdk.client.return_value = bucket_service
+        mock_sdk_get.return_value = sdk
+
+        bucket = YcBucket(folder_id, bucket_name, logger=MagicMock())
+        bucket.add_lifecycle_rule(new_rule)
+
+        self.assertTrue(new_rule.HasField("filter"))
+        bucket_service.Update.assert_not_called()
         sdk.wait_operation_and_get_result.assert_not_called()
 
 
