@@ -9,6 +9,8 @@ from rod.libs.py.tf.tfvars import (
     Repo,
     tfvars,
     Env,
+    AppRepo,
+    AppCD,
     App,
     AppAccessRoles,
     TfBackend,
@@ -55,7 +57,7 @@ class TestFormattedTfvars(unittest.TestCase):
         return {
             "company": {"name": "test", "domain": "example.com"},
             "repo": {"name": "test", "type": "github", "group": "test"},
-            "ci": {"type": "gha", "group": "test"},
+            "ci": {"type": "gha"},
             "envs": envs,
         }
 
@@ -139,12 +141,12 @@ class TestFormattedTfvars(unittest.TestCase):
         )
 
     def test_ci_type_accepts_supported_values(self):
-        self.assertEqual(Ci(type="gl", group="test").type, "gl")
-        self.assertEqual(Ci(type="gha", group="test").type, "gha")
+        self.assertEqual(Ci(type="gl").type, "gl")
+        self.assertEqual(Ci(type="gha").type, "gha")
 
     def test_ci_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
-            Ci(type="gitlab", group="test")
+            Ci(type="gitlab")
 
     def test_repo_type_accepts_supported_values(self):
         self.assertEqual(Repo(name="test", type="github", group="test").type, "github")

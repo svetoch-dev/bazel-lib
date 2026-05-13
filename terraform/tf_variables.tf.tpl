@@ -26,7 +26,6 @@ variable "ci" {
   type = object(
     {
       type                 = string
-      group                = string
       bazelisk_img_version = optional(string,"")
     }
   )
@@ -70,13 +69,30 @@ variable "envs" {
             }
           )
         )
-        apps       = map(
+        apps = map(
           object(
             {
-              name         = string
-              postgres     = optional(bool, false)
-              redis        = optional(bool, false)
-              rabbitmq     = optional(bool, false)
+              name     = string
+              postgres = optional(bool, false)
+              redis    = optional(bool, false)
+              rabbitmq = optional(bool, false)
+              repo = optional(
+                object(
+                  {
+                    name  = string
+                    group = optional(string)
+                  }
+                )
+              )
+              cd = optional(
+                object(
+                  {
+                    branch   = optional(string)
+                    file     = optional(string)
+                    tag_path = optional(string)
+                  }
+                )
+              )
               access_roles = optional(
                 object(
                   {
