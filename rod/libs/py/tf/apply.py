@@ -29,7 +29,7 @@ def apply_env_targets(
     search_path = f"{bazel_settings.tf_env_dir}/{env}"
     secrets_target = f"//{bazel_settings.tf_env_dir}/{env}/secrets:apply"
     cloud_target = f"//{bazel_settings.tf_env_dir}/{env}/cloud:apply"
-    query = ["bazel", "query", f'attr(name, "^apply$|^rapply$", "//{search_path}/...")']
+    query = ["bazel", "query", f'attr(name, "^apply$|^mapply$", "//{search_path}/...")']
     return_code, stderr, apply_targets = run_command(query, print_stdout=False)
 
     apply_targets = [t for t in apply_targets if t not in exclude_targets]
