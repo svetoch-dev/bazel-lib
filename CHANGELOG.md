@@ -13,7 +13,13 @@ Features:
   * creates `.bazelrc.cloud` file with to populate `AWS_*` env vars needed for accessing tf state
 * `tools/macros/tf`
   * add `tf_output` to tf macro
+* `rod/libs/py/tf/apply` `rapply` -> `mapply` 
 * `rod/libs/py/bazel/rc` functions that serialize bazelrc files to objects and desrilize bazelrc objects to bazelrc files
+
+Fixes:
+* `rod/libs/py/tf/tfvars`
+  * `AppRepo|AppCD` are None by default
+* `tools/utils/format` dont cast to `str` use `json.encode` instead
 
 
 # v0.19.0
