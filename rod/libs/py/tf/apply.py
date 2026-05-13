@@ -45,7 +45,7 @@ def apply_env_targets(
 def apply_env(
     env: str,
     exclude_targets: list[str] | None = None,
-    logger: BaseLogger = CliLogger("rod.libs.py.tf.apply.apply_env"),
+    logger: BaseLogger = None,
 ) -> bool:
     """
     Finds Bazel apply targets for the given Terraform environment and runs them.
@@ -60,6 +60,9 @@ def apply_env(
         succeed. ``False`` if no matching targets are found or if any target
         execution fails.
     """
+
+    if not logger:
+        logger = CliLogger("rod.libs.py.tf.apply.apply_env")
 
     exclude_targets = exclude_targets or []
 
