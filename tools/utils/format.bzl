@@ -20,7 +20,6 @@ def format_dict(
     for key, value in replacement_dict.items():
         dict_str = dict_str.replace("{" + key + "}", str(value))
 
-
     return json.decode(dict_str)
 
 def formatted_tfvars(state_name = None):
