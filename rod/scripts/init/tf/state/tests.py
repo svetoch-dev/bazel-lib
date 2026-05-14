@@ -152,13 +152,13 @@ class TestCreateState(unittest.TestCase):
         mock_create_gcs_tf_state,
     ):
 
-        cloud_gcp_dev = cloud.model_copy(deep=True)
-        tf_backend_gcs_dev = tf_backend.model_copy(deep=True)
+        cloud_gcp_int = cloud.model_copy(deep=True)
+        tf_backend_gcs_int = tf_backend.model_copy(deep=True)
 
-        cloud_gcp_dev.id = "project-dev"
-        cloud_gcp_dev.location.region = "europe-north1"
-        tf_backend_gcs_dev.type = "gcs"
-        tf_backend_gcs_dev.configs["bucket"] = "bucket-dev"
+        cloud_gcp_int.id = "project-int"
+        cloud_gcp_int.location.region = "europe-north1"
+        tf_backend_gcs_int.type = "gcs"
+        tf_backend_gcs_int.configs["bucket"] = "bucket-int"
 
         cloud_gcp_prd = cloud.model_copy(deep=True)
         tf_backend_gcs_prd = tf_backend.model_copy(deep=True)
@@ -168,10 +168,10 @@ class TestCreateState(unittest.TestCase):
         tf_backend_gcs_prd.type = "gcs"
         tf_backend_gcs_prd.configs["bucket"] = "bucket-prd"
 
-        env_dev = SimpleNamespace(
+        env_int = SimpleNamespace(
             type="internal",
-            tf_backend=tf_backend_gcs_dev,
-            cloud=cloud_gcp_dev,
+            tf_backend=tf_backend_gcs_int,
+            cloud=cloud_gcp_int,
         )
         env_prd = SimpleNamespace(
             type="product",
@@ -180,7 +180,7 @@ class TestCreateState(unittest.TestCase):
         )
         mock_formatted_tfvars.return_value = SimpleNamespace(
             envs={
-                "dev": env_dev,
+                "int": env_int,
                 "prd": env_prd,
             }
         )
@@ -190,8 +190,8 @@ class TestCreateState(unittest.TestCase):
 
         self.assertEqual(mock_create_gcs_tf_state.call_count, 2)
         mock_create_gcs_tf_state.assert_any_call(
-            "project-dev",
-            "bucket-dev",
+            "project-int",
+            "bucket-int",
             "europe-north1",
         )
         mock_create_gcs_tf_state.assert_any_call(
