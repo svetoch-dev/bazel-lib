@@ -83,9 +83,9 @@ class App(BaseTfVarsModel):
     postgres: bool = False
     redis: bool = False
     rabbitmq: bool = False
-    access_roles: AppAccessRoles = AppAccessRoles()
-    repo: AppRepo = AppRepo()
-    cd: AppCD = AppCD()
+    access_roles: AppAccessRoles | None = None
+    repo: AppRepo | None = None
+    cd: AppCD | None = None
 
 
 class Cloud(BaseTfVarsModel):

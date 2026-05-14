@@ -1,0 +1,53 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
+
+py_lint()
+
+py_library(
+    name = "sa",
+    srcs = ["sa.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":client",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("yandexcloud"),
+    ],
+)
+
+py_library(
+    name = "bucket",
+    srcs = ["bucket.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":client",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("grpcio"),
+        requirement("protobuf"),
+        requirement("yandexcloud"),
+    ],
+)
+
+py_library(
+    name = "client",
+    srcs = ["client.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("requests"),
+        requirement("yandexcloud"),
+    ],
+)
+
+py_test(
+    name = "tests",
+    srcs = glob(
+        ["*.py"],
+    ),
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("grpcio"),
+        requirement("protobuf"),
+        requirement("requests"),
+        requirement("yandexcloud"),
+    ],
+)

@@ -1,10 +1,12 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from types import SimpleNamespace
 from google.api_core.exceptions import NotFound
+from yandex.cloud.storage.v1.bucket_pb2 import VERSIONING_ENABLED
 
-from rod.libs.py.tf.state import create_gcs_tf_state
-from rod.libs.py.tf.tfvars import TfBackend, Cloud
+from rod.libs.py.tf.state import (
+    create_gcs_tf_state,
+    create_yc_s3_tf_state,
+)
 
 
 class TestCreateGcsTfState(unittest.TestCase):
@@ -101,3 +103,80 @@ class TestCreateGcsTfState(unittest.TestCase):
         mock_client.get_bucket.assert_called_once_with(bucket_name)
         mock_client.bucket.assert_not_called()
         mock_client.create_bucket.assert_not_called()
+
+
+class TestCreateYcS3TfState(unittest.TestCase):
+    @patch("rod.libs.py.tf.state.YcBucket")
+    def test_configures_bucket_lifecycle_and_access(self, mock_bucket_cls):
+        folder_id = "folder-id"
+        bucket_name = "tf-state-bucket"
+        service_account_id = "service-account-id"
+
+        bucket = MagicMock()
+        mock_bucket_cls.return_value = bucket
+        logger = MagicMock()
+
+        result = create_yc_s3_tf_state(
+            folder_id,
+            bucket_name,
+            service_account_id,
+            logger=logger,
+        )
+
+        self.assertTrue(result)
+        mock_bucket_cls.assert_called_once()
+        self.assertEqual(
+            mock_bucket_cls.call_args.args,
+            (folder_id, bucket_name),
+        )
+        self.assertIs(mock_bucket_cls.call_args.kwargs["logger"], logger)
+        self.assertEqual(
+            mock_bucket_cls.call_args.kwargs["configs"].versioning, VERSIONING_ENABLED
+        )
+
+        bucket.add_lifecycle_rule.assert_called_once()
+        lifecycle_rule = bucket.add_lifecycle_rule.call_args.args[0]
+        self.assertEqual(lifecycle_rule.id.value, "delete-old-noncurrent-versions")
+        self.assertTrue(lifecycle_rule.enabled)
+        self.assertEqual(
+            lifecycle_rule.noncurrent_expiration.noncurrent_days.value,
+            200,
+        )
+
+        bucket.add_admin.assert_called_once()
+        subject = bucket.add_admin.call_args.args[0]
+        self.assertEqual(subject.id, service_account_id)
+        self.assertEqual(subject.type, "serviceAccount")
+
+    @patch("rod.libs.py.tf.state.YcBucket")
+    def test_returns_false_when_bucket_setup_fails(self, mock_bucket_cls):
+        mock_bucket_cls.side_effect = RuntimeError("boom")
+        logger = MagicMock()
+
+        result = create_yc_s3_tf_state(
+            "folder-id",
+            "tf-state-bucket",
+            "service-account-id",
+            logger=logger,
+        )
+
+        self.assertFalse(result)
+        logger.error.assert_called_once()
+
+    @patch("rod.libs.py.tf.state.YcBucket")
+    def test_returns_false_when_access_binding_fails(self, mock_bucket_cls):
+        bucket = MagicMock()
+        bucket.add_admin.side_effect = RuntimeError("boom")
+        mock_bucket_cls.return_value = bucket
+        logger = MagicMock()
+
+        result = create_yc_s3_tf_state(
+            "folder-id",
+            "tf-state-bucket",
+            "service-account-id",
+            logger=logger,
+        )
+
+        self.assertFalse(result)
+        bucket.add_lifecycle_rule.assert_called_once()
+        logger.error.assert_called_once()

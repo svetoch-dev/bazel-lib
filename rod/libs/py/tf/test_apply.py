@@ -13,7 +13,7 @@ class TestApplyEnvTargets(unittest.TestCase):
             [
                 "//terraform/environments/dev/secrets:apply",
                 "//terraform/environments/dev/k8s:apply",
-                "//terraform/environments/dev/repo:rapply",
+                "//terraform/environments/dev/repo:mapply",
                 "//terraform/environments/dev/cloud:apply",
             ],
         )
@@ -26,7 +26,7 @@ class TestApplyEnvTargets(unittest.TestCase):
             [
                 "//terraform/environments/dev/cloud:apply",
                 "//terraform/environments/dev/k8s:apply",
-                "//terraform/environments/dev/repo:rapply",
+                "//terraform/environments/dev/repo:mapply",
                 "//terraform/environments/dev/secrets:apply",
             ],
         )
@@ -34,7 +34,7 @@ class TestApplyEnvTargets(unittest.TestCase):
             [
                 "bazel",
                 "query",
-                'attr(name, "^apply$|^rapply$", "//terraform/environments/dev/...")',
+                'attr(name, "^apply$|^mapply$", "//terraform/environments/dev/...")',
             ],
             print_stdout=False,
         )
@@ -45,7 +45,7 @@ class TestApplyEnvTargets(unittest.TestCase):
             0,
             [],
             [
-                "//terraform/environments/dev/repo:rapply",
+                "//terraform/environments/dev/repo:mapply",
                 "//terraform/environments/dev/cloud:apply",
                 "//terraform/environments/dev/secrets:apply",
             ],
@@ -55,7 +55,7 @@ class TestApplyEnvTargets(unittest.TestCase):
             "dev",
             exclude_targets=[
                 "//terraform/environments/dev/secrets:apply",
-                "//terraform/environments/dev/repo:rapply",
+                "//terraform/environments/dev/repo:mapply",
             ],
         )
 
@@ -119,7 +119,7 @@ class TestApplyEnv(unittest.TestCase):
             [
                 "bazel",
                 "query",
-                'attr(name, "^apply$|^rapply$", "//terraform/environments/development/...")',
+                'attr(name, "^apply$|^mapply$", "//terraform/environments/development/...")',
             ],
             print_stdout=False,
         )
@@ -133,7 +133,7 @@ class TestApplyEnv(unittest.TestCase):
                 [],
                 [
                     "//terraform/environments/development:apply",
-                    "//terraform/environments/development:rapply",
+                    "//terraform/environments/development:mapply",
                 ],
             ),
             (0, [], ["ok"]),
@@ -150,12 +150,12 @@ class TestApplyEnv(unittest.TestCase):
                     [
                         "bazel",
                         "query",
-                        'attr(name, "^apply$|^rapply$", "//terraform/environments/development/...")',
+                        'attr(name, "^apply$|^mapply$", "//terraform/environments/development/...")',
                     ],
                     print_stdout=False,
                 ),
                 call(["bazel", "run", "//terraform/environments/development:apply"]),
-                call(["bazel", "run", "//terraform/environments/development:rapply"]),
+                call(["bazel", "run", "//terraform/environments/development:mapply"]),
             ],
         )
 
@@ -167,7 +167,7 @@ class TestApplyEnv(unittest.TestCase):
                 [],
                 [
                     "//terraform/environments/development:apply",
-                    "//terraform/environments/development:rapply",
+                    "//terraform/environments/development:mapply",
                 ],
             ),
             (0, [], ["ok"]),
@@ -175,7 +175,7 @@ class TestApplyEnv(unittest.TestCase):
 
         result = apply_env(
             "development",
-            exclude_targets=["//terraform/environments/development:rapply"],
+            exclude_targets=["//terraform/environments/development:mapply"],
         )
 
         self.assertTrue(result)
@@ -186,7 +186,7 @@ class TestApplyEnv(unittest.TestCase):
                     [
                         "bazel",
                         "query",
-                        'attr(name, "^apply$|^rapply$", "//terraform/environments/development/...")',
+                        'attr(name, "^apply$|^mapply$", "//terraform/environments/development/...")',
                     ],
                     print_stdout=False,
                 ),
@@ -202,7 +202,7 @@ class TestApplyEnv(unittest.TestCase):
                 [],
                 [
                     "//terraform/environments/development:apply",
-                    "//terraform/environments/development:rapply",
+                    "//terraform/environments/development:mapply",
                 ],
             ),
             (1, ["error"], []),
@@ -218,7 +218,7 @@ class TestApplyEnv(unittest.TestCase):
                     [
                         "bazel",
                         "query",
-                        'attr(name, "^apply$|^rapply$", "//terraform/environments/development/...")',
+                        'attr(name, "^apply$|^mapply$", "//terraform/environments/development/...")',
                     ],
                     print_stdout=False,
                 ),
@@ -233,7 +233,7 @@ class TestApplyEnv(unittest.TestCase):
             [],
             [
                 "//terraform/environments/development:apply",
-                "//terraform/environments/development:rapply",
+                "//terraform/environments/development:mapply",
             ],
         )
 
@@ -241,7 +241,7 @@ class TestApplyEnv(unittest.TestCase):
             "development",
             exclude_targets=[
                 "//terraform/environments/development:apply",
-                "//terraform/environments/development:rapply",
+                "//terraform/environments/development:mapply",
             ],
         )
 
@@ -250,7 +250,7 @@ class TestApplyEnv(unittest.TestCase):
             [
                 "bazel",
                 "query",
-                'attr(name, "^apply$|^rapply$", "//terraform/environments/development/...")',
+                'attr(name, "^apply$|^mapply$", "//terraform/environments/development/...")',
             ],
             print_stdout=False,
         )

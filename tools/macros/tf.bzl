@@ -8,6 +8,7 @@ load(
     "tf_fmt",
     "tf_fmt_test",
     "tf_init",
+    "tf_output",
     "tf_plan",
     "tf_validate_test",
 )
@@ -147,6 +148,13 @@ def tf(
         srcs = [":srcs"],
         init = ":init",
         plan = plan_target,
+        tags = ["manual"],
+    )
+
+    tf_output(
+        name = "output",
+        srcs = [":srcs"],
+        init = ":init",
         tags = ["manual"],
     )
 

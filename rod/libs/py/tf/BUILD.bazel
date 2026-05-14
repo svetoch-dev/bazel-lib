@@ -15,8 +15,13 @@ py_library(
         "@svetoch_bazel_lib//rod/libs/py/helpers",
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/utils",
-        requirement("pydantic"),
+        "@svetoch_bazel_lib//rod/libs/py/yc:bucket",
+        "@svetoch_bazel_lib//rod/libs/py/yc:client",
         requirement("google-cloud-storage"),
+        requirement("grpcio"),
+        requirement("protobuf"),
+        requirement("pydantic"),
+        requirement("yandexcloud"),
     ],
 )
 
@@ -32,7 +37,12 @@ py_test(
         "@svetoch_bazel_lib//rod/libs/py/helpers",
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/utils",
-        requirement("pydantic"),
+        "@svetoch_bazel_lib//rod/libs/py/yc:bucket",
+        "@svetoch_bazel_lib//rod/libs/py/yc:client",
         requirement("google-cloud-storage"),
+        requirement("grpcio"),
+        requirement("protobuf"),
+        requirement("pydantic"),
+        requirement("yandexcloud"),
     ],
 )

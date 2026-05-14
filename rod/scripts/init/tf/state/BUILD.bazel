@@ -11,8 +11,11 @@ py_binary(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/tf",
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/yc:bucket",
+        "@svetoch_bazel_lib//rod/libs/py/yc:sa",
     ],
 )
 
@@ -22,7 +25,10 @@ py_test(
         ["*.py"],
     ),
     deps = [
+        "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/tf",
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/yc:bucket",
+        "@svetoch_bazel_lib//rod/libs/py/yc:sa",
     ],
 )

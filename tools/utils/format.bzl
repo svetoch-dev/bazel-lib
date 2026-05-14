@@ -15,13 +15,7 @@ def format_dict(
     Returns:
        formatted dict
     """
-    dict_str = str(format_dict)
-
-    #we need to replace uppercase bools that returned
-    #by str func because they are not valid in json
-    #spec
-    dict_str = dict_str.replace("True", "true")
-    dict_str = dict_str.replace("False", "false")
+    dict_str = json.encode(format_dict)
 
     for key, value in replacement_dict.items():
         dict_str = dict_str.replace("{" + key + "}", str(value))
