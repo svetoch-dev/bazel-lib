@@ -80,11 +80,9 @@ def bazelrc_obj_to_str(obj: object) -> str:
 
         if name.startswith("o_"):
             option_name = "--" + name[2:]
-            parts.append(option_name)
-            parts.append(str(value))
+            parts.extend([option_name, str(value)])
         elif name == "try_import":
-            parts.append("try-import")
-            parts.append(str(value))
+            parts.extend(["try-import", str(value)])
         elif value == True:
             parts.append(name)
 
