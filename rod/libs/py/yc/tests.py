@@ -1,7 +1,7 @@
 import os
 import unittest
 from types import SimpleNamespace
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, PropertyMock, call, patch
 
 import grpc
 from google.protobuf.wrappers_pb2 import Int64Value, StringValue
@@ -16,6 +16,7 @@ from rod.libs.py.yc.bucket import (
     CreateBucketRequest,
     GetBucketRequest,
     YcBucket,
+    YcBucketObject,
     YcBucketConfigs,
 )
 from rod.libs.py.yc.client import AuthError, YcSettings, sdk_get
@@ -63,21 +64,27 @@ class TestSdkGet(unittest.TestCase):
         mock_sdk_cls.assert_called_once_with(iam_token="env-token")
 
     @patch.dict(os.environ, {}, clear=True)
+    @patch(
+        "rod.libs.py.yc.client.YcSettings.metadata_token",
+        new_callable=PropertyMock,
+    )
     @patch("rod.libs.py.yc.client.YcSettings.metadata_available")
     @patch("rod.libs.py.yc.client.SDK")
     def test_uses_metadata_when_no_token_is_available(
         self,
         mock_sdk_cls,
         mock_metadata_available,
+        mock_metadata_token,
     ):
         mock_metadata_available.return_value = True
+        mock_metadata_token.return_value = "metadata-token"
         sdk = MagicMock()
         mock_sdk_cls.return_value = sdk
 
         result = sdk_get()
 
         self.assertIs(result, sdk)
-        mock_sdk_cls.assert_called_once_with()
+        mock_sdk_cls.assert_called_once_with(iam_token="metadata-token")
 
     @patch.dict(os.environ, {}, clear=True)
     @patch("rod.libs.py.yc.client.YcSettings.metadata_available", return_value=False)
@@ -107,12 +114,31 @@ class TestYcSettings(unittest.TestCase):
         )
 
     @patch("rod.libs.py.yc.client.requests.get")
+    def test_metadata_token_fetches_access_token(self, mock_get):
+        response = MagicMock()
+        response.json.return_value = {"access_token": "metadata-token"}
+        mock_get.return_value = response
+
+        self.assertEqual(YcSettings().metadata_token, "metadata-token")
+
+        mock_get.assert_called_once_with(
+            YcSettings().metadata,
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        response.raise_for_status.assert_called_once()
+
+    @patch("rod.libs.py.yc.client.requests.get")
     def test_metadata_available_returns_false_for_request_errors(self, mock_get):
         import requests
 
         mock_get.side_effect = requests.RequestException
 
         self.assertFalse(YcSettings().metadata_available())
+
+    @patch.dict(os.environ, {"YC_TOKEN": "env-token"}, clear=True)
+    def test_token_uses_environment_before_metadata(self):
+        self.assertEqual(YcSettings().token, "env-token")
 
 
 class TestServiceAccount(unittest.TestCase):
@@ -265,6 +291,144 @@ class TestServiceAccount(unittest.TestCase):
         self.assertIsInstance(create_request, CreateAccessKeyRequest)
         self.assertEqual(create_request.service_account_id, sa_id)
         self.assertEqual(create_request.description, description)
+
+
+class TestBucketObject(unittest.TestCase):
+    def test_uses_explicit_token(self):
+        logger = MagicMock()
+
+        bucket_object = YcBucketObject(
+            "bucket",
+            "path/to/state.tfstate",
+            token="iam-token",
+            logger=logger,
+        )
+
+        self.assertEqual(bucket_object.bucket, "bucket")
+        self.assertEqual(bucket_object.key, "path/to/state.tfstate")
+        self.assertEqual(bucket_object.token, "iam-token")
+        self.assertEqual(
+            bucket_object.url,
+            "https://storage.yandexcloud.net/bucket/path/to/state.tfstate",
+        )
+        self.assertIs(bucket_object.logger, logger)
+
+    @patch("rod.libs.py.yc.bucket.YcSettings")
+    def test_raises_when_no_token_is_available(self, mock_settings_cls):
+        mock_settings_cls.return_value = SimpleNamespace(token=None)
+
+        with self.assertRaises(AuthError):
+            YcBucketObject("bucket", "key")
+
+    @patch("rod.libs.py.yc.bucket.requests.head")
+    def test_bool_returns_true_when_object_exists(self, mock_head):
+        mock_head.return_value = SimpleNamespace(status_code=200)
+
+        self.assertTrue(YcBucketObject("bucket", "key", token="iam-token"))
+
+        mock_head.assert_called_once_with(
+            "https://storage.yandexcloud.net/bucket/key",
+            headers={"Authorization": "Bearer iam-token"},
+            timeout=10,
+        )
+
+    @patch("rod.libs.py.yc.bucket.requests.head")
+    def test_bool_returns_false_when_object_is_missing(self, mock_head):
+        mock_head.return_value = SimpleNamespace(status_code=404)
+
+        self.assertFalse(YcBucketObject("bucket", "key", token="iam-token"))
+
+    @patch("rod.libs.py.yc.bucket.requests.get")
+    @patch("rod.libs.py.yc.bucket.requests.head")
+    def test_data_returns_content_when_object_exists(self, mock_head, mock_get):
+        mock_head.return_value = SimpleNamespace(status_code=200)
+        response = MagicMock()
+        response.content = b"state"
+        mock_get.return_value = response
+
+        data = YcBucketObject("bucket", "key", token="iam-token").data
+
+        self.assertEqual(data, b"state")
+        mock_get.assert_called_once_with(
+            "https://storage.yandexcloud.net/bucket/key",
+            headers={"Authorization": "Bearer iam-token"},
+            timeout=30,
+        )
+        response.raise_for_status.assert_called_once()
+
+    @patch("rod.libs.py.yc.bucket.requests.get")
+    @patch("rod.libs.py.yc.bucket.requests.head")
+    def test_data_returns_none_when_object_is_missing(self, mock_head, mock_get):
+        mock_head.return_value = SimpleNamespace(status_code=404)
+
+        data = YcBucketObject("bucket", "key", token="iam-token").data
+
+        self.assertIsNone(data)
+        mock_get.assert_not_called()
+
+    @patch("rod.libs.py.yc.bucket.requests.put")
+    @patch("rod.libs.py.yc.bucket.requests.head")
+    def test_create_puts_object_when_missing(self, mock_head, mock_put):
+        mock_head.return_value = SimpleNamespace(status_code=404)
+        response = MagicMock()
+        mock_put.return_value = response
+
+        YcBucketObject("bucket", "key", token="iam-token", logger=MagicMock()).create(
+            b"state",
+            "application/json",
+        )
+
+        mock_put.assert_called_once_with(
+            "https://storage.yandexcloud.net/bucket/key",
+            headers={
+                "Authorization": "Bearer iam-token",
+                "Content-Type": "application/json",
+            },
+            data=b"state",
+            timeout=30,
+        )
+        response.raise_for_status.assert_called_once()
+
+    @patch("rod.libs.py.yc.bucket.requests.put")
+    @patch("rod.libs.py.yc.bucket.requests.head")
+    def test_create_skips_existing_object(self, mock_head, mock_put):
+        logger = MagicMock()
+        mock_head.return_value = SimpleNamespace(status_code=200)
+
+        YcBucketObject("bucket", "key", token="iam-token", logger=logger).create(
+            b"state",
+            "application/json",
+        )
+
+        mock_put.assert_not_called()
+        logger.info.assert_called_once()
+
+    @patch("rod.libs.py.yc.bucket.requests.delete")
+    @patch("rod.libs.py.yc.bucket.requests.head")
+    def test_delete_deletes_existing_object(self, mock_head, mock_delete):
+        mock_head.return_value = SimpleNamespace(status_code=200)
+        response = MagicMock(status_code=204)
+        mock_delete.return_value = response
+
+        YcBucketObject("bucket", "key", token="iam-token", logger=MagicMock()).delete()
+
+        mock_delete.assert_called_once_with(
+            "https://storage.yandexcloud.net/bucket/key",
+            headers={"Authorization": "Bearer iam-token"},
+            timeout=30,
+        )
+        response.raise_for_status.assert_not_called()
+
+    @patch("rod.libs.py.yc.bucket.requests.delete")
+    @patch("rod.libs.py.yc.bucket.requests.head")
+    def test_delete_skips_missing_object(self, mock_head, mock_delete):
+        logger = MagicMock()
+        mock_head.return_value = SimpleNamespace(status_code=404)
+
+        YcBucketObject("bucket", "key", token="iam-token", logger=logger).delete()
+
+        mock_delete.assert_not_called()
+        logger.info.assert_called_once()
 
 
 class TestBucket(unittest.TestCase):

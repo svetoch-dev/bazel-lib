@@ -23,8 +23,10 @@ from yandex.cloud.storage.v1.bucket_service_pb2 import (
 )
 from yandex.cloud.storage.v1.bucket_service_pb2_grpc import BucketServiceStub
 
+import requests
+
 from rod.libs.py.utils.logger import BaseLogger, CliLogger
-from rod.libs.py.yc.client import sdk_get
+from rod.libs.py.yc.client import AuthError, YcSettings, sdk_get
 
 
 @dataclass
@@ -40,6 +42,103 @@ class YcBucketConfigs:
         )
     )
     versioning: Versioning = VERSIONING_DISABLED
+
+
+class YcBucketObject:
+    """Manage a single object in a Yandex Object Storage bucket over HTTP."""
+
+    def __init__(
+        self,
+        bucket: str,
+        key: str,
+        token: str = None,
+        logger: BaseLogger = None,
+    ):
+        if not logger:
+            logger = CliLogger("rod.libs.py.yc.bucket.BucketObject")
+        self.logger = logger
+
+        settings = YcSettings()
+        if token:
+            self.token = token
+        else:
+            self.token = settings.token
+
+        if not self.token:
+            raise AuthError("no auth methods found")
+
+        self.bucket = bucket
+        self.key = key
+        self.url = f"https://storage.yandexcloud.net/{self.bucket}/{self.key}"
+
+    @property
+    def data(self) -> bytes | None:
+        """Return object bytes, or None when the object does not exist."""
+        if not self:
+            return None
+
+        response = requests.get(
+            self.url,
+            headers={"Authorization": f"Bearer {self.token}"},
+            timeout=30,
+        )
+
+        response.raise_for_status()
+        return response.content
+
+    def create(self, data: bytes, content_type: str) -> None:
+        """Create this object when it does not already exist."""
+        if self:
+            self.logger.info(f"create: BucketObject {self.url} already exists")
+            return
+
+        response = requests.put(
+            self.url,
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": content_type,
+            },
+            data=data,
+            timeout=30,
+        )
+        response.raise_for_status()
+        self.logger.info(f"create: BucketObject {self.url} success!!!")
+
+    def delete(self) -> None:
+        """Delete this object when it exists."""
+        if not self:
+            self.logger.info(f"delete: BucketObject {self.url} does not exists")
+            return
+
+        response = requests.delete(
+            self.url,
+            headers={"Authorization": f"Bearer {self.token}"},
+            timeout=30,
+        )
+
+        if response.status_code in (200, 202, 204):
+            self.logger.info(f"delete: BucketObject {self.url} success!!!")
+            return
+
+        response.raise_for_status()
+        self.logger.info(f"delete: BucketObject {self.url} success!!!")
+
+    def __bool__(self) -> bool:
+        """Return True when the object exists in Yandex Object Storage."""
+        response = requests.head(
+            self.url,
+            headers={"Authorization": f"Bearer {self.token}"},
+            timeout=10,
+        )
+
+        if response.status_code == 200:
+            return True
+
+        if response.status_code == 404:
+            return False
+
+        response.raise_for_status()
+        return False
 
 
 class YcBucket:
@@ -161,6 +260,5 @@ class YcBucket:
         )
         self.sdk.wait_operation_and_get_result(operation)
         self.logger.info(
-            f"granted storage.admin on yc s3 tf state bucket {self.name} "
-            f"to {subject}."
+            f"granted storage.admin on yc s3 tf state bucket {self.name} to {subject.id}."
         )

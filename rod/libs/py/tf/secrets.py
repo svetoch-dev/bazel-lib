@@ -8,8 +8,11 @@ from rod.libs.py.utils.logger import CliLogger, BaseLogger
 def import_secrets(
     env: str,
     secrets: dict[str, ImportSecret],
-    logger: BaseLogger = CliLogger("rod.libs.py.tf.secrets.import_secrets"),
+    logger: BaseLogger = None,
 ) -> bool:
+    if not logger:
+        logger = CliLogger("rod.libs.py.tf.secrets.import_secrets")
+
     os.chdir(bazel_settings.workspace)
     secrets_package = f"//{bazel_settings.tf_env_dir}/{env}/secrets"
     state_list_command = ["bazel", "run", f"{secrets_package}:tf", "state", "list"]

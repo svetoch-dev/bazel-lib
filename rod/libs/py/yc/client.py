@@ -1,6 +1,4 @@
 import os
-from dataclasses import dataclass
-from typing import Optional
 
 import requests
 from yandexcloud import SDK
@@ -12,18 +10,23 @@ class AuthError(Exception):
     pass
 
 
-@dataclass
 class YcSettings:
     """Authentication settings discovered from the local environment."""
 
-    token: Optional[str] = None
+    @property
+    def token(self) -> str | None:
+        """Return an IAM token from YC_TOKEN or instance metadata."""
+        token = os.getenv("YC_TOKEN", None)
+        if token:
+            return token
 
-    def __post_init__(self):
-        if self.token is None:
-            self.token = os.getenv("YC_TOKEN")
+        if self.metadata_available():
+            return self.metadata_token
+
+        return None
 
     @property
-    def metadata(self):
+    def metadata(self) -> str:
         """Metadata endpoint used to request instance service account tokens."""
         m_address = os.getenv("YC_METADATA_ADDR", "169.254.169.254")
         return f"http://{m_address}/computeMetadata/v1/instance/service-accounts/default/token"
@@ -42,13 +45,24 @@ class YcSettings:
         except requests.RequestException:
             return False
 
+    @property
+    def metadata_token(self) -> str:
+        """Fetch an IAM token from the instance metadata endpoint."""
+        response = requests.get(
+            self.metadata,
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        response.raise_for_status()
+        return response.json()["access_token"]
+
 
 def sdk_get(token: str = None) -> SDK:
     """Create a Yandex Cloud SDK with the first available auth method.
 
     Authentication is selected in this order: explicit IAM token, ``YC_TOKEN``
-    from the environment, then the default instance service account exposed
-    through the metadata endpoint.
+    from the environment, then an IAM token fetched from the default instance
+    service account metadata endpoint.
 
     Args:
         token: Optional IAM token that takes precedence over environment auth.
@@ -62,9 +76,8 @@ def sdk_get(token: str = None) -> SDK:
     settings = YcSettings()
     if token:
         return SDK(iam_token=token)
-    if settings.token:
-        return SDK(iam_token=settings.token)
-    if settings.metadata_available():
-        return SDK()
+    settings_token = settings.token
+    if settings_token:
+        return SDK(iam_token=settings_token)
 
     raise AuthError("no auth methods found")

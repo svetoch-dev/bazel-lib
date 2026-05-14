@@ -24,6 +24,7 @@ py_library(
         "@svetoch_bazel_lib//rod/libs/py/utils",
         requirement("grpcio"),
         requirement("protobuf"),
+        requirement("requests"),
         requirement("yandexcloud"),
     ],
 )

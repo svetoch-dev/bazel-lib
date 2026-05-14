@@ -13,3 +13,9 @@ For Google Cloud Platform, the Terraform state is stored in a **Google Cloud Sto
 
 These settings help ensure durability, traceability, and security of the Terraform state files.
 
+## Yandex Object Storage Notes
+
+When `AWS_ENDPOINT_URL_S3` points to Yandex Object Storage, S3 Terraform
+backends are created in Yandex Cloud. The setup grants the Terraform state
+service account access to the bucket and initializes the secrets state object
+from the backend key template.

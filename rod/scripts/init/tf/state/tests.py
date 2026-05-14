@@ -22,7 +22,13 @@ cloud = Cloud(
     buckets={"multi_regional": "false"},
 )
 
-tf_backend = TfBackend(type="<replace-me>", configs={"bucket": "my-tf-state-bucket"})
+tf_backend = TfBackend(
+    type="<replace-me>",
+    configs={
+        "bucket": "my-tf-state-bucket",
+        "key": "{tf_backend.state_name}.tfstate",
+    },
+)
 
 
 class TestCreateState(unittest.TestCase):
@@ -60,10 +66,12 @@ class TestCreateState(unittest.TestCase):
     @patch("rod.scripts.init.tf.state.create.create_yc_s3_tf_state")
     @patch("rod.scripts.init.tf.state.create.YcServiceAccount")
     @patch("rod.scripts.init.tf.state.create.YcSettings")
+    @patch("rod.scripts.init.tf.state.create.AWSSettings")
     @patch("rod.scripts.init.tf.state.create.formatted_tfvars")
     def test_creates_yc_s3_state_for_yc_s3_backend(
         self,
         mock_formatted_tfvars,
+        mock_aws_settings_cls,
         mock_yc_settings_cls,
         mock_yc_service_account_cls,
         mock_create_yc_s3_tf_state,
@@ -83,6 +91,9 @@ class TestCreateState(unittest.TestCase):
             cloud=cloud_yc,
         )
         mock_formatted_tfvars.return_value = SimpleNamespace(envs={"dev": env_obj})
+        mock_aws_settings_cls.return_value = SimpleNamespace(
+            s3_endpoint="https://storage.yandexcloud.net",
+        )
         mock_yc_settings_cls.return_value = SimpleNamespace(
             token="iam-token",
             tf_state_sa="tf-state-sa",
@@ -102,15 +113,18 @@ class TestCreateState(unittest.TestCase):
             "folder-id",
             "my-tf-state-bucket",
             "service-account-id",
+            "secrets.tfstate",
         )
 
     @patch("rod.scripts.init.tf.state.create.create_yc_s3_tf_state")
     @patch("rod.scripts.init.tf.state.create.YcServiceAccount")
     @patch("rod.scripts.init.tf.state.create.YcSettings")
+    @patch("rod.scripts.init.tf.state.create.AWSSettings")
     @patch("rod.scripts.init.tf.state.create.formatted_tfvars")
     def test_exits_when_yc_s3_state_creation_fails(
         self,
         mock_formatted_tfvars,
+        mock_aws_settings_cls,
         mock_yc_settings_cls,
         mock_yc_service_account_cls,
         mock_create_yc_s3_tf_state,
@@ -128,6 +142,9 @@ class TestCreateState(unittest.TestCase):
             cloud=cloud_yc,
         )
         mock_formatted_tfvars.return_value = SimpleNamespace(envs={"dev": env_obj})
+        mock_aws_settings_cls.return_value = SimpleNamespace(
+            s3_endpoint="https://storage.yandexcloud.net",
+        )
         mock_yc_settings_cls.return_value = SimpleNamespace(tf_state_sa="tf-state-sa")
         mock_yc_service_account_cls.return_value = SimpleNamespace(
             id="service-account-id"
@@ -142,7 +159,40 @@ class TestCreateState(unittest.TestCase):
             "folder-id",
             "my-tf-state-bucket",
             "service-account-id",
+            "secrets.tfstate",
         )
+
+    @patch("rod.scripts.init.tf.state.create.create_yc_s3_tf_state")
+    @patch("rod.scripts.init.tf.state.create.AWSSettings")
+    @patch("rod.scripts.init.tf.state.create.formatted_tfvars")
+    def test_raises_for_s3_backend_without_yandex_endpoint(
+        self,
+        mock_formatted_tfvars,
+        mock_aws_settings_cls,
+        mock_create_yc_s3_tf_state,
+    ):
+        cloud_yc = cloud.model_copy(deep=True)
+        tf_backend_ycs3 = tf_backend.model_copy(deep=True)
+
+        cloud_yc.name = "yc"
+        cloud_yc.folder_id = "folder-id"
+        tf_backend_ycs3.type = "s3"
+
+        env_obj = SimpleNamespace(
+            type="internal",
+            tf_backend=tf_backend_ycs3,
+            cloud=cloud_yc,
+        )
+        mock_formatted_tfvars.return_value = SimpleNamespace(envs={"dev": env_obj})
+        mock_aws_settings_cls.return_value = SimpleNamespace(
+            s3_endpoint="https://example.invalid",
+        )
+
+        with self.assertRaises(NotImplementedError) as ctx:
+            create_state()
+
+        self.assertIn("No tf_state scripts for s3", str(ctx.exception))
+        mock_create_yc_s3_tf_state.assert_not_called()
 
     @patch("rod.scripts.init.tf.state.create.create_gcs_tf_state")
     @patch("rod.scripts.init.tf.state.create.formatted_tfvars")
