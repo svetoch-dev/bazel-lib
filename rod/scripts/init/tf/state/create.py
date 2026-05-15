@@ -1,14 +1,20 @@
 from rod.libs.py.tf.state import create_gcs_tf_state
 from rod.libs.py.tf.state import create_yc_s3_tf_state
 from rod.libs.py.tf.tfvars import formatted_tfvars
-from rod.libs.py.settings import YcSettings
+from rod.libs.py.settings import AWSSettings, YcSettings
 from rod.libs.py.yc.sa import YcServiceAccount
+from types import SimpleNamespace
 import sys
 
 
 def create_state() -> None:
-    """Create Terraform state backends for all configured environments."""
+    """Create Terraform state backends for all configured environments.
+
+    For Yandex Object Storage backends, also initialize the secrets state object
+    derived from the configured backend key template.
+    """
     tfvars = formatted_tfvars()
+    aws_settings = AWSSettings()
     int_env = next(
         env_obj
         for env_name, env_obj in tfvars.envs.items()
@@ -23,8 +29,15 @@ def create_state() -> None:
             )
             if not created:
                 sys.exit(1)
-        elif env_obj.cloud.name == "yc" and env_obj.tf_backend.type == "s3":
+        elif (
+            aws_settings.s3_endpoint == "https://storage.yandexcloud.net"
+            and env_obj.tf_backend.type == "s3"
+        ):
             yc_settings = YcSettings()
+            tf_backend = SimpleNamespace(state_name="secrets")
+            secrets_state = env_obj.tf_backend.configs["key"].format(
+                tf_backend=tf_backend
+            )
             service_account = YcServiceAccount(
                 int_env.cloud.folder_id,
                 yc_settings.tf_state_sa,
@@ -33,6 +46,7 @@ def create_state() -> None:
                 env_obj.cloud.folder_id,
                 env_obj.tf_backend.configs["bucket"],
                 service_account.id,
+                secrets_state,
             )
             if not created:
                 sys.exit(1)

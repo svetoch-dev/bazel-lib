@@ -1,3 +1,12 @@
+# v0.21.0
+
+Features:
+* `rod/libs/py/yc/bucket` YcBucketObject class
+* `rod/scripts/init/tf/state` create empty statefile for secrets root module
+
+Enhancements:
+* `rod/scripts/init/tf/state` run yande related code only if type is s3 and s3_endpoint is `https://storage.yandexcloud.net`
+
 # v0.20.0
 
 Features:

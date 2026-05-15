@@ -61,8 +61,7 @@ def apply_env(
         execution fails.
     """
 
-    if not logger:
-        logger = CliLogger("rod.libs.py.tf.apply.apply_env")
+    logger = logger or CliLogger("rod.libs.py.tf.apply.apply_env")
 
     exclude_targets = exclude_targets or []
 

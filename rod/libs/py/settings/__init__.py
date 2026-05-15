@@ -10,6 +10,12 @@ class YcSettings(BaseSettings):
     )
 
 
+class AWSSettings(BaseSettings):
+    s3_endpoint: str = Field(
+        validation_alias="AWS_ENDPOINT_URL_S3", default="https://s3.amazonaws.com"
+    )
+
+
 class LogSettings(BaseSettings):
     log_level: str = "INFO"
 

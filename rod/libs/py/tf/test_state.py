@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import MagicMock, patch
 from google.api_core.exceptions import NotFound
@@ -6,6 +7,7 @@ from yandex.cloud.storage.v1.bucket_pb2 import VERSIONING_ENABLED
 from rod.libs.py.tf.state import (
     create_gcs_tf_state,
     create_yc_s3_tf_state,
+    empty_state_file,
 )
 
 
@@ -106,20 +108,44 @@ class TestCreateGcsTfState(unittest.TestCase):
 
 
 class TestCreateYcS3TfState(unittest.TestCase):
+    def test_empty_state_file_returns_minimal_terraform_state(self):
+        state = json.loads(empty_state_file().decode("utf-8"))
+
+        self.assertEqual(state["version"], 4)
+        self.assertEqual(state["terraform_version"], "1.14.4")
+        self.assertEqual(state["serial"], 1)
+        self.assertEqual(state["outputs"], {})
+        self.assertEqual(state["resources"], [])
+        self.assertIsNone(state["check_results"])
+        self.assertTrue(state["lineage"])
+
+    @patch("rod.libs.py.tf.state.empty_state_file")
+    @patch("rod.libs.py.tf.state.YcBucketObject")
     @patch("rod.libs.py.tf.state.YcBucket")
-    def test_configures_bucket_lifecycle_and_access(self, mock_bucket_cls):
+    def test_configures_bucket_lifecycle_access_and_secrets_state(
+        self,
+        mock_bucket_cls,
+        mock_bucket_object_cls,
+        mock_empty_state_file,
+    ):
         folder_id = "folder-id"
         bucket_name = "tf-state-bucket"
         service_account_id = "service-account-id"
+        secrets_state = "secrets.tfstate"
+        empty_state = b'{"version": 4}'
 
         bucket = MagicMock()
         mock_bucket_cls.return_value = bucket
+        bucket_object = MagicMock()
+        mock_bucket_object_cls.return_value = bucket_object
+        mock_empty_state_file.return_value = empty_state
         logger = MagicMock()
 
         result = create_yc_s3_tf_state(
             folder_id,
             bucket_name,
             service_account_id,
+            secrets_state,
             logger=logger,
         )
 
@@ -148,6 +174,9 @@ class TestCreateYcS3TfState(unittest.TestCase):
         self.assertEqual(subject.id, service_account_id)
         self.assertEqual(subject.type, "serviceAccount")
 
+        mock_bucket_object_cls.assert_called_once_with(bucket_name, secrets_state)
+        bucket_object.create.assert_called_once_with(empty_state, "application/json")
+
     @patch("rod.libs.py.tf.state.YcBucket")
     def test_returns_false_when_bucket_setup_fails(self, mock_bucket_cls):
         mock_bucket_cls.side_effect = RuntimeError("boom")
@@ -157,14 +186,20 @@ class TestCreateYcS3TfState(unittest.TestCase):
             "folder-id",
             "tf-state-bucket",
             "service-account-id",
+            "secrets.tfstate",
             logger=logger,
         )
 
         self.assertFalse(result)
         logger.error.assert_called_once()
 
+    @patch("rod.libs.py.tf.state.YcBucketObject")
     @patch("rod.libs.py.tf.state.YcBucket")
-    def test_returns_false_when_access_binding_fails(self, mock_bucket_cls):
+    def test_returns_false_when_access_binding_fails(
+        self,
+        mock_bucket_cls,
+        mock_bucket_object_cls,
+    ):
         bucket = MagicMock()
         bucket.add_admin.side_effect = RuntimeError("boom")
         mock_bucket_cls.return_value = bucket
@@ -174,9 +209,42 @@ class TestCreateYcS3TfState(unittest.TestCase):
             "folder-id",
             "tf-state-bucket",
             "service-account-id",
+            "secrets.tfstate",
             logger=logger,
         )
 
         self.assertFalse(result)
         bucket.add_lifecycle_rule.assert_called_once()
+        mock_bucket_object_cls.assert_not_called()
+        logger.error.assert_called_once()
+
+    @patch("rod.libs.py.tf.state.YcBucketObject")
+    @patch("rod.libs.py.tf.state.YcBucket")
+    def test_returns_false_when_secrets_state_creation_fails(
+        self,
+        mock_bucket_cls,
+        mock_bucket_object_cls,
+    ):
+        bucket = MagicMock()
+        mock_bucket_cls.return_value = bucket
+        bucket_object = MagicMock()
+        bucket_object.create.side_effect = RuntimeError("boom")
+        mock_bucket_object_cls.return_value = bucket_object
+        logger = MagicMock()
+
+        result = create_yc_s3_tf_state(
+            "folder-id",
+            "tf-state-bucket",
+            "service-account-id",
+            "secrets.tfstate",
+            logger=logger,
+        )
+
+        self.assertFalse(result)
+        bucket.add_lifecycle_rule.assert_called_once()
+        bucket.add_admin.assert_called_once()
+        mock_bucket_object_cls.assert_called_once_with(
+            "tf-state-bucket",
+            "secrets.tfstate",
+        )
         logger.error.assert_called_once()

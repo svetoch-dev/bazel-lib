@@ -35,8 +35,7 @@ class YcServiceAccount:
         logger: BaseLogger = None,
         create_if_missing: bool = True,
     ):
-        if not logger:
-            logger = CliLogger("rod.libs.py.yc.sa.ServiceAccount")
+        logger = logger or CliLogger("rod.libs.py.yc.sa.ServiceAccount")
 
         self.sdk = sdk_get(token)
         self.folder_id = folder_id
