@@ -54,9 +54,7 @@ class YcBucketObject:
         token: str = None,
         logger: BaseLogger = None,
     ):
-        if not logger:
-            logger = CliLogger("rod.libs.py.yc.bucket.BucketObject")
-        self.logger = logger
+        self.logger = logger or CliLogger("rod.libs.py.yc.bucket.BucketObject")
 
         settings = YcSettings()
         if token:
@@ -158,10 +156,8 @@ class YcBucket:
         configs: YcBucketConfigs = None,
         logger: BaseLogger = None,
     ):
-        if not configs:
-            configs = YcBucketConfigs()
-        if not logger:
-            logger = CliLogger("rod.libs.py.yc.bucket.Bucket")
+        conifgs = configs or YcBucketConfigs()
+        logger = logger or CliLogger("rod.libs.py.yc.bucket.Bucket")
 
         self.sdk = sdk_get(token)
         self.folder_id = folder_id

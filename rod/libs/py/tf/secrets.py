@@ -10,8 +10,7 @@ def import_secrets(
     secrets: dict[str, ImportSecret],
     logger: BaseLogger = None,
 ) -> bool:
-    if not logger:
-        logger = CliLogger("rod.libs.py.tf.secrets.import_secrets")
+    logger = logger or CliLogger("rod.libs.py.tf.secrets.import_secrets")
 
     os.chdir(bazel_settings.workspace)
     secrets_package = f"//{bazel_settings.tf_env_dir}/{env}/secrets"

@@ -48,8 +48,7 @@ def create_gcs_tf_state(
         True if the bucket already exists or is created successfully.
         False if bucket creation fails due to an unexpected error.
     """
-    if not logger:
-        logger = CliLogger("rod.libs.py.tf.state.create_gcs_tf_state")
+    logger = logger or CliLogger("rod.libs.py.tf.state.create_gcs_tf_state")
 
     client = storage.Client(project=project_id)
 
@@ -109,8 +108,7 @@ def create_yc_s3_tf_state(
         if bucket setup, lifecycle configuration, access binding update, or
         secrets state object creation fails.
     """
-    if not logger:
-        logger = CliLogger("rod.libs.py.tf.state.create_yc_s3_tf_state")
+    logger = logger or CliLogger("rod.libs.py.tf.state.create_yc_s3_tf_state")
 
     configs = YcBucketConfigs()
     configs.versioning = VERSIONING_ENABLED
