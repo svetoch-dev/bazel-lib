@@ -12,3 +12,15 @@ py_binary(
         "@svetoch_bazel_lib//rod/libs/py/settings",
     ],
 )
+
+py_binary(
+    name = "update_tfvars",
+    srcs = ["update_tfvars.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/helpers",
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+    ],
+)
