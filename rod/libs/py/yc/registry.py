@@ -9,7 +9,7 @@ from yandex.cloud.containerregistry.v1.registry_service_pb2 import (
     ListRegistriesRequest,
     CreateRegistryRequest,
     CreateRegistryMetadata,
-    GetRegistryRequest
+    GetRegistryRequest,
 )
 from yandex.cloud.containerregistry.v1.registry_service_pb2_grpc import (
     RegistryServiceStub,
@@ -77,9 +77,7 @@ class YcRegistry:
 
     def _find_by_id(self) -> Registry:
         registry_service = self.sdk.client(RegistryServiceStub)
-        return registry_service.Get(
-            GetRegistryRequest(registry_id=self._id)
-        )
+        return registry_service.Get(GetRegistryRequest(registry_id=self._id))
 
     def create(self) -> None:
         registry_service = self.sdk.client(RegistryServiceStub)
@@ -98,7 +96,7 @@ class YcRegistry:
         )
 
         self.logger.info(f"Registry {self.name} created successfully")
-        self._registry= result.response
+        self._registry = result.response
 
     def purge_images(self) -> None:
         image_service = self.sdk.client(ImageServiceStub)
@@ -137,5 +135,3 @@ class YcRegistry:
                 break
 
             page_token = response.next_page_token
-
-
