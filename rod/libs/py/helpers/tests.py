@@ -14,6 +14,7 @@ from rod.libs.py.helpers import (
     create_dir,
     create_file,
     switch_index,
+    find_value,
 )
 from rod.libs.py.helpers.exceptions import CommandException
 
@@ -59,6 +60,40 @@ class TestSwitchIndex(unittest.TestCase):
         switch_index(array, 1, -1)
 
         self.assertEqual(array, [3, 2, 1])
+
+
+class TestFindValue(unittest.TestCase):
+    def test_returns_direct_dict_value(self) -> None:
+        self.assertEqual(find_value({"name": "dev"}, "name"), "dev")
+
+    def test_returns_nested_dict_value(self) -> None:
+        data = {"root": {"items": {"target": "found"}}}
+
+        self.assertEqual(find_value(data, "target"), "found")
+
+    def test_returns_value_nested_in_list(self) -> None:
+        data = {"outputs": [{"other": 1}, {"target": "inside-list"}]}
+
+        self.assertEqual(find_value(data, "target"), "inside-list")
+
+    def test_returns_first_depth_first_match(self) -> None:
+        data = {
+            "left": {"target": "left-value"},
+            "right": {"target": "right-value"},
+        }
+
+        self.assertEqual(find_value(data, "target"), "left-value")
+
+    def test_returns_falsy_matching_values(self) -> None:
+        self.assertEqual(find_value({"outer": {"target": 0}}, "target"), 0)
+        self.assertFalse(find_value({"outer": {"target": False}}, "target"))
+        self.assertEqual(find_value({"outer": {"target": ""}}, "target"), "")
+
+    def test_returns_none_when_key_is_missing(self) -> None:
+        self.assertIsNone(find_value({"a": [{"b": 1}]}, "target"))
+
+    def test_ignores_non_container_values(self) -> None:
+        self.assertIsNone(find_value("not-a-container", "target"))
 
 
 class TestRunCommand(unittest.TestCase):
