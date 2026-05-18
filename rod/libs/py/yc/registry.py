@@ -26,6 +26,13 @@ from yandex.cloud.containerregistry.v1.image_service_pb2_grpc import (
 
 
 class YcRegistry:
+    """Manage a Yandex Container Registry.
+
+    The constructor looks up an existing registry by ID or name. When lookup by
+    name does not find a registry, it can create one automatically. Registry
+    protobuf fields are exposed through attribute delegation.
+    """
+
     def __init__(
         self,
         folder_id: str,
@@ -47,15 +54,15 @@ class YcRegistry:
         elif self.name:
             self._registry = self._find()
         else:
-            raise NotImplemented("name or registry_id should be set")
+            raise NotImplementedError("name or registry_id should be set")
 
         if self._registry:
             self.logger.info(f"registry {self._registry.name} found")
         elif create_if_missing:
-            self.logger.info(f"registry {self._registry.name} not found creating")
+            self.logger.info(f"registry {self.name} not found creating")
             self.create()
         else:
-            self.logger.info(f"registry {self._registry.name} found")
+            self.logger.info(f"registry {self.name or self._id} not found")
 
     def __getattr__(self, name):
         return getattr(self._registry, name)
@@ -64,6 +71,7 @@ class YcRegistry:
         return self._registry is not None
 
     def _find(self) -> Registry | None:
+        """Return the registry named by this instance, or None when missing."""
         registry_service = self.sdk.client(RegistryServiceStub)
 
         response = registry_service.List(
@@ -76,10 +84,12 @@ class YcRegistry:
         return next((x for x in response.registries if x.name == self.name), None)
 
     def _find_by_id(self) -> Registry:
+        """Return the registry with the configured registry ID."""
         registry_service = self.sdk.client(RegistryServiceStub)
         return registry_service.Get(GetRegistryRequest(registry_id=self._id))
 
     def create(self) -> None:
+        """Create this registry and store the created registry response."""
         registry_service = self.sdk.client(RegistryServiceStub)
 
         operation = registry_service.Create(
@@ -99,6 +109,7 @@ class YcRegistry:
         self._registry = result.response
 
     def purge_images(self) -> None:
+        """Delete all images currently listed in this registry."""
         image_service = self.sdk.client(ImageServiceStub)
 
         page_token = ""
