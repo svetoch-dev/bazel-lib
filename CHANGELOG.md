@@ -1,3 +1,13 @@
+# v0.22.0
+
+Features:
+* `rod/libs/py/tf/output` get something from tf output functions
+* `macros/{tf.bzl,tfvars_update.py}` script that gets registries from output and updates tfvars
+* `rod/scripts/init/tf/poststeps` update_tfvars script that uses bazel to query and find tfvars_update targets
+
+Enhancements:
+* `rod/scripts/init/{prepare,poststeps,tf/poststeps}.py` do not do anything if `ROD_INIT_TEST=true`
+
 # v0.21.0
 
 Features:
