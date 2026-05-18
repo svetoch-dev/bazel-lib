@@ -16,7 +16,9 @@ def update_tfvars() -> bool:
         return_code, stderr, targets = run_command(query, print_stdout=False)
         for target in targets:
             logger.info(f"found tfvars_update target {target} executing")
-            return_code, stderr, targets = run_command(["bazel", "run", target], print_stdout=False)
+            return_code, stderr, targets = run_command(
+                ["bazel", "run", target], print_stdout=False
+            )
             if return_code != 0:
                 logger.error(f"tfvars_update failed with exit_code={return_code}")
 
