@@ -20,6 +20,13 @@ class LogSettings(BaseSettings):
     log_level: str = "INFO"
 
 
+class InitSettings(BaseSettings):
+    test: bool = Field(
+        validation_alias="ROD_INIT_TEST",
+        default=False,
+    )
+
+
 class BazelSettings(BaseSettings):
     workspace: str = Field(
         validation_alias="BUILD_WORKSPACE_DIRECTORY",
@@ -90,3 +97,4 @@ class BazelSettings(BaseSettings):
 
 log_settings = LogSettings()
 bazel_settings = BazelSettings()
+init_settings = InitSettings()
