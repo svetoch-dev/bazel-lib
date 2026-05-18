@@ -1,7 +1,8 @@
 from pathlib import Path
-from rod.libs.py.settings import bazel_settings
+from rod.libs.py.settings import bazel_settings, init_settings
 import shutil
 import os
+import sys
 
 
 def prepare_repo():
@@ -12,4 +13,7 @@ def prepare_repo():
 
 
 if __name__ == "__main__":
+    if init_settings.test:
+        sys.exit(0)
+
     prepare_repo()

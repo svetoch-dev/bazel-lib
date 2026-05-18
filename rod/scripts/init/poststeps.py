@@ -1,6 +1,7 @@
 import os
 import shutil
-from rod.libs.py.settings import bazel_settings
+import sys
+from rod.libs.py.settings import bazel_settings, init_settings
 
 
 def clean() -> None:
@@ -9,4 +10,7 @@ def clean() -> None:
 
 
 if __name__ == "__main__":
+    if init_settings.test:
+        sys.exit(0)
+
     clean()
