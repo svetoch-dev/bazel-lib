@@ -4,6 +4,7 @@ Features:
 * `rod/libs/py/tf/output` get something from tf output functions
 * `macros/{tf.bzl,tfvars_update.py}` script that gets registries from output and updates tfvars
 * `rod/scripts/init/tf/poststeps` update_tfvars script that uses bazel to query and find tfvars_update targets
+* `rod/libs/py/yc/registry` YcRegistry
 
 Enhancements:
 * `rod/scripts/init/{prepare,poststeps,tf/poststeps}.py` do not do anything if `ROD_INIT_TEST=true`
