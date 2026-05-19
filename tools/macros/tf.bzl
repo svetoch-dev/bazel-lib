@@ -191,4 +191,5 @@ def tf(
                 "@svetoch_bazel_lib//rod/libs/py/helpers",
                 "@svetoch_bazel_lib//rod/libs/py/tf",
             ],
+            tags = ["manual"],
         )
