@@ -232,3 +232,44 @@ def switch_index(array: list[Any], element: Any, index: int) -> None:
             array[i] = array[index]
             array[index] = element
             break
+
+
+def find_value(data: Any, target_key: str) -> Any | None:
+    """
+    Recursively find the first value for a key in nested dicts and lists.
+
+    Traverses dictionaries and lists depth-first, returning the value for the
+    first dictionary key that matches ``target_key``. Non-container values are
+    ignored.
+
+    Args:
+        data: Data structure to search.
+        target_key: Dictionary key to find.
+
+    Returns:
+        The first matching value, or None if the key is not found.
+    """
+    missing = object()
+
+    def _find(node: Any) -> Any:
+        if isinstance(node, dict):
+            if target_key in node.keys():
+                return node[target_key]
+
+            for value in node.values():
+                result = _find(value)
+                if result is not missing:
+                    return result
+        elif isinstance(node, list):
+            for item in node:
+                result = _find(item)
+                if result is not missing:
+                    return result
+
+        return missing
+
+    result = _find(data)
+    if result is missing:
+        return None
+
+    return result

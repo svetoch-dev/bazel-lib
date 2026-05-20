@@ -26,6 +26,11 @@ command(
 )
 
 command(
+    name = "update_tfvars",
+    command = "@svetoch_bazel_lib//rod/scripts/init/tf/poststeps:update_tfvars",
+)
+
+command(
     name = "cleanup",
     command = "@svetoch_bazel_lib//rod/scripts/init/tf/poststeps:clean",
 )
@@ -38,6 +43,7 @@ multirun(
         "state_create",
         "apply",
         "import_secrets",
+        "update_tfvars",
         "cleanup",
     ],
     visibility = ["//visibility:public"],

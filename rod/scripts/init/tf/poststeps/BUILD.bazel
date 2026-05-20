@@ -1,4 +1,4 @@
-load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_test")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 
 py_lint()
@@ -10,5 +10,30 @@ py_binary(
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/helpers",
         "@svetoch_bazel_lib//rod/libs/py/settings",
+    ],
+)
+
+py_binary(
+    name = "update_tfvars",
+    srcs = ["update_tfvars.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/yc:registry",
+    ],
+)
+
+py_test(
+    name = "tests",
+    srcs = glob(
+        ["*.py"],
+    ),
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/yc:registry",
     ],
 )
