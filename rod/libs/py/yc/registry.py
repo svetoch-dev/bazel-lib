@@ -44,17 +44,18 @@ class YcRegistry:
     ):
         logger = logger or CliLogger("rod.libs.py.yc.registry.YcRegistry")
 
-        self.sdk = sdk_get(token)
+        if not name and not registry_id:
+            raise NotImplementedError("name or registry_id should be set")
+
         self.folder_id = folder_id
         self.name = name
         self._id = registry_id
         self.logger = logger
+        self.sdk = sdk_get(token)
         if self._id:
             self._registry = self._find_by_id()
         elif self.name:
             self._registry = self._find()
-        else:
-            raise NotImplementedError("name or registry_id should be set")
 
         if self._registry:
             self.logger.info(f"registry {self._registry.name} found")
