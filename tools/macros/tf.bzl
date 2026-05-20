@@ -1,7 +1,6 @@
 """Tf macros"""
 
 load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
-load("@aspect_rules_py//py:defs.bzl", "py_binary")
 load(
     "@rules_tf//tf:defs.bzl",
     "tf_apply",
@@ -174,22 +173,3 @@ def tf(
         fix = True,
         tags = ["manual"],
     )
-
-    if state_name == "cloud":
-        py_binary(
-            name = "tfvars_update",
-            srcs = ["@svetoch_bazel_lib//tools/macros:tfvars_update.py"],
-            visibility = ["//visibility:public"],
-            data = [
-                ":output",
-            ],
-            env = {
-                "TF_OUTPUT_FILE": "$(rootpath :output)",
-                "TF_ENV_NAME": env_name,
-            },
-            deps = [
-                "@svetoch_bazel_lib//rod/libs/py/helpers",
-                "@svetoch_bazel_lib//rod/libs/py/tf",
-            ],
-            tags = ["manual"],
-        )

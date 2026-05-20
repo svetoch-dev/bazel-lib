@@ -647,6 +647,7 @@ class TestRegistry(unittest.TestCase):
 
         self.assertTrue(result)
         self.assertEqual(result.id, "matching-id")
+        self.assertEqual(result.endpoint, "cr.yandex/matching-id")
         mock_sdk_get.assert_called_once_with(token)
         sdk.client.assert_called_once_with(RegistryServiceStub)
         registry_service.List.assert_called_once()

@@ -67,6 +67,11 @@ class YcRegistry:
     def __getattr__(self, name):
         return getattr(self._registry, name)
 
+    @property
+    def endpoint(self):
+        """Return the image registry endpoint derived from the registry ID."""
+        return f"cr.yandex/{self.id}"
+
     def __bool__(self):
         return self._registry is not None
 
