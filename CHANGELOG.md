@@ -1,3 +1,15 @@
+# v0.23.0
+
+Features:
+* `rod/libs/py/tf/tfvars`
+  * `env_network_settings` function that adds network settings to env
+  * `update_tfvars` function that dumps model data to projects `terraform.tfvars.json`
+* `rod/scripts/init/poststeps` clean all dirs in last poststep instead of per component
+* `rod/scripts/init/prepare` prepare helper script that prepares `terraform.tfvars.json` for a specific env
+* `tools/macros/tf` support `{env.type}` template string
+* `terraform/tf_variables.tf` new environment test attribute to idicate that test specific code should run. For example in gcp custom roles are permanently deleted  after 1 month. During this period of time you can use the same role name
+
+
 # v0.22.0
 
 Features:
