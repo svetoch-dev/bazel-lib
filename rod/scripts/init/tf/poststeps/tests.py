@@ -8,7 +8,7 @@ from rod.scripts.init.tf.poststeps.update_tfvars import update_tfvars
 class TestUpdateTfvars(unittest.TestCase):
     """Test suite for Terraform poststep variable updates."""
 
-    @patch("rod.scripts.init.tf.poststeps.update_tfvars.Path")
+    @patch("rod.scripts.init.tf.poststeps.update_tfvars.tfvars_update")
     @patch("rod.scripts.init.tf.poststeps.update_tfvars.bazel_settings")
     @patch("rod.scripts.init.tf.poststeps.update_tfvars.YcRegistry")
     @patch("rod.scripts.init.tf.poststeps.update_tfvars.formatted_tfvars")
@@ -17,7 +17,7 @@ class TestUpdateTfvars(unittest.TestCase):
         mock_formatted_tfvars,
         mock_yc_registry,
         mock_bazel_settings,
-        mock_path,
+        mock_tfvars_update,
     ):
         dev = SimpleNamespace(
             registry=SimpleNamespace(type="ycr", url="old-dev"),
@@ -39,7 +39,6 @@ class TestUpdateTfvars(unittest.TestCase):
             SimpleNamespace(endpoint="cr.yandex/prod-registry"),
         ]
         mock_bazel_settings.tfvars_file = "/workspace/terraform.tfvars.json"
-        path = mock_path.return_value
 
         self.assertTrue(update_tfvars())
 
@@ -52,10 +51,9 @@ class TestUpdateTfvars(unittest.TestCase):
                 call("prod-folder", "containers", create_if_missing=False),
             ]
         )
-        mock_path.assert_called_once_with("/workspace/terraform.tfvars.json")
-        path.write_text.assert_called_once_with('{"envs": {}}', encoding="utf-8")
+        mock_tfvars_update.assert_called_once_with(tfvars)
 
-    @patch("rod.scripts.init.tf.poststeps.update_tfvars.Path")
+    @patch("rod.scripts.init.tf.poststeps.update_tfvars.tfvars_update")
     @patch("rod.scripts.init.tf.poststeps.update_tfvars.bazel_settings")
     @patch("rod.scripts.init.tf.poststeps.update_tfvars.YcRegistry")
     @patch("rod.scripts.init.tf.poststeps.update_tfvars.formatted_tfvars")
@@ -64,7 +62,7 @@ class TestUpdateTfvars(unittest.TestCase):
         mock_formatted_tfvars,
         mock_yc_registry,
         mock_bazel_settings,
-        mock_path,
+        mock_tfvars_update,
     ):
         env = SimpleNamespace(
             registry=SimpleNamespace(type="ycr", url="old-url"),
@@ -79,10 +77,7 @@ class TestUpdateTfvars(unittest.TestCase):
         update_tfvars()
 
         self.assertEqual(env.registry.url, "old-url")
-        mock_path.return_value.write_text.assert_called_once_with(
-            '{"envs": {}}',
-            encoding="utf-8",
-        )
+        mock_tfvars_update.assert_called_once_with(tfvars)
 
 
 if __name__ == "__main__":
