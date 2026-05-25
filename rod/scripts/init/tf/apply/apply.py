@@ -1,7 +1,7 @@
 import os
 import sys
 from rod.libs.py.settings import bazel_settings
-from rod.libs.py.tf.tfvars import tfvars, env_key
+from rod.libs.py.tf.tfvars import tfvars, env_key, update_tfvars
 from rod.libs.py.helpers import switch_index
 from rod.libs.py.utils.logger import CliLogger
 from rod.libs.py.tf.apply import apply_env
@@ -50,10 +50,7 @@ def apply() -> None:
             sys.exit(1)
 
     # Dump new terraform.tfvars.json with initial_start = False
-    Path(bazel_settings.tfvars_file).write_text(
-        tf_vars.model_dump_json(indent=2),
-        encoding="utf-8",
-    )
+    update_tfvars(tf_vars)
 
     # Re apply everything again
     for env_obj in envs:
