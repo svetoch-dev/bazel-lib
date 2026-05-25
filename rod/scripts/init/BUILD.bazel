@@ -10,6 +10,7 @@ py_binary(
     visibility = ["//visibility:public"],
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/tf",
     ],
 )
 
@@ -20,11 +21,6 @@ py_binary(
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/settings",
     ],
-)
-
-command(
-    name = "init_prepare",
-    command = "@svetoch_bazel_lib//rod/scripts/init:prepare",
 )
 
 command(
@@ -40,7 +36,6 @@ command(
 multirun(
     name = "init",
     commands = [
-        "prepare",
         "tf_init",
         "images_init",
         "poststeps",
