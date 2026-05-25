@@ -1,8 +1,10 @@
 from typing import Literal
+from pathlib import Path
 
 from rod.libs.py.settings import bazel_settings
 from pydantic import BaseModel, ConfigDict, model_validator
 from rod.libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholders
+import ipaddress
 
 
 class BaseTfVarsModel(BaseModel):
@@ -66,6 +68,15 @@ class Network(BaseTfVarsModel):
     k8s_pod_cidr: str
     k8s_service_cidr: str
 
+    def __bool__(self) -> bool:
+        return all(
+            [
+                self.vm_cidr,
+                self.k8s_pod_cidr,
+                self.k8s_service_cidr,
+            ]
+        )
+
 
 class AppRepo(BaseTfVarsModel):
     name: str = ""
@@ -108,6 +119,7 @@ class Env(BaseTfVarsModel):
     name: str
     short_name: str
     type: Literal["internal", "product"]
+    test: bool = False
     initial_start: bool = False
     users: dict[str, User]
     apps: dict[str, App]
@@ -193,3 +205,60 @@ def formatted_tfvars():
         )
 
     return TfVars.model_validate(tf_vars_dict)
+
+
+def update_tfvars(tf_vars: TfVars) -> None:
+    Path(bazel_settings.tfvars_file).write_text(
+        tf_vars.model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+
+def env_network_settings(envs: list[Env]) -> tuple[str, str, str]:
+    """
+    Generate CIDR allocations for a new environment.
+
+    Returns a tuple of (vm_cidr, service_cidr, pod_cidr) chosen from the
+    10.0.0.0/8 address space.
+
+    Algorithm:
+    1. Start with all /14 subnets of 10.0.0.0/8.
+    2. Remove the first /14 so that the returned pod_cidr always comes
+       from the second available /14 (index 1).
+    3. For each existing env with a network, remove its pod /14 from the
+       pool. Also remove the preceding /14 because its /20 subdivisions
+       would have been used for vm and service CIDRs.
+    4. The first remaining /14 (index 0) is split into /20 subnets;
+       the first /20 becomes vm_cidr and the second becomes service_cidr.
+    5. The second remaining /14 (index 1) becomes pod_cidr.
+
+    Args:
+        envs: Existing environments whose networks should be excluded.
+
+    Returns:
+        Tuple of (vm_cidr, service_cidr, pod_cidr) strings.
+    """
+    pod_nets_to_exclude = []
+    main_net = ipaddress.ip_network("10.0.0.0/8")
+    pod_nets_available = sorted(main_net.subnets(new_prefix=14))
+    # Exclude first pod_cidr network as we pick n+1 network
+    pod_nets_available.pop(0)
+
+    for env_obj in envs:
+        if env_obj.cloud.network:
+            pod_net_str = env_obj.cloud.network.k8s_pod_cidr
+            pod_net = ipaddress.ip_network(pod_net_str)
+            if pod_net in pod_nets_available:
+                index = pod_nets_available.index(pod_net)
+                # Exclude found pod_net and previous pod_net
+                # because /20 addresses are taken from it
+                pod_nets_available.pop(index)
+                if (index - 1) >= 0:
+                    pod_nets_available.pop(index - 1)
+
+    pod_net_str = str(pod_nets_available[1])
+    vm_and_service_nets = sorted(pod_nets_available[0].subnets(new_prefix=20))
+    vm_net_str = str(vm_and_service_nets[0])
+    pod_service_net_str = str(vm_and_service_nets[1])
+
+    return vm_net_str, pod_service_net_str, pod_net_str

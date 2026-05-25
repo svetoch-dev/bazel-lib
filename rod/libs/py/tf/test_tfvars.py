@@ -19,6 +19,8 @@ from rod.libs.py.tf.tfvars import (
     Cloud,
     Location,
     Kubernetes,
+    env_network_settings,
+    Network,
 )
 
 
@@ -232,3 +234,98 @@ class TestFormattedTfvars(unittest.TestCase):
     def test_registry_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
             Registry(type="none_existant_registry", url="registry.example.com")
+
+
+class TestEnvNetworkSettings(unittest.TestCase):
+    """Test suite for env_network_settings function."""
+
+    def _env_with_network(self, name, pod_cidr="", vm_cidr="", service_cidr=""):
+        return Env(
+            name=name,
+            short_name=name[:3],
+            type="product",
+            users={},
+            apps={},
+            import_secrets={},
+            registry={"type": "gar", "url": "registry.example.com"},
+            dns={"domain": "example.com", "type": "gcp"},
+            tf_backend={"type": "gcs", "configs": {"bucket": "tf-state"}},
+            cloud={
+                "name": "gcp",
+                "id": name,
+                "location": {
+                    "region": "europe-west2",
+                    "default_zone": "europe-west2-a",
+                },
+                "network": {
+                    "vm_cidr": vm_cidr,
+                    "k8s_pod_cidr": pod_cidr,
+                    "k8s_service_cidr": service_cidr,
+                },
+                "buckets": {"multi_regional": True},
+            },
+            kubernetes={"enabled": False},
+        )
+
+    def test_returns_first_available_networks_when_no_envs(self):
+        vm_cidr, service_cidr, pod_cidr = env_network_settings([])
+
+        self.assertEqual(vm_cidr, "10.4.0.0/20")
+        self.assertEqual(service_cidr, "10.4.16.0/20")
+        self.assertEqual(pod_cidr, "10.8.0.0/14")
+
+    def test_excludes_used_network_and_previous(self):
+        env = self._env_with_network(
+            "dev", "10.8.0.0/14", "10.4.0.0/20", "10.4.16.0/20"
+        )
+
+        vm_cidr, service_cidr, pod_cidr = env_network_settings([env])
+
+        self.assertEqual(vm_cidr, "10.12.0.0/20")
+        self.assertEqual(service_cidr, "10.12.16.0/20")
+        self.assertEqual(pod_cidr, "10.16.0.0/14")
+
+    def test_excludes_multiple_used_networks(self):
+        env1 = self._env_with_network(
+            "dev", "10.8.0.0/14", "10.4.0.0/20", "10.4.16.0/20"
+        )
+        env2 = self._env_with_network(
+            "prd", "10.16.0.0/14", "10.12.0.0/20", "10.12.16.0/20"
+        )
+
+        vm_cidr, service_cidr, pod_cidr = env_network_settings([env1, env2])
+
+        self.assertEqual(vm_cidr, "10.20.0.0/20")
+        self.assertEqual(service_cidr, "10.20.16.0/20")
+        self.assertEqual(pod_cidr, "10.24.0.0/14")
+
+    def test_skips_env_with_empty_network(self):
+        env_with_net = self._env_with_network(
+            "dev", "10.8.0.0/14", "10.4.0.0/20", "10.4.16.0/20"
+        )
+        env_without_net = self._env_with_network("tst")
+
+        vm_cidr, service_cidr, pod_cidr = env_network_settings(
+            [env_with_net, env_without_net]
+        )
+
+        self.assertEqual(vm_cidr, "10.12.0.0/20")
+        self.assertEqual(service_cidr, "10.12.16.0/20")
+        self.assertEqual(pod_cidr, "10.16.0.0/14")
+
+    def test_returns_non_overlapping_cidrs(self):
+        env = self._env_with_network(
+            "dev", "10.8.0.0/14", "10.4.0.0/20", "10.4.16.0/20"
+        )
+
+        vm_cidr, service_cidr, pod_cidr = env_network_settings([env])
+
+        import ipaddress
+
+        vm_net = ipaddress.ip_network(vm_cidr)
+        service_net = ipaddress.ip_network(service_cidr)
+        pod_net = ipaddress.ip_network(pod_cidr)
+
+        self.assertFalse(vm_net.overlaps(service_net))
+        self.assertFalse(vm_net.overlaps(pod_net))
+        self.assertFalse(service_net.overlaps(pod_net))
