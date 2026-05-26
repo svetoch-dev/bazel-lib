@@ -4,16 +4,6 @@ load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 py_lint()
 
 py_binary(
-    name = "clean",
-    srcs = ["clean.py"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "@svetoch_bazel_lib//rod/libs/py/helpers",
-        "@svetoch_bazel_lib//rod/libs/py/settings",
-    ],
-)
-
-py_binary(
     name = "update_tfvars",
     srcs = ["update_tfvars.py"],
     visibility = ["//visibility:public"],

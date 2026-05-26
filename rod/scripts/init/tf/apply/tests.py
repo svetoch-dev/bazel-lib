@@ -48,7 +48,7 @@ tfvars = TfVars(
 
 
 class TestApply(unittest.TestCase):
-    @patch("rod.scripts.init.tf.apply.apply.Path")
+    @patch("rod.scripts.init.tf.apply.apply.update_tfvars")
     @patch("rod.scripts.init.tf.apply.apply.apply_env")
     @patch("rod.scripts.init.tf.apply.apply.tfvars")
     @patch("rod.scripts.init.tf.apply.apply.os.chdir")
@@ -59,7 +59,7 @@ class TestApply(unittest.TestCase):
         mock_chdir,
         mock_tfvars,
         mock_apply_env,
-        mock_path,
+        mock_update_tfvars,
     ):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
@@ -108,7 +108,7 @@ class TestApply(unittest.TestCase):
         ]
         self.assertEqual(mock_apply_env.call_args_list, expected_calls)
 
-        mock_path.assert_called_once_with("/tmp/workspace/terraform.tfvars.json")
+        mock_update_tfvars.assert_called_once_with(tf_vars)
 
     @patch("rod.scripts.init.tf.apply.apply.Path")
     @patch("rod.scripts.init.tf.apply.apply.apply_env")
@@ -163,7 +163,7 @@ class TestApply(unittest.TestCase):
         )
         mock_path.return_value.write_text.assert_not_called()
 
-    @patch("rod.scripts.init.tf.apply.apply.Path")
+    @patch("rod.scripts.init.tf.apply.apply.update_tfvars")
     @patch("rod.scripts.init.tf.apply.apply.apply_env")
     @patch("rod.scripts.init.tf.apply.apply.switch_index")
     @patch("rod.scripts.init.tf.apply.apply.tfvars")
@@ -176,7 +176,7 @@ class TestApply(unittest.TestCase):
         mock_tfvars,
         mock_switch_index,
         mock_apply_env,
-        mock_path,
+        mock_update_tfvars,
     ):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
@@ -224,7 +224,7 @@ class TestApply(unittest.TestCase):
                 ),
             ],
         )
-        mock_path.assert_called_once_with("/tmp/workspace/terraform.tfvars.json")
+        mock_update_tfvars.assert_called_once_with(tf_vars)
 
     @patch("rod.scripts.init.tf.apply.apply.Path")
     @patch("rod.scripts.init.tf.apply.apply.apply_env")

@@ -60,6 +60,7 @@ variable "envs" {
         name          = string
         short_name    = string
         type          = string
+        test          = optional(bool, false)
         initial_start = optional(bool, false)
         users = map(
           object(

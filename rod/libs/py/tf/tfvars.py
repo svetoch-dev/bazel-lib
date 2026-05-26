@@ -1,8 +1,10 @@
 from typing import Literal
+from pathlib import Path
 
 from rod.libs.py.settings import bazel_settings
 from pydantic import BaseModel, ConfigDict, model_validator
 from rod.libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholders
+import ipaddress
 
 
 class BaseTfVarsModel(BaseModel):
@@ -66,6 +68,15 @@ class Network(BaseTfVarsModel):
     k8s_pod_cidr: str
     k8s_service_cidr: str
 
+    def __bool__(self) -> bool:
+        return all(
+            [
+                self.vm_cidr,
+                self.k8s_pod_cidr,
+                self.k8s_service_cidr,
+            ]
+        )
+
 
 class AppRepo(BaseTfVarsModel):
     name: str = ""
@@ -108,6 +119,7 @@ class Env(BaseTfVarsModel):
     name: str
     short_name: str
     type: Literal["internal", "product"]
+    test: bool = False
     initial_start: bool = False
     users: dict[str, User]
     apps: dict[str, App]
@@ -193,3 +205,61 @@ def formatted_tfvars():
         )
 
     return TfVars.model_validate(tf_vars_dict)
+
+
+def update_tfvars(tf_vars: TfVars) -> None:
+    Path(bazel_settings.tfvars_file).write_text(
+        tf_vars.model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+
+def env_network_settings(envs: list[Env]) -> tuple[str, str, str]:
+    """
+    Allocate non-overlapping CIDR blocks for a new environment.
+
+    Divides the 10.0.0.0/8 private range into /14 subnets. Each environment
+    consumes two adjacent /14s: the first is subdivided into /20s for VM
+    and service CIDRs, and the second is used as the pod CIDR.
+
+    Existing environment networks are excluded from allocation by checking
+    which /14 subnets overlap with their vm_cidr, service_cidr, or pod_cidr.
+
+    Args:
+        envs: Existing environments to exclude from allocation.
+
+    Returns:
+        Tuple of (vm_cidr, service_cidr, pod_cidr) strings.
+    """
+    pod_nets_to_exclude = []
+    main_net = ipaddress.ip_network("10.0.0.0/8")
+    pod_nets_total = sorted(main_net.subnets(new_prefix=14))
+    pod_nets_need_removal = []
+    pod_nets_available = []
+
+    for env_obj in envs:
+        if not env_obj.cloud.network:
+            continue
+
+        pod_net = ipaddress.ip_network(env_obj.cloud.network.k8s_pod_cidr)
+        vm_net = ipaddress.ip_network(env_obj.cloud.network.vm_cidr)
+        service_net = ipaddress.ip_network(env_obj.cloud.network.k8s_service_cidr)
+
+        for index, p_net in enumerate(pod_nets_total):
+            if (
+                pod_net.overlaps(p_net)
+                or vm_net.overlaps(p_net)
+                or service_net.overlaps(p_net)
+            ) and p_net not in pod_nets_need_removal:
+                pod_nets_need_removal.append(p_net)
+
+    for p_net in pod_nets_total:
+        if p_net not in pod_nets_need_removal:
+            pod_nets_available.append(p_net)
+
+    pod_net_str = str(pod_nets_available[1])
+    vm_and_service_nets = sorted(pod_nets_available[0].subnets(new_prefix=20))
+    vm_net_str = str(vm_and_service_nets[0])
+    pod_service_net_str = str(vm_and_service_nets[1])
+
+    return vm_net_str, pod_service_net_str, pod_net_str

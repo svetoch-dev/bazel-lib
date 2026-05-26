@@ -2,7 +2,7 @@ from pathlib import Path
 
 from rod.libs.py.settings import bazel_settings
 from rod.libs.py.utils.logger import CliLogger
-from rod.libs.py.tf.tfvars import formatted_tfvars
+from rod.libs.py.tf.tfvars import formatted_tfvars, update_tfvars as tfvars_update
 from rod.libs.py.yc.registry import YcRegistry
 
 
@@ -24,10 +24,8 @@ def update_tfvars() -> bool:
             if registry:
                 env_obj.registry.url = registry.endpoint
 
-    Path(bazel_settings.tfvars_file).write_text(
-        tfvars.model_dump_json(indent=2),
-        encoding="utf-8",
-    )
+    tfvars_update(tfvars)
+
     return True
 
 
