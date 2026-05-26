@@ -216,45 +216,46 @@ def update_tfvars(tf_vars: TfVars) -> None:
 
 def env_network_settings(envs: list[Env]) -> tuple[str, str, str]:
     """
-    Generate CIDR allocations for a new environment.
+    Allocate non-overlapping CIDR blocks for a new environment.
 
-    Returns a tuple of (vm_cidr, service_cidr, pod_cidr) chosen from the
-    10.0.0.0/8 address space.
+    Divides the 10.0.0.0/8 private range into /14 subnets. Each environment
+    consumes two adjacent /14s: the first is subdivided into /20s for VM
+    and service CIDRs, and the second is used as the pod CIDR.
 
-    Algorithm:
-    1. Start with all /14 subnets of 10.0.0.0/8.
-    2. Remove the first /14 so that the returned pod_cidr always comes
-       from the second available /14 (index 1).
-    3. For each existing env with a network, remove its pod /14 from the
-       pool. Also remove the preceding /14 because its /20 subdivisions
-       would have been used for vm and service CIDRs.
-    4. The first remaining /14 (index 0) is split into /20 subnets;
-       the first /20 becomes vm_cidr and the second becomes service_cidr.
-    5. The second remaining /14 (index 1) becomes pod_cidr.
+    Existing environment networks are excluded from allocation by checking
+    which /14 subnets overlap with their vm_cidr, service_cidr, or pod_cidr.
 
     Args:
-        envs: Existing environments whose networks should be excluded.
+        envs: Existing environments to exclude from allocation.
 
     Returns:
         Tuple of (vm_cidr, service_cidr, pod_cidr) strings.
     """
     pod_nets_to_exclude = []
     main_net = ipaddress.ip_network("10.0.0.0/8")
-    pod_nets_available = sorted(main_net.subnets(new_prefix=14))
-    # Exclude first pod_cidr network as we pick n+1 network
-    pod_nets_available.pop(0)
+    pod_nets_total = sorted(main_net.subnets(new_prefix=14))
+    pod_nets_need_removal = []
+    pod_nets_available = []
 
     for env_obj in envs:
-        if env_obj.cloud.network:
-            pod_net_str = env_obj.cloud.network.k8s_pod_cidr
-            pod_net = ipaddress.ip_network(pod_net_str)
-            if pod_net in pod_nets_available:
-                index = pod_nets_available.index(pod_net)
-                # Exclude found pod_net and previous pod_net
-                # because /20 addresses are taken from it
-                pod_nets_available.pop(index)
-                if (index - 1) >= 0:
-                    pod_nets_available.pop(index - 1)
+        if not env_obj.cloud.network:
+            continue
+
+        pod_net = ipaddress.ip_network(env_obj.cloud.network.k8s_pod_cidr)
+        vm_net = ipaddress.ip_network(env_obj.cloud.network.vm_cidr)
+        service_net = ipaddress.ip_network(env_obj.cloud.network.k8s_service_cidr)
+
+        for index, p_net in enumerate(pod_nets_total):
+            if (
+                pod_net.overlaps(p_net)
+                or vm_net.overlaps(p_net)
+                or service_net.overlaps(p_net)
+            ) and p_net not in pod_nets_need_removal:
+                pod_nets_need_removal.append(p_net)
+
+    for p_net in pod_nets_total:
+        if p_net not in pod_nets_need_removal:
+            pod_nets_available.append(p_net)
 
     pod_net_str = str(pod_nets_available[1])
     vm_and_service_nets = sorted(pod_nets_available[0].subnets(new_prefix=20))

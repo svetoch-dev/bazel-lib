@@ -258,9 +258,9 @@ class TestEnvNetworkSettings(unittest.TestCase):
                     "default_zone": "europe-west2-a",
                 },
                 "network": {
-                    "vm_cidr": vm_cidr,
-                    "k8s_pod_cidr": pod_cidr,
-                    "k8s_service_cidr": service_cidr,
+                    "vm_cidr": str(vm_cidr),
+                    "k8s_pod_cidr": str(pod_cidr),
+                    "k8s_service_cidr": str(service_cidr),
                 },
                 "buckets": {"multi_regional": True},
             },
@@ -270,38 +270,38 @@ class TestEnvNetworkSettings(unittest.TestCase):
     def test_returns_first_available_networks_when_no_envs(self):
         vm_cidr, service_cidr, pod_cidr = env_network_settings([])
 
-        self.assertEqual(vm_cidr, "10.4.0.0/20")
-        self.assertEqual(service_cidr, "10.4.16.0/20")
-        self.assertEqual(pod_cidr, "10.8.0.0/14")
+        self.assertEqual(vm_cidr, "10.0.0.0/20")
+        self.assertEqual(service_cidr, "10.0.16.0/20")
+        self.assertEqual(pod_cidr, "10.4.0.0/14")
 
-    def test_excludes_used_network_and_previous(self):
+    def test_excludes_used_network(self):
         env = self._env_with_network(
-            "dev", "10.8.0.0/14", "10.4.0.0/20", "10.4.16.0/20"
+            "dev", "10.4.0.0/14", "10.8.0.0/20", "10.8.16.0/20"
         )
 
         vm_cidr, service_cidr, pod_cidr = env_network_settings([env])
 
-        self.assertEqual(vm_cidr, "10.12.0.0/20")
-        self.assertEqual(service_cidr, "10.12.16.0/20")
-        self.assertEqual(pod_cidr, "10.16.0.0/14")
+        self.assertEqual(vm_cidr, "10.0.0.0/20")
+        self.assertEqual(service_cidr, "10.0.16.0/20")
+        self.assertEqual(pod_cidr, "10.12.0.0/14")
 
     def test_excludes_multiple_used_networks(self):
         env1 = self._env_with_network(
-            "dev", "10.8.0.0/14", "10.4.0.0/20", "10.4.16.0/20"
+            "dev", "10.0.0.0/14", "10.4.0.0/20", "10.8.16.0/20"
         )
         env2 = self._env_with_network(
-            "prd", "10.16.0.0/14", "10.12.0.0/20", "10.12.16.0/20"
+            "prd", "10.12.0.0/14", "10.16.0.0/20", "10.20.16.0/20"
         )
 
         vm_cidr, service_cidr, pod_cidr = env_network_settings([env1, env2])
 
-        self.assertEqual(vm_cidr, "10.20.0.0/20")
-        self.assertEqual(service_cidr, "10.20.16.0/20")
-        self.assertEqual(pod_cidr, "10.24.0.0/14")
+        self.assertEqual(vm_cidr, "10.24.0.0/20")
+        self.assertEqual(service_cidr, "10.24.16.0/20")
+        self.assertEqual(pod_cidr, "10.28.0.0/14")
 
     def test_skips_env_with_empty_network(self):
         env_with_net = self._env_with_network(
-            "dev", "10.8.0.0/14", "10.4.0.0/20", "10.4.16.0/20"
+            "dev", "10.4.0.0/14", "10.0.0.0/20", "10.0.16.0/20"
         )
         env_without_net = self._env_with_network("tst")
 
@@ -309,23 +309,40 @@ class TestEnvNetworkSettings(unittest.TestCase):
             [env_with_net, env_without_net]
         )
 
-        self.assertEqual(vm_cidr, "10.12.0.0/20")
-        self.assertEqual(service_cidr, "10.12.16.0/20")
-        self.assertEqual(pod_cidr, "10.16.0.0/14")
+        self.assertEqual(vm_cidr, "10.8.0.0/20")
+        self.assertEqual(service_cidr, "10.8.16.0/20")
+        self.assertEqual(pod_cidr, "10.12.0.0/14")
 
     def test_returns_non_overlapping_cidrs(self):
-        env = self._env_with_network(
-            "dev", "10.8.0.0/14", "10.4.0.0/20", "10.4.16.0/20"
-        )
-
-        vm_cidr, service_cidr, pod_cidr = env_network_settings([env])
-
         import ipaddress
+
+        networks = [
+            {
+                "pod_cidr": ipaddress.ip_network("10.0.0.0/14"),
+                "vm_cidr": ipaddress.ip_network("10.4.0.0/16"),
+                "service_cidr": ipaddress.ip_network("10.5.0.0/16"),
+            },
+            {
+                "vm_cidr": ipaddress.ip_network("10.8.0.0/16"),
+                "pod_cidr": ipaddress.ip_network("10.12.0.0/16"),
+                "service_cidr": ipaddress.ip_network("10.16.0.0/14"),
+            },
+        ]
+
+        env1 = self._env_with_network("dev", **networks[0])
+        env2 = self._env_with_network("prd", **networks[1])
+
+        vm_cidr, service_cidr, pod_cidr = env_network_settings([env1, env2])
 
         vm_net = ipaddress.ip_network(vm_cidr)
         service_net = ipaddress.ip_network(service_cidr)
         pod_net = ipaddress.ip_network(pod_cidr)
 
+        nets = list(networks[0].values()) + list(networks[1].values())
         self.assertFalse(vm_net.overlaps(service_net))
         self.assertFalse(vm_net.overlaps(pod_net))
         self.assertFalse(service_net.overlaps(pod_net))
+        for network in nets:
+            self.assertFalse(vm_net.overlaps(network))
+            self.assertFalse(service_net.overlaps(network))
+            self.assertFalse(pod_net.overlaps(network))
