@@ -1,0 +1,43 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "tar")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@svetoch_bazel_lib//tools/macros:img.bzl", "img_push")
+
+tar(
+    name = "yc_binary",
+    srcs = ["@svetoch_bazel_lib_yc_cli//:yc"],
+    mtree = [
+        "./usr/local/bin/yc type=file mode=0755 uid=0 gid=0",
+    ],
+)
+
+tar(
+    name = "yc_k8s_auth",
+    srcs = ["yc-k8s-auth"],
+    mtree = [
+        "./usr/local/bin/yc-k8s-auth type=file mode=0755 uid=0 gid=0",
+    ],
+)
+
+oci_image(
+    name = "argocd_img",
+    base = "@svetoch_bazel_lib_argocd",
+    tars = [
+        ":yc_binary",
+        ":yc_k8s_auth",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+oci_load(
+    name = "argocd_docker",
+    image = ":argocd_img",
+    repo_tags = [
+        "argocd:yc",
+    ],
+)
+
+img_push(
+    service_name = "argocd",
+    image = ":argocd_img",
+    envs = ["int"],
+)

@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+TOKEN=$(yc iam create-token 2>/dev/null)
+printf '{"apiVersion":"client.authentication.k8s.io/v1beta1","kind":"ExecCredential","status":{"token":"%s"}}' "$TOKEN"
