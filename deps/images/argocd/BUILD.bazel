@@ -4,7 +4,7 @@ load("@svetoch_bazel_lib//tools/macros:img.bzl", "img_push")
 
 tar(
     name = "yc_binary",
-    srcs = ["@svetoch_bazel_lib_yc_cli//:yc"],
+    srcs = ["@svetoch_bazel_lib_yc_cli//file"],
     mtree = [
         "./usr/local/bin/yc type=file mode=0755 uid=0 gid=0",
     ],

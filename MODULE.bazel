@@ -92,7 +92,7 @@ oci.pull(
 oci.pull(
     name = "svetoch_bazel_lib_argocd",
     #v3.0.11
-    digest = "sha256:5c0e9312e22a59e2e705b46e10fd59455b82f0b6ecad15d2d90c6e6a34c19c5e",
+    digest = "sha256:1cb4ede2fc4a6332c128d9ba29d19e8cb5b76f9260dc47550a4b3b154269ff86",
     image = "quay.io/argoproj/argocd",
     platforms = [
         "linux/amd64",
@@ -136,11 +136,11 @@ http_file(
     url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.28.1/bazelisk-linux-amd64",
 )
 
-http_archive(
+http_file(
     name = "svetoch_bazel_lib_yc_cli",
-    build_file_content = "exports_files([\"yc\"])",
-    sha256 = "b6475aabe99e1b6a2d37c5f1ec54c5b88db2d6c2e3e0f96b9bf9545b3dd1e83f",
-    urls = ["https://storage.yandexcloud.net/yandexcloud-yc/release/0.144.0/linux/amd64/yc.tar.gz"],
+    downloaded_file_path = "yc",
+    sha256 = "64df24420974927a7f90357df3b9c6504783e1ef69e99c3b48c7854b35e93567",
+    url = "https://storage.yandexcloud.net/yandexcloud-yc/release/1.12.0/linux/amd64/yc",
 )
 
 http_archive(
