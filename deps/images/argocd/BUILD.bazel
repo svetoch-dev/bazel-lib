@@ -27,17 +27,3 @@ oci_image(
     ],
     visibility = ["//visibility:public"],
 )
-
-oci_load(
-    name = "argocd_docker",
-    image = ":argocd_img",
-    repo_tags = [
-        "argocd:yc",
-    ],
-)
-
-img_push(
-    service_name = "argocd",
-    image = ":argocd_img",
-    envs = ["int"],
-)
