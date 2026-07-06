@@ -1,3 +1,8 @@
+# v0.24.0
+
+Features:
+* Use debian snapshot as .deb package source
+
 # v0.23.0
 
 Features:
