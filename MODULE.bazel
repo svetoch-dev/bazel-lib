@@ -67,7 +67,7 @@ use_repo(load_file, "svetoch_bazel_lib_tfvars")
 ###################
 
 bazel_dep(name = "rules_oci", version = "2.3.0")
-bazel_dep(name = "rules_distroless", version = "0.6.2")
+bazel_dep(name = "rules_distroless", version = "0.8.0")
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
@@ -100,20 +100,20 @@ use_repo(
 
 apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
 
-#bazel run @svetoch_bazel_lib_noble//:lock
+#bazel run @svetoch_bazel_lib_trixie//:lock
 apt.install(
-    name = "svetoch_bazel_lib_noble",
-    lock = "@svetoch_bazel_lib//deps/deb:noble.lock.json",
-    manifest = "@svetoch_bazel_lib//deps/deb:noble.yaml",
+    name = "svetoch_bazel_lib_trixie",
+    lock = "@svetoch_bazel_lib//deps/deb:trixie.lock.json",
+    manifest = "@svetoch_bazel_lib//deps/deb:trixie.yaml",
 )
-use_repo(apt, "svetoch_bazel_lib_noble")
+use_repo(apt, "svetoch_bazel_lib_trixie")
 
 http_archive(
     name = "svetoch_bazel_lib_ca_certificates",
-    build_file_content = "exports_files([\"data.tar.zst\"])",
-    sha256 = "641de77d8f142cfd62a1a6f964ba67b20754d3337c480efb529d086075a06c9a",
+    build_file_content = "exports_files([\"data.tar.xz\"])",
+    sha256 = "3269df8178f5402093a57c754810f8ce59e1a0cf9361aa72252bf3186cfc32d7",
     type = ".deb",
-    urls = ["https://snapshot.ubuntu.com/ubuntu/20240917T000000Z/pool/main/c/ca-certificates/ca-certificates_20240203_all.deb"],
+    urls = ["https://snapshot.debian.org/archive/debian/20260706T142243Z/pool/main/c/ca-certificates/ca-certificates_20260601_all.deb"],
 )
 
 http_file(

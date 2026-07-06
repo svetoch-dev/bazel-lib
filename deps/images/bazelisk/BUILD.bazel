@@ -26,25 +26,23 @@ passwd(
         {
             "uid": 1001,
             "gid": 1000,
-            "home": "/home/ubuntu",
+            "home": "/home/debian",
             "shell": "/bin/bash",
-            "username": "ubuntu",
+            "username": "debian",
         },
     ],
 )
 
 PACKAGES = [
-    "@svetoch_bazel_lib_noble//git",
-    "@svetoch_bazel_lib_noble//curl",
-    "@svetoch_bazel_lib_noble//sed",
-    "@svetoch_bazel_lib_noble//mawk",
-    "@svetoch_bazel_lib_noble//gcc",
-    "@svetoch_bazel_lib_noble//findutils",
-    "@svetoch_bazel_lib_noble//python3",
-    "@svetoch_bazel_lib_noble//gzip",
-    "@svetoch_bazel_lib_noble//libc-bin",
-    "@svetoch_bazel_lib_noble//libc6-dev",
-    "@svetoch_bazel_lib_noble//g++",
+    "@svetoch_bazel_lib_trixie//git",
+    "@svetoch_bazel_lib_trixie//curl",
+    "@svetoch_bazel_lib_trixie//gcc",
+    "@svetoch_bazel_lib_trixie//findutils",
+    "@svetoch_bazel_lib_trixie//python3",
+    "@svetoch_bazel_lib_trixie//gzip",
+    "@svetoch_bazel_lib_trixie//libc-bin",
+    "@svetoch_bazel_lib_trixie//libc6-dev",
+    "@svetoch_bazel_lib_trixie//g++",
 ]
 
 _packages_tar = deb_packages(PACKAGES)
@@ -92,16 +90,14 @@ tar(
         #so we need to use a symlink here
         "./usr/local/bin/bazel type=link link=/usr/local/bin/file/bazelisk",
         "./usr/local/bin/docker-credential-gcloud type=link link=/usr/local/bin/docker-credential-gcr",
-        #symlink awk to mawk the same how its done in ubuntu
-        "./usr/bin/awk type=link link=/usr/bin/mawk",
         #change permissions of home dir
-        "./home/ubuntu/ uid=1001 gid=0 mode=0755 type=dir",
+        "./home/debian/ uid=1001 gid=0 mode=0755 type=dir",
     ],
 )
 
 oci_image(
     name = "bazelisk_img",
-    base = "@svetoch_bazel_lib//deps/images/base:ubuntu_noble",
+    base = "@svetoch_bazel_lib//deps/images/base:debian_trixie",
     tars = [
         _packages_tar,
         "@svetoch_bazel_lib//deps/images/bazelisk:passwd",
