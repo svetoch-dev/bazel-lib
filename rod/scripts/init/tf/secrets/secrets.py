@@ -16,7 +16,7 @@ def secrets() -> None:
         query = ["bazel", "query", f'attr(name, "^tf$", "{secrets_package}")']
         exit_code, stderr, _ = run_command(query, print_stdout=False)
         if exit_code != 0:
-           logger.info(f"{secret_package}:tf target not found")
+           logger.info(f"{secrets_package}:tf target not found")
            continue
 
 
