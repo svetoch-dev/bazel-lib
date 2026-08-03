@@ -13,11 +13,11 @@ def secrets() -> None:
 
     for env_name, env_obj in tf_vars.envs.items():
         os.chdir(bazel_settings.workspace)
-        secrets_package = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:tf"
-        query = ["bazel", "query", f"{secrets_package}"]
+        secrets_target = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:tf"
+        query = ["bazel", "query", f"{secrets_target}"]
         exit_code, stderr, _ = run_command(query, print_stdout=False)
         if exit_code != 0:
-           logger.info(f"{secrets_package}:tf target not found")
+           logger.info(f"{secrets_target} target not found")
            continue
 
 
