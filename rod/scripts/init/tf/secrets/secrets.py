@@ -12,6 +12,7 @@ def secrets() -> None:
     logger = CliLogger("rod.scripts.init.tf.secrets.secrets")
 
     for env_name, env_obj in tf_vars.envs.items():
+        os.chdir(bazel_settings.workspace)
         secrets_package = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets"
         query = ["bazel", "query", f'attr(name, "^tf$", "{secrets_package}")']
         exit_code, stderr, _ = run_command(query, print_stdout=False)
