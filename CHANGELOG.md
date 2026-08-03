@@ -1,3 +1,8 @@
+# v0.24.1
+
+Features:
+* `rod/scripts/init/tf/secrets/secrets.py` import_secrets only if tf target exists
+
 # v0.24.0
 
 Features:
