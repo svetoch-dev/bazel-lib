@@ -1,5 +1,7 @@
 import os
 import sys
+from rod.libs.py.helpers import run_command
+from rod.libs.py.settings import bazel_settings
 from rod.libs.py.tf.tfvars import tfvars
 from rod.libs.py.tf.secrets import import_secrets
 from rod.libs.py.utils.logger import CliLogger
@@ -10,6 +12,14 @@ def secrets() -> None:
     logger = CliLogger("rod.scripts.init.tf.secrets.secrets")
 
     for env_name, env_obj in tf_vars.envs.items():
+        os.chdir(bazel_settings.workspace)
+        secrets_target = f"//{bazel_settings.tf_env_dir}/{env_name}/secrets:tf"
+        query = ["bazel", "query", f"{secrets_target}"]
+        exit_code, stderr, _ = run_command(query, print_stdout=False)
+        if exit_code != 0:
+            logger.info(f"Target {secrets_target} not found")
+            continue
+
         imported = import_secrets(env_name, env_obj.import_secrets)
         if not imported:
             logger.error(f"Import for secrets of {env_name} has failed")
