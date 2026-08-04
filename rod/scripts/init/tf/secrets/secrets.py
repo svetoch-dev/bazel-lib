@@ -17,9 +17,8 @@ def secrets() -> None:
         query = ["bazel", "query", f"{secrets_target}"]
         exit_code, stderr, _ = run_command(query, print_stdout=False)
         if exit_code != 0:
-           logger.info(f"{secrets_target} target not found")
-           continue
-
+            logger.info(f"Target {secrets_target} not found")
+            continue
 
         imported = import_secrets(env_name, env_obj.import_secrets)
         if not imported:
