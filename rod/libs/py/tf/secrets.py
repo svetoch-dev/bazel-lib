@@ -5,13 +5,32 @@ from rod.libs.py.settings import bazel_settings
 from rod.libs.py.utils.logger import CliLogger, BaseLogger
 
 
+def render_tpl(
+    tpl: str,
+    secret_name: str,
+    secret_key: str,
+) -> str:
+    rendered = tpl.replace("<secret_name>", secret_name)
+    rendered = rendered.replace("<secret_key>", secret_key)
+    return rendered
+
+
+def import_secret_env_name(
+    secret_name: str,
+    secret_key: str,
+) -> str:
+    env_secret_name = secret_name.replace("-", "__")
+    env_secret_key = secret_key.replace("-", "__")
+    return f"TF_IMPORT_SECRET_{env_secret_name}_{env_secret_key}".upper()
+
+
 def import_secrets(
     env: str,
     secrets: dict[str, ImportSecret],
     logger: BaseLogger = None,
     final_apply: bool = True,
     secrets_package: str = "secrets",
-    tf_resource_tpl: str = 'module.secrets.module.rod_secrets["{}"].module.import_secret["{}"].secret_resource.secret',
+    tf_resource_tpl: str = 'module.secrets.module.rod_secrets["<secret_name>"].module.import_secret["<secret_key>"].secret_resource.secret',
 ) -> bool:
     logger = logger or CliLogger("rod.libs.py.tf.secrets.import_secrets")
 
@@ -35,7 +54,8 @@ def import_secrets(
 
     for secret_name, secret_obj in secrets.items():
         for secret_key in secret_obj.secrets_to_import:
-            tf_resource = tf_resource_tpl.format(secret_name, secret_key)
+            tf_resource = render_tpl(tf_resource_tpl, secret_name, secret_key)
+            env_var_name = import_secret_env_name(secret_name, secret_key)
             import_command = [
                 "bazel",
                 "run",
@@ -44,11 +64,6 @@ def import_secrets(
                 tf_resource,
             ]
             if tf_resource not in tf_resources:
-                env_secret_name = secret_name.replace("-", "__")
-                env_secret_key = secret_key.replace("-", "__")
-                env_var_name = (
-                    f"TF_IMPORT_SECRET_{env_secret_name}_{env_secret_key}".upper()
-                )
                 try:
                     secret_value = os.environ[env_var_name]
                     import_command.append(secret_value)
