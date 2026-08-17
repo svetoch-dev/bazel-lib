@@ -9,28 +9,37 @@ def import_secrets(
     env: str,
     secrets: dict[str, ImportSecret],
     logger: BaseLogger = None,
+    final_apply: bool = True,
+    secrets_package: str = "secrets",
+    tf_resource_tpl: str = 'module.secrets.module.rod_secrets["{}"].module.import_secret["{}"].secret_resource.secret',
 ) -> bool:
     logger = logger or CliLogger("rod.libs.py.tf.secrets.import_secrets")
 
     os.chdir(bazel_settings.workspace)
-    secrets_package = f"//{bazel_settings.tf_env_dir}/{env}/secrets"
-    state_list_command = ["bazel", "run", f"{secrets_package}:tf", "state", "list"]
+    secrets_package_full_path = f"//{bazel_settings.tf_env_dir}/{env}/{secrets_package}"
+    state_list_command = [
+        "bazel",
+        "run",
+        f"{secrets_package_full_path}:tf",
+        "state",
+        "list",
+    ]
     exit_code, stderr, tf_resources = run_command(
         state_list_command, print_stdout=False
     )
     if exit_code != 0:
-        logger.error(f"State list failed for {secrets_package}")
+        logger.error(f"State list failed for {secrets_package_full_path}")
         return False
 
     final_apply_needed = False
 
     for secret_name, secret_obj in secrets.items():
         for secret_key in secret_obj.secrets_to_import:
-            tf_resource = f'module.secrets.module.rod_secrets["{secret_name}"].module.import_secret["{secret_key}"].secret_resource.secret'
+            tf_resource = tf_resource_tpl.format(secret_name, secret_key)
             import_command = [
                 "bazel",
                 "run",
-                f"{secrets_package}:tf",
+                f"{secrets_package_full_path}:tf",
                 "import",
                 tf_resource,
             ]
@@ -54,12 +63,15 @@ def import_secrets(
                     logger.error(f"Import secrets failed for {tf_resource}")
                     return False
 
-                final_apply_needed = True
+                if final_apply:
+                    final_apply_needed = True
 
     if final_apply_needed:
-        exit_code, _, _ = run_command(["bazel", "run", f"{secrets_package}:apply"])
+        exit_code, _, _ = run_command(
+            ["bazel", "run", f"{secrets_package_full_path}:apply"]
+        )
         if exit_code != 0:
-            logger.error(f"Final {secrets_package}:apply failed")
+            logger.error(f"Final {secrets_package_full_path}:apply failed")
             return False
 
     return True
