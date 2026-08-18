@@ -10,6 +10,16 @@ def render_tpl(
     secret_name: str,
     secret_key: str,
 ) -> str:
+    """Render the secret name and key placeholders in a Terraform resource template.
+
+    Args:
+        tpl: Template containing ``<secret_name>`` and ``<secret_key>`` placeholders.
+        secret_name: Secret name to insert into the template.
+        secret_key: Secret key to insert into the template.
+
+    Returns:
+        The rendered Terraform resource address.
+    """
     rendered = tpl.replace("<secret_name>", secret_name)
     rendered = rendered.replace("<secret_key>", secret_key)
     return rendered
@@ -19,6 +29,18 @@ def import_secret_env_name(
     secret_name: str,
     secret_key: str,
 ) -> str:
+    """Build the environment-variable name used to read a secret value.
+
+    Hyphens are converted to double underscores before the result is converted
+    to uppercase.
+
+    Args:
+        secret_name: Name of the secret.
+        secret_key: Key within the secret.
+
+    Returns:
+        The normalized ``TF_IMPORT_SECRET_*`` environment-variable name.
+    """
     env_secret_name = secret_name.replace("-", "__")
     env_secret_key = secret_key.replace("-", "__")
     return f"TF_IMPORT_SECRET_{env_secret_name}_{env_secret_key}".upper()
@@ -32,6 +54,24 @@ def import_secrets(
     secrets_package: str = "secrets",
     tf_resource_tpl: str = 'module.secrets.module.rod_secrets["<secret_name>"].module.import_secret["<secret_key>"].secret_resource.secret',
 ) -> bool:
+    """Import missing secrets into a Terraform state through Bazel targets.
+
+    Secret values are read from normalized ``TF_IMPORT_SECRET_*`` environment
+    variables. If a variable is absent, the user is prompted for its value.
+
+    Args:
+        env: Environment directory containing the secrets package.
+        secrets: Secret definitions and the keys that should be imported.
+        logger: Logger used for status and error messages.
+        final_apply: Whether to run the package's apply target after imports.
+        secrets_package: Package path relative to the environment directory.
+        tf_resource_tpl: Terraform resource address template containing
+            ``<secret_name>`` and ``<secret_key>`` placeholders.
+
+    Returns:
+        True when state inspection and all requested operations succeed; False
+        when state inspection, an import, or the final apply fails.
+    """
     logger = logger or CliLogger("rod.libs.py.tf.secrets.import_secrets")
 
     os.chdir(bazel_settings.workspace)
