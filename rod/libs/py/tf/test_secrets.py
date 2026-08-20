@@ -3,7 +3,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock, call
 
-from rod.libs.py.tf.secrets import import_secrets
+from rod.libs.py.tf.secrets import import_secret_env_name, import_secrets, render_tpl
 from rod.libs.py.tf.tfvars import ImportSecret
 
 test_secret = ImportSecret(
@@ -16,6 +16,26 @@ test_secret = ImportSecret(
 
 
 class TestImportSecrets(unittest.TestCase):
+    def test_render_tpl_replaces_named_placeholders(self):
+        result = render_tpl(
+            'module.vault["<secret_name>"].value["<secret_key>"]',
+            "service-account",
+            "api-token",
+        )
+
+        self.assertEqual(
+            result,
+            'module.vault["service-account"].value["api-token"]',
+        )
+
+    def test_import_secret_env_name_normalizes_name_and_key(self):
+        result = import_secret_env_name("service-account", "api-token")
+
+        self.assertEqual(
+            result,
+            "TF_IMPORT_SECRET_SERVICE__ACCOUNT_API__TOKEN",
+        )
+
     @patch("rod.libs.py.tf.secrets.os.chdir")
     @patch("rod.libs.py.tf.secrets.run_command")
     @patch("rod.libs.py.tf.secrets.bazel_settings")
@@ -140,6 +160,62 @@ class TestImportSecrets(unittest.TestCase):
                 call(["bazel", "run", "//terraform/environment/prd/secrets:apply"]),
             ]
         )
+
+    @patch("rod.libs.py.tf.secrets.os.chdir")
+    @patch("rod.libs.py.tf.secrets.run_command")
+    @patch("rod.libs.py.tf.secrets.bazel_settings")
+    @patch.dict(
+        os.environ, {"TF_IMPORT_SECRET_SECRET_API_KEY": "secret-from-env"}, clear=True
+    )
+    def test_supports_custom_package_and_resource_template_without_final_apply(
+        self,
+        mock_bazel_settings,
+        mock_run_command,
+        mock_chdir,
+    ):
+        mock_bazel_settings.workspace = "/tmp/worksapce"
+        mock_bazel_settings.tf_env_dir = "terraform/environment"
+        tf_resource_tpl = 'module.vault["<secret_name>"].value["<secret_key>"]'
+        tf_resource = 'module.vault["secret"].value["api_key"]'
+        mock_run_command.side_effect = [
+            (0, [], []),  # state list: resource missing
+            (0, [], []),  # import
+        ]
+
+        result = import_secrets(
+            env="prd",
+            secrets={"secret": test_secret.model_copy(deep=True)},
+            final_apply=False,
+            secrets_package="credentials",
+            tf_resource_tpl=tf_resource_tpl,
+        )
+
+        self.assertTrue(result)
+        mock_run_command.assert_has_calls(
+            [
+                call(
+                    [
+                        "bazel",
+                        "run",
+                        "//terraform/environment/prd/credentials:tf",
+                        "state",
+                        "list",
+                    ],
+                    print_stdout=False,
+                ),
+                call(
+                    [
+                        "bazel",
+                        "run",
+                        "//terraform/environment/prd/credentials:tf",
+                        "import",
+                        tf_resource,
+                        "secret-from-env",
+                    ]
+                ),
+            ]
+        )
+        self.assertEqual(mock_run_command.call_count, 2)
 
     @patch("rod.libs.py.tf.secrets.input", return_value="secret-from-prompt")
     @patch("rod.libs.py.tf.secrets.os.chdir")

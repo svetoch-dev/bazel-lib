@@ -1,3 +1,11 @@
+# v0.24.2
+
+Enahancements:
+* `rod/libs/py/tf/secrets.py`
+  * settable `tf_resource` and package
+  * optional final apply
+  
+
 # v0.24.1
 
 Features:
