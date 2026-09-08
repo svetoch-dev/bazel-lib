@@ -1,0 +1,44 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+
+mtree_spec(
+    name = "mtree_yc",
+    srcs = ["@svetoch_bazel_lib_yc_cli//file"],
+)
+
+mtree_mutate(
+    name = "install_yc",
+    mtree = ":mtree_yc",
+    package_dir = "usr/local/bin",
+)
+
+tar(
+    name = "yc",
+    srcs = ["@svetoch_bazel_lib_yc_cli//file"],
+    mtree = ":install_yc",
+)
+
+tar(
+    name = "yc_link",
+    mtree = [
+        "./usr/local/bin/yc type=link link=/usr/local/bin/file/yc",
+    ],
+)
+
+oci_image(
+    name = "argocd_img",
+    base = "@svetoch_bazel_lib_argocd",
+    tars = [
+        ":yc",
+        ":yc_link",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+oci_load(
+    name = "argocd_tarball",
+    image = ":argocd_img",
+    repo_tags = [
+        "argocd:v3.5.2-test1",
+    ],
+)
