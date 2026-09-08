@@ -71,6 +71,15 @@ bazel_dep(name = "rules_distroless", version = "0.8.0")
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
+    name = "svetoch_bazel_lib_argocd",
+    #v3.5.2
+    digest = "sha256:e2aadfae709d904e87f46ba4aa49601d827b3022db22cd4d03aae816a2e7097b",
+    image = "quay.io/argoproj/argocd",
+    platforms = [
+        "linux/amd64",
+    ],
+)
+oci.pull(
     name = "svetoch_bazel_lib_postgres-exporter",
     #v0.18.1
     digest = "sha256:fb96c4413985d4b23ab02b19022b3d70a86c8e0a62f41ab15ebb6f4673781a5d",
@@ -91,6 +100,8 @@ oci.pull(
 )
 use_repo(
     oci,
+    "svetoch_bazel_lib_argocd",
+    "svetoch_bazel_lib_argocd_linux_amd64",
     "svetoch_bazel_lib_postgres-exporter",
     "svetoch_bazel_lib_postgres-exporter_linux_amd64",
     "svetoch_bazel_lib_postgres-exporter_linux_arm64",
@@ -121,6 +132,13 @@ http_file(
     downloaded_file_path = "bazelisk",
     sha256 = "22e7d3a188699982f661cf4687137ee52d1f24fec1ec893d91a6c4d791a75de8",
     url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.28.1/bazelisk-linux-amd64",
+)
+
+http_file(
+    name = "svetoch_bazel_lib_yc_cli",
+    downloaded_file_path = "yc",
+    sha256 = "6980db14cfb975e1068d23a3440a5c4617019d9d66316659aaacfec47ab2466c",
+    url = "https://storage.yandexcloud.net/yandexcloud-yc/release/1.31.0/linux/amd64/yc",
 )
 
 http_archive(
