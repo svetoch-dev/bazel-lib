@@ -137,7 +137,7 @@ http_file(
 http_file(
     name = "svetoch_bazel_lib_yc_cli",
     downloaded_file_path = "yc",
-    sha256 = "95570106b09d35a6830b7534e9bd746086dc4ee2fd6f7a1cf6c5f33264127b09",
+    sha256 = "23fb5daaf86f6e48c4c62d30c3f1c084c58d22dc7e3f5aa5473fc3f4dc5eef9d",
     url = "https://storage.yandexcloud.net/yandexcloud-yc/release/1.36.0/linux/amd64/yc",
 )
 
