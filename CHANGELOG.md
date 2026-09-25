@@ -1,3 +1,8 @@
+# v0.24.3
+
+Enahancements:
+* `rod/libs/py/tf/apply.py` show target and env for error"
+
 # v0.24.2
 
 Enahancements:

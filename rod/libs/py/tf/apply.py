@@ -77,7 +77,7 @@ def apply_env(
         return_code, stderr, stdout = run_command(command)
         if return_code != 0:
             logger.error(
-                f"Failed to apply target {target} for {env} "
+                f"Failed to apply target {target} for {env}"
                 f"(exit code {return_code})"
             )
             return False
