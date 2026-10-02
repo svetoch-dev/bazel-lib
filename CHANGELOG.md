@@ -3,6 +3,9 @@
 Features:
 * `deps/images/argocd` custom Argo CD `v3.5.3` image with Yandex Cloud CLI `1.38.0`
 
+Fixes:
+* fix Path import in `rod/scripts/init/poststeps.py
+
 # v0.24.3
 
 Enahancements:
