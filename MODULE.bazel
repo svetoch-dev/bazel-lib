@@ -72,8 +72,8 @@ bazel_dep(name = "rules_distroless", version = "0.8.0")
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
     name = "svetoch_bazel_lib_argocd",
-    #v3.5.2
-    digest = "sha256:e2aadfae709d904e87f46ba4aa49601d827b3022db22cd4d03aae816a2e7097b",
+    #v3.5.3
+    digest = "sha256:dd3f47d5a5e4da563a7a398506e892481b358a7cec50abdf320c71aa55904bfa",
     image = "quay.io/argoproj/argocd",
     platforms = [
         "linux/amd64",

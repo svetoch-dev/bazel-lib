@@ -1,3 +1,11 @@
+# v0.25.0
+
+Features:
+* `deps/images/argocd` custom Argo CD `v3.5.3` image with Yandex Cloud CLI `1.38.0`
+
+Enhancements:
+* `rod/libs/py/tf/apply.py` report the failed Terraform target, environment, and exit code
+
 # v0.24.3
 
 Enahancements:
@@ -305,4 +313,3 @@ Features:
 * `terraform/tf_variables.tf.tpl`:
   * `var.env` users attribute
   * `var.env.apps` `access_roles` attr that states what roles can do 
-

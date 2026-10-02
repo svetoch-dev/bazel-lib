@@ -1,5 +1,5 @@
 load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_oci//oci:defs.bzl", "oci_image")
 
 mtree_spec(
     name = "mtree_yc",
@@ -33,12 +33,4 @@ oci_image(
         ":yc_link",
     ],
     visibility = ["//visibility:public"],
-)
-
-oci_load(
-    name = "argocd_tarball",
-    image = ":argocd_img",
-    repo_tags = [
-        "argocd:v3.5.2-test1",
-    ],
 )
