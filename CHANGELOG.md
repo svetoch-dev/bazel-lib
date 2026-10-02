@@ -5,6 +5,7 @@ Features:
 
 Fixes:
 * fix Path import in `rod/scripts/init/poststeps.py
+* fix typo in `rod/libs/py/yc/bucket.py`
 
 # v0.24.3
 

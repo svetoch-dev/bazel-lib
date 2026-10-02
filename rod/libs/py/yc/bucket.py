@@ -156,7 +156,7 @@ class YcBucket:
         configs: YcBucketConfigs = None,
         logger: BaseLogger = None,
     ):
-        conifgs = configs or YcBucketConfigs()
+        configs = configs or YcBucketConfigs()
         logger = logger or CliLogger("rod.libs.py.yc.bucket.Bucket")
 
         self.sdk = sdk_get(token)
