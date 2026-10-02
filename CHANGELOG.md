@@ -17,7 +17,6 @@ Enahancements:
 * `rod/libs/py/tf/secrets.py`
   * settable `tf_resource` and package
   * optional final apply
-  
 
 # v0.24.1
 
@@ -39,7 +38,6 @@ Features:
 * `rod/scripts/init/prepare` prepare helper script that prepares `terraform.tfvars.json` for a specific env
 * `tools/macros/tf` support `{env.type}` template string
 * `terraform/tf_variables.tf` new environment `test` attribute to indicate that test specific code should run. For example in gcp custom roles are permanently deleted  after 1 month. During this period of time you can't use the same role name
-
 
 # v0.22.0
 
@@ -85,7 +83,6 @@ Fixes:
   * `AppRepo|AppCD` are None by default
 * `tools/utils/format` dont cast to `str` use `json.encode` instead
 
-
 # v0.19.0
 
 Braking changes:
@@ -105,7 +102,6 @@ Features:
   * use env.type attribute to find internal env
 * `libs/py/settings` add tests
 
-
 # v0.17.0
 
 ## ⚠️ Breaking Changes:
@@ -115,7 +111,6 @@ Features:
 * `env.cloud.registry` is moved to `env.registry` and type is changed to object
 * `env.dns` new mandatory object variable
 * `env.cloud.{region,default_zone,multi_region}` attributes are moved under `env.cloud.location`
-
 
 Features:
 * `terrafrom.tfvars.json` variables validation
@@ -231,7 +226,6 @@ Enhancements:
 * `scripts/init/tf/state` move `create_gcs_tf_state` `create_yc_s3_tf_state` functions to `libs/py/tf/state`
 * `scripts/init/tf/apply` move `apply_env` `apply_env_targets` functions to `libs/py/tf/apply`
 
-
 # v0.11.0
 
 Features:
@@ -276,7 +270,6 @@ Features:
 * tools/macros/tf.bzl can render variable `repo.type`
 * add `var.repo.name` attribute to tf_variables.tf.tpl
 
-
 # v0.8.0
 
 Features:
@@ -287,12 +280,9 @@ Features:
 * `libs.py.helpers.create_file` function
 * `scripts/init/images` scripts have there terraform.tfvars.json dependent logic moved to python instead of starlark
 
-
 Enhancements:
 * annotations to libs.py.helpers.run_command
 * custom exceptions for black lint fix because `build` dirs are excluded by default
-
-
 
 # v0.7.0
 
