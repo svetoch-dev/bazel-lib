@@ -3,13 +3,10 @@
 Features:
 * `deps/images/argocd` custom Argo CD `v3.5.3` image with Yandex Cloud CLI `1.38.0`
 
-Enhancements:
-* `rod/libs/py/tf/apply.py` report the failed Terraform target, environment, and exit code
-
 # v0.24.3
 
 Enahancements:
-* `rod/libs/py/tf/apply.py` show target and env for error"
+* `rod/libs/py/tf/apply.py` show target and env in error"
 
 # v0.24.2
 
