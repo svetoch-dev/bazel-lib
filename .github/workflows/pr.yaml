@@ -13,8 +13,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: "europe-north1-docker.pkg.dev/svetochdev-internal/containers/bazelisk:v1.28.1-1"
+      image: "${{ vars.BAZELISK_IMAGE }}"
     steps:
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v7.0.1
     - name: test
       run: bazel test //...
