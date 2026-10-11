@@ -2,6 +2,7 @@ from rod.libs.py.tf.tfvars import (
     tfvars,
     TfVars,
     CloudTypeEnum,
+    DnsTypeEnum,
     update_tfvars,
     TfBackend,
     Dns,
@@ -33,7 +34,7 @@ def prepare_tfvars_gcp(tfvars: TfVars):
         "type": "gar",
         "url": "{env.cloud.location.region}-docker.pkg.dev/{env.cloud.id}/containers",
     }
-    dns = {"domain": "{env.short_name}.{company.domain}.", "type": "gcp"}
+    dns = {"domain": "{env.short_name}.{company.domain}.", "type": DnsTypeEnum.gcp}
     location = {
         "region": "CHANGE_ME",
         "default_zone": "CHANGE_ME",
@@ -66,7 +67,7 @@ def prepare_tfvars_yc(tfvars: TfVars):
         },
     }
     registry = {"type": "ycr", "url": ""}
-    dns = {"domain": "{env.short_name}.{company.domain}.", "type": "yc"}
+    dns = {"domain": "{env.short_name}.{company.domain}.", "type": DnsTypeEnum.yc}
     # We set locations for yc because there
     # is only one ru region and prefered location
     location = {

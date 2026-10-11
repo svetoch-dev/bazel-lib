@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import MagicMock, call, patch
 
 from rod.scripts.init.tf.apply.apply import apply
-from rod.libs.py.tf.tfvars import Cloud, CloudTypeEnum, Env, TfVars
+from rod.libs.py.tf.tfvars import Cloud, CloudTypeEnum, DnsTypeEnum, Env, TfVars
 
 cloud = Cloud(
     name=CloudTypeEnum.yc,
@@ -31,7 +31,7 @@ env = Env(
     initial_start=True,
     import_secrets={},
     registry={"type": "ycr", "url": "registry"},
-    dns={"domain": "example.com", "type": "yc"},
+    dns={"domain": "example.com", "type": DnsTypeEnum.yc},
     tf_backend={"type": "s3", "configs": {"bucket": "some-tf-state"}},
     cloud=cloud,
     kubernetes={"enabled": False},

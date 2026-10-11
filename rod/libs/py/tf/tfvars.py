@@ -13,6 +13,11 @@ class CloudTypeEnum(str, Enum):
     yc = "yc"
 
 
+class DnsTypeEnum(str, Enum):
+    gcp = "gcp"
+    yc = "yc"
+
+
 class BaseTfVarsModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -54,7 +59,7 @@ class Registry(BaseTfVarsModel):
 
 class Dns(BaseTfVarsModel):
     domain: str
-    type: Literal["gcp", "yc"]
+    type: DnsTypeEnum
 
 
 class Buckets(BaseTfVarsModel):
