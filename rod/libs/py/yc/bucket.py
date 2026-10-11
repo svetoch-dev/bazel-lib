@@ -51,8 +51,8 @@ class YcBucketObject:
         self,
         bucket: str,
         key: str,
-        token: str = None,
-        logger: BaseLogger = None,
+        token: str | None = None,
+        logger: BaseLogger | None = None,
     ):
         self.logger = logger or CliLogger("rod.libs.py.yc.bucket.BucketObject")
 
@@ -152,9 +152,9 @@ class YcBucket:
         folder_id: str,
         name: str,
         create_if_missing: bool = True,
-        token: str = None,
-        configs: YcBucketConfigs = None,
-        logger: BaseLogger = None,
+        token: str | None = None,
+        configs: YcBucketConfigs | None = None,
+        logger: BaseLogger | None = None,
     ):
         configs = configs or YcBucketConfigs()
         logger = logger or CliLogger("rod.libs.py.yc.bucket.Bucket")

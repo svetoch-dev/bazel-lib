@@ -1,0 +1,16 @@
+load("@rules_python//python:defs.bzl", "py_library")
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
+
+py_lint()
+
+py_library(
+    name = "client",
+    srcs = ["client.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        requirement("kubernetes"),
+    ],
+)

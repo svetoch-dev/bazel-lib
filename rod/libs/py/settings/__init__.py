@@ -1,5 +1,5 @@
-from pydantic_settings import BaseSettings
 from pydantic import Field, computed_field
+from pydantic_settings import BaseSettings
 
 
 class YcSettings(BaseSettings):
@@ -8,6 +8,13 @@ class YcSettings(BaseSettings):
         validation_alias="USER",
         default="not identified",
     )
+
+
+class K8sClusterSettings(BaseSettings):
+    endpoint: str = Field(
+        description="Https url of K8s cluster ip",
+    )
+    ca_cert: str = Field(description="Base64 encoded k8s cluster ca cert")
 
 
 class AWSSettings(BaseSettings):

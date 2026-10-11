@@ -20,6 +20,7 @@ from rod.libs.py.tf.tfvars import (
     Location,
     Kubernetes,
     env_network_settings,
+    CloudTypeEnum,
     Network,
 )
 
@@ -204,8 +205,11 @@ class TestFormattedTfvars(unittest.TestCase):
         cloud = self._env("internal")["cloud"]
         del cloud["name"]
 
-        self.assertEqual(Cloud(name="gcp", **cloud).name, "gcp")
-        self.assertEqual(Cloud(name="yc", folder_id="yc-folder", **cloud).name, "yc")
+        self.assertEqual(Cloud(name=CloudTypeEnum.gcp, **cloud).name, CloudTypeEnum.gcp)
+        self.assertEqual(
+            Cloud(name=CloudTypeEnum.yc, folder_id="yc-folder", **cloud).name,
+            CloudTypeEnum.yc,
+        )
 
     def test_cloud_name_rejects_unsupported_values(self):
         cloud = self._env("internal")["cloud"]

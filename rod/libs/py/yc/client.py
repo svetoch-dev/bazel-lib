@@ -57,7 +57,7 @@ class YcSettings:
         return response.json()["access_token"]
 
 
-def sdk_get(token: str = None) -> SDK:
+def sdk_get(token: str | None = None) -> SDK:
     """Create a Yandex Cloud SDK with the first available auth method.
 
     Authentication is selected in this order: explicit IAM token, ``YC_TOKEN``

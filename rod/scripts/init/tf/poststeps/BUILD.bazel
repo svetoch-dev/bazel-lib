@@ -15,6 +15,17 @@ py_binary(
     ],
 )
 
+py_binary(
+    name = "update_kube_config",
+    srcs = ["update_kube_config.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+    ],
+)
+
 py_test(
     name = "tests",
     srcs = glob(

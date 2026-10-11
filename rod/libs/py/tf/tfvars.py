@@ -1,4 +1,5 @@
 from typing import Literal
+from enum import Enum
 from pathlib import Path
 
 from rod.libs.py.settings import bazel_settings
@@ -7,8 +8,12 @@ from rod.libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholder
 import ipaddress
 
 
-class BaseTfVarsModel(BaseModel):
+class CloudTypeEnum(str, Enum):
+    gcp = "gcp"
+    yc = "yc"
 
+
+class BaseTfVarsModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
@@ -100,7 +105,7 @@ class App(BaseTfVarsModel):
 
 
 class Cloud(BaseTfVarsModel):
-    name: Literal["gcp", "yc"]
+    name: CloudTypeEnum
     id: str
     folder_id: str | None = None
     location: Location
