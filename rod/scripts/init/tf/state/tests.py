@@ -80,7 +80,7 @@ class TestCreateState(unittest.TestCase):
         tf_backend_ycs3 = tf_backend.model_copy(deep=True)
 
         cloud_yc.id = "asadadadad"
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.folder_id = "folder-id"
         cloud_yc.location.region = "ru-central1"
         tf_backend_ycs3.type = "s3"
@@ -132,7 +132,7 @@ class TestCreateState(unittest.TestCase):
         cloud_yc = cloud.model_copy(deep=True)
         tf_backend_ycs3 = tf_backend.model_copy(deep=True)
 
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.folder_id = "folder-id"
         tf_backend_ycs3.type = "s3"
 
@@ -174,7 +174,7 @@ class TestCreateState(unittest.TestCase):
         cloud_yc = cloud.model_copy(deep=True)
         tf_backend_ycs3 = tf_backend.model_copy(deep=True)
 
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.folder_id = "folder-id"
         tf_backend_ycs3.type = "s3"
 

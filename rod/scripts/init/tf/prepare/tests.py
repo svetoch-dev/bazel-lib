@@ -10,7 +10,7 @@ from rod.libs.py.bazel.rc import bazelrc_str_to_obj
 from rod.libs.py.tf.tfvars import Cloud, Env, CloudTypeEnum
 
 cloud = Cloud(
-    name="yc",
+    name=CloudTypeEnum.yc,
     id="<replace-me>",
     folder_id="adadadadad",
     location={
@@ -184,7 +184,7 @@ class TestPrepare(unittest.TestCase):
 
         cloud_yc = cloud.model_copy(deep=True)
 
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.id = "dadadadad"
 
         env_dev.cloud = cloud_yc
@@ -211,7 +211,7 @@ class TestPrepare(unittest.TestCase):
 
         cloud_yc = cloud.model_copy(deep=True)
 
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.id = "dadadadad"
         env_int.cloud = cloud_yc
 

@@ -40,7 +40,7 @@ class TestFormattedTfvars(unittest.TestCase):
             "dns": {"domain": "example.com", "type": "gcp"},
             "tf_backend": {"type": "gcs", "configs": {"bucket": "tf-state"}},
             "cloud": {
-                "name": "gcp",
+                "name": CloudTypeEnum.gcp,
                 "id": env_type,
                 "location": {
                     "region": "europe-west2",
@@ -219,7 +219,7 @@ class TestFormattedTfvars(unittest.TestCase):
 
     def test_yc_cloud_requires_folder_id(self):
         cloud = self._env("internal")["cloud"]
-        cloud["name"] = "yc"
+        cloud["name"] = CloudTypeEnum.yc
         with self.assertRaises(ValidationError):
             Cloud(**cloud)
 
@@ -255,7 +255,7 @@ class TestEnvNetworkSettings(unittest.TestCase):
             dns={"domain": "example.com", "type": "gcp"},
             tf_backend={"type": "gcs", "configs": {"bucket": "tf-state"}},
             cloud={
-                "name": "gcp",
+                "name": CloudTypeEnum.gcp,
                 "id": name,
                 "location": {
                     "region": "europe-west2",

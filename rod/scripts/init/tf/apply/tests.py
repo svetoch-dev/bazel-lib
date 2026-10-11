@@ -3,10 +3,10 @@ import unittest
 from unittest.mock import MagicMock, call, patch
 
 from rod.scripts.init.tf.apply.apply import apply
-from rod.libs.py.tf.tfvars import Cloud, Env, TfVars
+from rod.libs.py.tf.tfvars import Cloud, CloudTypeEnum, Env, TfVars
 
 cloud = Cloud(
-    name="yc",
+    name=CloudTypeEnum.yc,
     id="<replace-me>",
     folder_id="adadadadad",
     location={

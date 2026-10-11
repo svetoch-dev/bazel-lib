@@ -1,4 +1,4 @@
-from rod.libs.py.tf.tfvars import formatted_tfvars
+from rod.libs.py.tf.tfvars import CloudTypeEnum, formatted_tfvars
 from rod.scripts.init.tf.prepare.gcp import prepare_gcp
 from rod.scripts.init.tf.prepare.yc import prepare_yc
 import sys
@@ -10,11 +10,11 @@ def prepare() -> None:
     """
     tfvars = formatted_tfvars()
     for env_name, env_obj in tfvars.envs.items():
-        if env_obj.cloud.name == "gcp":
+        if env_obj.cloud.name == CloudTypeEnum.gcp:
             prepared = prepare_gcp(env_obj.cloud.id)
             if not prepared:
                 sys.exit(1)
-        elif env_obj.cloud.name == "yc":
+        elif env_obj.cloud.name == CloudTypeEnum.yc:
             if env_obj.type != "internal":
                 continue
             prepared = prepare_yc(env_obj.cloud.folder_id)

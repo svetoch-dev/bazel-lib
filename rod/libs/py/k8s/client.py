@@ -1,6 +1,6 @@
 from kubernetes import client
 
-from rod.libs.py.tf.tfvars import Env
+from rod.libs.py.tf.tfvars import Env, CloudTypeEnum
 
 
 class K8sClient:
@@ -24,5 +24,6 @@ class K8sClient:
 
 
 def k8s_config_factory(env: Env, use_cli: bool = False) -> client.Configuration:
-    if env.cloud.name == 
+    if env.cloud.name == CloudTypeEnum.gcp:
+        pass
     return client.Configuration()

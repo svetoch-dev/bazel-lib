@@ -114,7 +114,7 @@ class Cloud(BaseTfVarsModel):
 
     @model_validator(mode="after")
     def validate_folder_id_for_yc(self):
-        if self.name == "yc" and not self.folder_id:
+        if self.name == CloudTypeEnum.yc and not self.folder_id:
             raise ValueError("folder_id must be set when cloud.name is yc")
 
         return self
