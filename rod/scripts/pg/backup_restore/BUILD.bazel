@@ -1,0 +1,10 @@
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+
+py_lint()
+
+py_binary(
+    name = "backup_restore",
+    srcs = ["backup_restore.py"],
+    visibility = ["//visibility:public"],
+)
