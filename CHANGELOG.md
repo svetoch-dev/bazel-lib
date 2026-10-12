@@ -1,7 +1,7 @@
 # v0.26.0
 
 Features:
-* `rod/scripts/pg/backup_restore` verify PostgreSQL WAL-G backups with point-in-time restoration through the Zalando Postgres Operator, run a SQL query, and clean up the temporary cluster and its PVCs
+* `rod/scripts/pg/backup_restore` verify PostgreSQL physical backups and archived WAL with point-in-time restoration through the Zalando Postgres Operator
 
 # v0.25.0
 

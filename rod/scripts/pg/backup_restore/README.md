@@ -1,8 +1,13 @@
 # PostgreSQL backup restore check
 
 The `backup_restore` command verifies a point-in-time backup by asking the
-Zalando Postgres Operator to clone the source cluster from its WAL-G backup,
-running a SQL query on the restored cluster, and deleting the temporary cluster.
+Zalando Postgres Operator to restore a physical base backup and replay archived
+WAL up to the requested recovery target, running a SQL query on the restored
+cluster, and deleting the temporary cluster.
+
+Spilo performs the restoration. Support for WAL-E or WAL-G depends on the
+installed Spilo image and its restore configuration; this command does not
+select the tool. Logical backups produced by `pg_dump` are not checked.
 
 Run it from a repository that depends on `svetoch_bazel_lib`:
 
