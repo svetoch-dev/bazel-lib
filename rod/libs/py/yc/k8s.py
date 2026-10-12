@@ -39,7 +39,7 @@ class YcK8sCluster(K8sClusterSettings):
     @property
     def ca_cert(self) -> str:
         ca_cert = self.master.master_auth.cluster_ca_certificate
-        return str(base64.b64encode(ca_cert.encode("utf-8")))
+        return base64.b64encode(ca_cert.encode("utf-8")).decode("utf-8")
 
     def _get(self):
         """Return the k8s cluster named by this instance, or None when missing."""

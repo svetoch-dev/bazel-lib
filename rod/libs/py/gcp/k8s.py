@@ -18,7 +18,6 @@ class GcpK8sCluster(K8sClusterSettings):
         logger: BaseLogger | None = None,
     ):
         logger = logger or CliLogger("rod.libs.py.gcp.k8s.GcpK8sCluster")
-
         self.project_id = project_id
         self.name = name
         self.location = location
@@ -43,7 +42,7 @@ class GcpK8sCluster(K8sClusterSettings):
         client = container_v1.ClusterManagerClient()
 
         try:
-            self._cluster = client.get_cluster(
+            return client.get_cluster(
                 name=f"projects/{self.project_id}/locations/{self.location}/clusters/{self.name}"
             )
         except NotFound:
