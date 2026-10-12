@@ -1,5 +1,6 @@
 import unittest
 from copy import deepcopy
+from unittest.mock import patch
 
 from pydantic import ValidationError
 from rod.libs.py.tf.tfvars import (
@@ -218,6 +219,57 @@ class TestFormattedTfvars(unittest.TestCase):
         cloud["name"] = "yc"
         with self.assertRaises(ValidationError):
             Cloud(**cloud)
+
+    def test_yc_cloud_organization_id_is_optional(self):
+        cloud = self._env("internal")["cloud"]
+        cloud.update(name="yc", folder_id="example-folder")
+
+        for organization in ({}, {"organization_id": None}):
+            with self.subTest(organization=organization):
+                result = Cloud.model_validate(cloud | organization)
+                self.assertIsNone(result.organization_id)
+
+    def test_tfvars_preserves_organization_id_in_json(self):
+        env = self._env("internal")
+        env["cloud"].update(
+            name="yc",
+            folder_id="example-folder",
+            organization_id="example-organization",
+        )
+        original = TfVars.model_validate(self._tfvars({"internal": env}))
+
+        restored = TfVars.model_validate_json(original.model_dump_json())
+
+        self.assertEqual(
+            restored.envs["internal"].cloud.organization_id, "example-organization"
+        )
+
+    def test_formatted_tfvars_preserves_and_formats_organization_id(self):
+        internal = self._env("internal")
+        internal["cloud"].update(
+            name="yc",
+            folder_id="example-folder",
+            organization_id="example-organization",
+        )
+        production = self._env("product")
+        production["cloud"].update(
+            name="yc",
+            folder_id="example-product-folder",
+            organization_id="{env.cloud.id}-organization",
+        )
+        original = TfVars.model_validate(
+            self._tfvars({"internal": internal, "production": production})
+        )
+
+        with patch("rod.libs.py.tf.tfvars.tfvars", return_value=original):
+            result = formatted_tfvars()
+
+        self.assertEqual(
+            result.envs["internal"].cloud.organization_id, "example-organization"
+        )
+        self.assertEqual(
+            result.envs["production"].cloud.organization_id, "product-organization"
+        )
 
     def test_dns_type_accepts_supported_values(self):
         self.assertEqual(Dns(domain="example.com", type="gcp").type, "gcp")

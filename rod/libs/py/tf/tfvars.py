@@ -103,6 +103,7 @@ class Cloud(BaseTfVarsModel):
     name: Literal["gcp", "yc"]
     id: str
     folder_id: str | None = None
+    organization_id: str | None = None
     location: Location
     network: Network
     buckets: Buckets
