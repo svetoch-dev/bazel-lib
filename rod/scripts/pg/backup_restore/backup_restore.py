@@ -11,7 +11,8 @@ from datetime import datetime
 
 
 RUN_ID_LABEL = "backup-restore-run-id"
-POLL_INTERVAL = 10
+POLL_INTERVAL = 5
+RECOVERY_POLL_INTERVAL = 3
 TIMESTAMP_FORMAT_ERROR = (
     "expected YYYY-MM-DDTHH:MM:SS with an optional fraction and timezone, "
     "or YYYY.MM.DD HH:MM:SS"
@@ -304,6 +305,40 @@ def wait_for_master(namespace: str, cluster: str) -> str:
         time.sleep(POLL_INTERVAL)
 
 
+def wait_for_recovery(namespace: str, pod: str) -> None:
+    print("Master is ready. Waiting for pg_is_in_recovery() = f...", file=sys.stderr)
+    while True:
+        result = kubectl(
+            [
+                "exec",
+                "--namespace",
+                namespace,
+                pod,
+                "--container",
+                "postgres",
+                "--",
+                "psql",
+                "--no-psqlrc",
+                "--set",
+                "ON_ERROR_STOP=1",
+                "--tuples-only",
+                "--no-align",
+                "--username",
+                "postgres",
+                "--dbname",
+                "postgres",
+                "--command",
+                "SELECT pg_is_in_recovery();",
+            ]
+        ).strip()
+        if result == "f":
+            print("Recovery completed: pg_is_in_recovery() = f.", file=sys.stderr)
+            return
+        if result != "t":
+            raise RuntimeError(f"Unexpected pg_is_in_recovery() result: {result!r}")
+        time.sleep(RECOVERY_POLL_INTERVAL)
+
+
 def cleanup_clone_storage(namespace: str, cluster: str) -> None:
     selector = f"cluster-name={cluster}"
     while True:
@@ -380,6 +415,7 @@ def run_check(args: argparse.Namespace) -> int:
         )
         created = True
         pod = wait_for_master(namespace, clone_name)
+        wait_for_recovery(namespace, pod)
         print(f"Restore ready. Running SQL in database {database}...", file=sys.stderr)
         result = kubectl(
             [

@@ -63,9 +63,11 @@ operator-generated replica Service names, while keeping `teamId` intact. If the
 team ID alone leaves insufficient room for the clone suffix, the command fails
 before creating the clone.
 
-The command waits until the restored cluster becomes ready, runs the query, and
-then removes the temporary cluster. It has no built-in timeout; if the cluster
-does not become ready, the command keeps waiting.
+The command waits for a Ready master Pod, then polls `pg_is_in_recovery()` in
+the `postgres` database every 3 seconds until it returns `false`. Only then
+does it run the user's query and remove the temporary cluster. A failed SQL
+probe or an unexpected result fails the check and triggers cleanup.
+It has no built-in timeout; readiness and recovery waits can continue indefinitely.
 
 SQL results include column headings. The command waits for the PostgreSQL
 resource to be deleted, removes retained PVCs, and waits for the listed resource
