@@ -39,15 +39,14 @@ py_library(
     ],
 )
 
-
 py_library(
     name = "k8s",
     srcs = ["k8s.py"],
     visibility = ["//visibility:public"],
     deps = [
         ":client",
-        "@svetoch_bazel_lib//rod/libs/py/utils",
         "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
         requirement("yandexcloud"),
     ],
 )

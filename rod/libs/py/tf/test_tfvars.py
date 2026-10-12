@@ -1,5 +1,6 @@
 import unittest
 from copy import deepcopy
+from unittest.mock import patch
 
 from pydantic import ValidationError
 from rod.libs.py.tf.tfvars import (
@@ -125,6 +126,27 @@ class TestFormattedTfvars(unittest.TestCase):
         self.assertEqual(
             dev.registry.url, "europe-west2-docker.pkg.dev/rod-development/containers"
         )
+
+    def test_formatted_tfvars_uses_enum_values_in_placeholders(self):
+        for provider in ("gcp", "yc"):
+            with self.subTest(provider=provider):
+                env = self._env("internal")
+                env["cloud"]["name"] = provider
+                env["cloud"]["folder_id"] = "test-folder"
+                env["dns"]["type"] = provider
+                env["dns"]["domain"] = "{env.dns.type}.example.com"
+                env["tf_backend"]["configs"]["bucket"] = "{env.cloud.name}-tf-state"
+                source = TfVars.model_validate(self._tfvars({"internal": env}))
+
+                with patch("rod.libs.py.tf.tfvars.tfvars", return_value=source):
+                    result = formatted_tfvars().envs["internal"]
+
+                self.assertEqual(
+                    result.tf_backend.configs["bucket"], f"{provider}-tf-state"
+                )
+                self.assertEqual(result.dns.domain, f"{provider}.example.com")
+                self.assertIs(result.cloud.name, CloudTypeEnum(provider))
+                self.assertIs(result.dns.type, DnsTypeEnum(provider))
 
     def test_formatted_tfvars_returns_validated_models(self):
 

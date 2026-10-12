@@ -133,4 +133,3 @@ class KubeConfig(BaseKubeConfigModel):
     users: list[NamedAuthInfo] = Field(default_factory=list)
     contexts: list[NamedContext] = Field(default_factory=list)
     current_context: str = Field(default="", alias="current-context")
-    extensions: list[NamedExtension] | None = None

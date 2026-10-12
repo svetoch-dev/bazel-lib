@@ -199,7 +199,7 @@ def env_key(env: Env, tf_vars: TfVars) -> str:
 
 
 def formatted_tfvars():
-    tf_vars_dict = tfvars().model_dump()
+    tf_vars_dict = tfvars().model_dump(mode="json")
 
     replacement_dict = {}
 

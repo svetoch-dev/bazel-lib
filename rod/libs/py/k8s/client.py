@@ -57,8 +57,12 @@ def _gcp_kube_config(
 ) -> KubeConfig:
     config = KubeConfig()
     logger = logger or CliLogger("rod.libs.py.k8s.client._gcp_kube_config")
+    location = env.cloud.location.region
+    if not env.kubernetes.regional:
+        location = env.cloud.location.default_zone
+
     try:
-        cluster = GcpK8sCluster(env.cloud.id, cluster_name, env.cloud.location.region)
+        cluster = GcpK8sCluster(env.cloud.id, cluster_name, location)
     except GcpClusterNotFound as e:
         logger.error(str(e))
         return config

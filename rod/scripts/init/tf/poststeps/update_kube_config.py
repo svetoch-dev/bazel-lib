@@ -19,6 +19,8 @@ def update_kube_config():
             data = yaml.safe_load(f)
 
         kube_config = KubeConfig(**data)
+    else:
+        kube_folder.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"Adding kuberenetes clusters to {str(kube_config_path)}")
     for env_obj in tfvars.envs.values():
