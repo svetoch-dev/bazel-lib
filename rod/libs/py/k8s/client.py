@@ -15,6 +15,8 @@ from rod.libs.py.k8s.config import (
 )
 from rod.libs.py.utils.logger import CliLogger, BaseLogger
 from rod.libs.py.tf.tfvars import Env, CloudTypeEnum
+from rod.libs.py.yc.k8s import K8sCluster
+from rod.libs.py.yc.client import YcSettings
 
 
 class K8sClient:
@@ -90,6 +92,54 @@ def _gcp_kube_config(
     return config
 
 
+def _yc_kube_config(
+    env: Env,
+    global_name: str,
+    cluster_name: str,
+    use_exec: bool,
+) -> KubeConfig:
+    config = KubeConfig()
+    cluster = K8sCluster(
+        env.cloud.folder_id,
+        cluster_name,
+    )
+
+    if not cluster:
+        return config
+
+    config.clusters.append(
+        NamedCluster(
+            name=global_name,
+            cluster=Cluster(
+                server=cluster.endpoint, certificate_authority_data=cluster.ca_cert
+            ),
+        )
+    )
+    config.contexts.append(
+        NamedContext(
+            name=global_name, context=Context(cluster=global_name, user=global_name)
+        )
+    )
+
+    named_user = NamedAuthInfo(
+        name=global_name,
+        user=AuthInfo(),
+    )
+
+    if use_exec:
+        named_user.user.exec = ExecConfig(
+            command="yc",
+            args=["k8s", "create-token"],
+            interactiveMode=ExecInteractiveModeEnum.if_available,
+            provideClusterInfo=False,
+        )
+    else:
+        named_user.user.token = YcSettings().token
+
+    config.users.append(named_user)
+    return config
+
+
 def kube_config_factory(
     env: Env,
     company_name: str | None = None,
@@ -109,7 +159,10 @@ def kube_config_factory(
 
     if env.cloud.name == CloudTypeEnum.gcp:
         config = _gcp_kube_config(env, global_name, cluster_name, use_exec)
+    elif env.cloud.name == CloudTypeEnum.yc:
+        config = _yc_kube_config(env, global_name, cluster_name, use_exec)
+    else:
+        raise NotImplementedError(f"kube_config not implemented for {env.cloud.name}")
     config.current_context = global_name
-    print(config.model_dump_json(indent=2))
 
     return config

@@ -10,10 +10,10 @@ def update_kube_config() -> bool:
 
     logger.info("Adding kuberenetes clusters to ~/.kube/config")
     for env_obj in tfvars.envs.values():
-        if env_obj.short_name == "int":
-            client = k8s_client_get(env_obj)
-            for ns in client.list_namespace().items:
-                print(ns.metadata.name)
+        config = kube_config_factory(
+            env_obj, company_name=tfvars.company.name, use_exec=True
+        )
+        print(config.model_dump_json(indent=2))
 
     return True
 
