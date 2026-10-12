@@ -15,7 +15,8 @@ def gke_cluster_settings(
     )
 
     settings = K8sClusterSettings(
-        endpoint=cluster.endpoint, ca_cert=cluster.master_auth.cluster_ca_certificate
+        endpoint=f"https://{cluster.endpoint}",
+        ca_cert=cluster.master_auth.cluster_ca_certificate,
     )
 
     return settings
