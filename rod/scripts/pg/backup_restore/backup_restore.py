@@ -118,7 +118,10 @@ def list_resources(kind: str, namespace: str, selector: str) -> list[dict]:
 
 
 def command_error(error: subprocess.CalledProcessError) -> str:
-    return error.stderr.strip() if error.stderr else str(error)
+    details = (error.stderr or "").strip() or str(error)
+    if error.stdout and error.stdout.strip():
+        details += f"\nOutput before failure:\n{error.stdout.strip()}"
+    return f"Command exited with code {error.returncode}: {details}"
 
 
 def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
@@ -336,6 +339,24 @@ def cleanup_clone_storage(namespace: str, cluster: str) -> None:
         )
 
 
+def wait_for_clone_cleanup(namespace: str, cluster: str) -> None:
+    kinds = (
+        "pods,statefulsets,services,endpoints,endpointslices,configmaps,secrets,"
+        "jobs,deployments,replicasets,persistentvolumeclaims"
+    )
+    while True:
+        resources = list_resources(kinds, namespace, f"cluster-name={cluster}")
+        if not resources:
+            print("Temporary cluster cleanup completed.", file=sys.stderr)
+            return
+        remaining = ", ".join(
+            f"{resource['kind']}/{resource['metadata']['name']}"
+            for resource in resources
+        )
+        print(f"Waiting for deletion: {remaining}...", file=sys.stderr)
+        time.sleep(POLL_INTERVAL)
+
+
 def run_check(args: argparse.Namespace) -> int:
     source = find_source_cluster(args.postgres, args.namespace)
     database = resolve_database(source, args.postgres, args.database)
@@ -359,19 +380,22 @@ def run_check(args: argparse.Namespace) -> int:
         )
         created = True
         pod = wait_for_master(namespace, clone_name)
+        print(f"Restore ready. Running SQL in database {database}...", file=sys.stderr)
         result = kubectl(
             [
                 "exec",
                 "--namespace",
                 namespace,
                 pod,
+                "--container",
+                "postgres",
                 "--",
                 "psql",
                 "--no-psqlrc",
                 "--set",
                 "ON_ERROR_STOP=1",
-                "--tuples-only",
-                "--no-align",
+                "--pset",
+                "pager=off",
                 "--username",
                 "postgres",
                 "--dbname",
@@ -380,8 +404,9 @@ def run_check(args: argparse.Namespace) -> int:
                 args.query,
             ]
         )
-        print(result, end="")
-        return 0
+        print("SQL result:", flush=True)
+        print(result, end="", flush=True)
+        print("SQL completed successfully.", file=sys.stderr)
     finally:
         operation_failed = sys.exc_info()[0] is not None
         should_delete = created
@@ -416,13 +441,25 @@ def run_check(args: argparse.Namespace) -> int:
                     ]
                 )
                 cleanup_clone_storage(namespace, clone_name)
-            except subprocess.CalledProcessError as error:
+                wait_for_clone_cleanup(namespace, clone_name)
+            except (subprocess.CalledProcessError, ValueError, OSError) as error:
+                detail = (
+                    command_error(error)
+                    if isinstance(error, subprocess.CalledProcessError)
+                    else str(error)
+                )
                 print(
-                    f"failed to remove temporary cluster: {command_error(error)}",
+                    f"Cleanup failed for {namespace}/{clone_name}: {detail}",
                     file=sys.stderr,
                 )
                 if not operation_failed:
                     raise
+
+    print(
+        "SUCCESS: backup restored, SQL completed, temporary cluster resources removed.",
+        file=sys.stderr,
+    )
+    return 0
 
 
 def main() -> int:
@@ -438,12 +475,18 @@ def main() -> int:
     ) as error:
         if isinstance(error, subprocess.CalledProcessError):
             print(
-                f"backup restore check failed: {command_error(error)}",
+                f"FAILED: backup restore check: {command_error(error)}",
                 file=sys.stderr,
             )
         else:
-            print(f"backup restore check failed: {error}", file=sys.stderr)
+            print(f"FAILED: backup restore check: {error}", file=sys.stderr)
         return 1
+    except KeyboardInterrupt:
+        print(
+            "FAILED: backup restore check interrupted; cleanup may be incomplete.",
+            file=sys.stderr,
+        )
+        return 130
 
 
 if __name__ == "__main__":
