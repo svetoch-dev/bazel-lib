@@ -14,7 +14,7 @@ py_library(
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/yc:k8s",
         "@svetoch_bazel_lib//rod/libs/py/yc:client",
-        "@svetoch_bazel_lib//rod/libs/py/gcp:gke",
+        "@svetoch_bazel_lib//rod/libs/py/gcp:k8s",
         "@svetoch_bazel_lib//rod/libs/py/gcp:auth",
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/tf",

@@ -1,6 +1,6 @@
 from kubernetes import client, config as k8s_config
 
-from rod.libs.py.gcp.gke import gke_cluster_settings
+from rod.libs.py.gcp.k8s import GcpK8sCluster, GcpClusterNotFound
 from rod.libs.py.gcp.auth import get_creds
 from rod.libs.py.k8s.config import (
     KubeConfig,
@@ -15,7 +15,7 @@ from rod.libs.py.k8s.config import (
 )
 from rod.libs.py.utils.logger import CliLogger, BaseLogger
 from rod.libs.py.tf.tfvars import Env, CloudTypeEnum
-from rod.libs.py.yc.k8s import K8sCluster
+from rod.libs.py.yc.k8s import YcK8sCluster, YcClusterNotFound
 from rod.libs.py.yc.client import YcSettings
 
 
@@ -53,11 +53,15 @@ def _gcp_kube_config(
     global_name: str,
     cluster_name: str,
     use_exec: bool,
+    logger: BaseLogger | None = None,
 ) -> KubeConfig:
     config = KubeConfig()
-    cluster = gke_cluster_settings(
-        env.cloud.id, env.cloud.location.region, cluster_name
-    )
+    logger = logger or CliLogger("rod.libs.py.k8s.client._gcp_kube_config")
+    try:
+        cluster = GcpK8sCluster(env.cloud.id, cluster_name, env.cloud.location.region)
+    except GcpClusterNotFound as e:
+        logger.error(str(e))
+        return config
 
     config.clusters.append(
         NamedCluster(
@@ -97,14 +101,17 @@ def _yc_kube_config(
     global_name: str,
     cluster_name: str,
     use_exec: bool,
+    logger: BaseLogger | None = None,
 ) -> KubeConfig:
     config = KubeConfig()
-    cluster = K8sCluster(
-        env.cloud.folder_id,
-        cluster_name,
-    )
-
-    if not cluster:
+    logger = logger or CliLogger("rod.libs.py.k8s.client._yc_kube_config")
+    try:
+        cluster = YcK8sCluster(
+            env.cloud.folder_id,
+            cluster_name,
+        )
+    except YcClusterNotFound as e:
+        logger.error(str(e))
         return config
 
     config.clusters.append(
@@ -148,14 +155,13 @@ def kube_config_factory(
     logger: BaseLogger | None = None,
 ) -> KubeConfig:
     config = KubeConfig()
+    logger = logger or CliLogger("rod.libs.py.k8s.client.k8s_config_factory")
     global_name = f"{env.cloud.name.value}-{env.short_name}"
     if company_name:
         global_name = f"{company_name}-{env.cloud.name.value}-{env.short_name}"
 
     if not cluster_name:
         cluster_name = env.short_name.lower()
-    if not logger:
-        logger = CliLogger("rod.libs.py.k8s.client.k8s_config_factory")
 
     if env.cloud.name == CloudTypeEnum.gcp:
         config = _gcp_kube_config(env, global_name, cluster_name, use_exec)

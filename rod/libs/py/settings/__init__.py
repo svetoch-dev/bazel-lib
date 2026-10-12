@@ -10,11 +10,16 @@ class YcSettings(BaseSettings):
     )
 
 
-class K8sClusterSettings(BaseSettings):
-    endpoint: str = Field(
-        description="Https url of K8s cluster ip",
-    )
-    ca_cert: str = Field(description="Base64 encoded k8s cluster ca cert")
+class K8sClusterSettings:
+    @property
+    def endpoint(self) -> str:
+        """Https url of K8s cluster ip"""
+        raise NotImplementedError("endpoint property should be overriden")
+
+    @property
+    def ca_cert(self) -> str:
+        """Base64 encoded k8s cluster ca cert"""
+        raise NotImplementedError("ca_cert property should be overriden")
 
 
 class AWSSettings(BaseSettings):

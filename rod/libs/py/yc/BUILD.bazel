@@ -47,6 +47,7 @@ py_library(
     deps = [
         ":client",
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/settings",
         requirement("yandexcloud"),
     ],
 )

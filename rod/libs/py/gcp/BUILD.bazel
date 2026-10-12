@@ -24,8 +24,8 @@ py_library(
 )
 
 py_library(
-    name = "gke",
-    srcs = ["gke.py"],
+    name = "k8s",
+    srcs = ["k8s.py"],
     visibility = ["//visibility:public"],
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/utils",
