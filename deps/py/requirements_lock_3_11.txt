@@ -652,6 +652,7 @@ google-auth==2.49.1 \
     --hash=sha256:16d40da1c3c5a0533f57d268fe72e0ebb0ae1cc3b567024122651c045d879b64 \
     --hash=sha256:195ebe3dca18eddd1b3db5edc5189b76c13e96f29e73043b923ebcf3f1a860f7
     # via
+    #   -r deps/py/requirements.in
     #   google-api-core
     #   google-cloud-container
     #   google-cloud-core
