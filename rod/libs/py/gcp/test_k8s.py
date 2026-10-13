@@ -17,7 +17,7 @@ class TestGcpK8sCluster(unittest.TestCase):
         self.client.get_cluster.return_value = container_v1.Cluster(
             endpoint="192.0.2.1",
             master_auth=container_v1.MasterAuth(cluster_ca_certificate="dGVzdC1jYQ=="),
-            current_master_version="1.32.1-gke.100",
+            current_master_version="1.35.6-gke.1250001",
         )
 
     def test_fetches_cluster_by_project_location_and_name(self):
@@ -45,7 +45,7 @@ class TestGcpK8sCluster(unittest.TestCase):
     def test_forwards_cluster_attributes(self):
         cluster = k8s.GcpK8sCluster("test-project", "test-cluster", "europe-west2")
 
-        self.assertEqual(cluster.current_master_version, "1.32.1-gke.100")
+        self.assertEqual(cluster.current_master_version, "1.35.6-gke.1250001")
         with self.assertRaises(AttributeError):
             cluster.unknown_attribute
 
