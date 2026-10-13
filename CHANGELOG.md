@@ -1,4 +1,4 @@
-# v0.27.0
+# v0.28.0
 
 Features:
 * `rod/scripts/pg/backup_restore` verify PostgreSQL physical backups and archived WAL with point-in-time restoration through the Zalando Postgres Operator
