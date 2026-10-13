@@ -47,6 +47,7 @@ from rod.libs.py.yc.sa import (
     ServiceAccount,
 )
 from rod.libs.py.yc.registry import YcRegistry
+from rod.libs.py.yc.test_k8s import TestYcK8sCluster
 
 
 class RpcError(grpc.RpcError):

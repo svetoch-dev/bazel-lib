@@ -35,9 +35,12 @@ py_test(
         ["*.py"],
     ),
     deps = [
+        "@svetoch_bazel_lib//rod/libs/py/k8s",
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/tf",
         "@svetoch_bazel_lib//rod/libs/py/utils",
         "@svetoch_bazel_lib//rod/libs/py/yc:registry",
+        requirement("PyYaml"),
+        requirement("pydantic"),
     ],
 )

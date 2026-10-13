@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
 
 from rod.scripts.init.tf.poststeps.update_tfvars import update_tfvars
+from rod.scripts.init.tf.poststeps.test_update_kube_config import TestUpdateKubeConfig
 
 
 class TestUpdateTfvars(unittest.TestCase):

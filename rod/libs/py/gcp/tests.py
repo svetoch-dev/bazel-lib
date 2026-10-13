@@ -5,6 +5,7 @@ from google.api_core.exceptions import AlreadyExists, PermissionDenied
 from google.cloud.service_usage_v1 import types
 
 from rod.libs.py.gcp.api import enable_apis
+from rod.libs.py.gcp.test_k8s import TestGcpK8sCluster
 
 
 class TestEnableApis(unittest.TestCase):

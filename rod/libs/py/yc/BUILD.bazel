@@ -67,6 +67,7 @@ py_test(
         ["*.py"],
     ),
     deps = [
+        ":k8s",
         "@svetoch_bazel_lib//rod/libs/py/utils",
         requirement("grpcio"),
         requirement("protobuf"),

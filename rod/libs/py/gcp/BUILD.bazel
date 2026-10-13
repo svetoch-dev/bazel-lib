@@ -28,6 +28,7 @@ py_library(
     srcs = ["k8s.py"],
     visibility = ["//visibility:public"],
     deps = [
+        "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/utils",
         requirement("google-cloud-container"),
     ],
@@ -49,7 +50,9 @@ py_test(
         ["*.py"],
     ),
     deps = [
+        ":k8s",
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("google-cloud-container"),
         requirement("google-cloud-service-usage"),
     ],
 )
