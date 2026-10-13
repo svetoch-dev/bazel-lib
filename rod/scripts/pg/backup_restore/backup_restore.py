@@ -1,16 +1,22 @@
 """Restore a PostgreSQL backup into a temporary cluster and run a query."""
 
 import argparse
-import json
 import re
-import subprocess
 import sys
 import time
 import uuid
 from datetime import datetime
 
+from kubernetes import client, config as kube_config, stream
+from kubernetes.client.exceptions import ApiException
+
+from rod.libs.py.k8s.client import K8sClient
+
 
 RUN_ID_LABEL = "backup-restore-run-id"
+POSTGRES_GROUP = "acid.zalan.do"
+POSTGRES_VERSION = "v1"
+POSTGRES_PLURAL = "postgresqls"
 K8S_POLL_INTERVAL = 5
 RECOVERY_POLL_INTERVAL = 3
 TIMESTAMP_FORMAT_ERROR = (
@@ -91,38 +97,154 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def kubectl(args: list[str], *, input_text: str | None = None) -> str:
-    result = subprocess.run(
-        ["kubectl", *args],
-        input=input_text,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout
+class PodCommandError(RuntimeError):
+    def __init__(
+        self,
+        namespace: str,
+        pod: str,
+        command: list[str],
+        return_code: int,
+        stdout: str,
+        stderr: str,
+    ):
+        self.namespace = namespace
+        self.pod = pod
+        self.command = command
+        self.return_code = return_code
+        self.stdout = stdout
+        self.stderr = stderr
+        message = (
+            f"Command {command[0]!r} in pod {namespace}/{pod} "
+            f"exited with code {return_code}"
+        )
+        if stderr.strip():
+            message += f"\nstderr:\n{stderr.strip()}"
+        if stdout.strip():
+            message += f"\nstdout before failure:\n{stdout.strip()}"
+        super().__init__(message)
 
 
-def list_resources(kind: str, namespace: str, selector: str) -> list[dict]:
-    output = kubectl(
-        [
-            "get",
-            kind,
-            "--namespace",
+class KubernetesApi:
+    """Small adapter around the Kubernetes Python client used by this script."""
+
+    def __init__(self):
+        api_client = kube_config.new_client_from_config()
+        self.core = client.CoreV1Api(api_client)
+        self.apps = client.AppsV1Api(api_client)
+        self.custom = client.CustomObjectsApi(api_client)
+        self.batch = client.BatchV1Api(api_client)
+        self.discovery = client.DiscoveryV1Api(api_client)
+        # Exec uses WebSockets and changes the API client's request protocol.
+        self.exec_core = client.CoreV1Api(kube_config.new_client_from_config())
+        self.api = K8sClient(v1=self.core, custom=self.custom, apps=self.apps)
+
+    def list_postgresql_clusters(self, namespace: str | None) -> list[dict]:
+        if namespace:
+            result = self.api.list_namespaced_custom_object(
+                POSTGRES_GROUP, POSTGRES_VERSION, namespace, POSTGRES_PLURAL
+            )
+        else:
+            result = self.api.list_cluster_custom_object(
+                POSTGRES_GROUP, POSTGRES_VERSION, POSTGRES_PLURAL
+            )
+        return result["items"]
+
+    def get_postgresql(self, namespace: str, name: str) -> dict:
+        return self.api.get_namespaced_custom_object(
+            POSTGRES_GROUP,
+            POSTGRES_VERSION,
             namespace,
-            "--selector",
-            selector,
-            "-o",
-            "json",
-        ]
-    )
-    return json.loads(output)["items"]
+            POSTGRES_PLURAL,
+            name,
+        )
+
+    def create_postgresql(self, namespace: str, resource: dict) -> None:
+        self.api.create_namespaced_custom_object(
+            POSTGRES_GROUP,
+            POSTGRES_VERSION,
+            namespace,
+            POSTGRES_PLURAL,
+            resource,
+        )
+
+    def delete_postgresqls(self, namespace: str, selector: str) -> None:
+        self.api.delete_collection_namespaced_custom_object(
+            POSTGRES_GROUP,
+            POSTGRES_VERSION,
+            namespace,
+            POSTGRES_PLURAL,
+            label_selector=selector,
+        )
+
+    def list_resources(self, kind: str, namespace: str, selector: str) -> list[dict]:
+        list_methods = {
+            "pods": self.api.list_namespaced_pod,
+            "statefulsets": self.api.list_namespaced_stateful_set,
+            "services": self.api.list_namespaced_service,
+            "endpoints": self.api.list_namespaced_endpoints,
+            "endpointslices": self.discovery.list_namespaced_endpoint_slice,
+            "configmaps": self.api.list_namespaced_config_map,
+            "secrets": self.api.list_namespaced_secret,
+            "jobs": self.batch.list_namespaced_job,
+            "deployments": self.api.list_namespaced_deployment,
+            "replicasets": self.api.list_namespaced_replica_set,
+            "persistentvolumeclaims": self.api.list_namespaced_persistent_volume_claim,
+        }
+        result = list_methods[kind](namespace, label_selector=selector)
+        resources = [resource.to_dict() for resource in result.items]
+        for resource in resources:
+            resource["kind"] = kind
+        return resources
+
+    def delete_persistentvolumeclaims(self, namespace: str, selector: str) -> None:
+        self.core.delete_collection_namespaced_persistent_volume_claim(
+            namespace,
+            label_selector=selector,
+            body=client.V1DeleteOptions(),
+        )
+
+    def exec_in_pod(self, namespace: str, pod: str, command: list[str]) -> str:
+        response = stream.stream(
+            self.exec_core.connect_get_namespaced_pod_exec,
+            pod,
+            namespace,
+            command=command,
+            container="postgres",
+            stderr=True,
+            stdin=False,
+            stdout=True,
+            tty=False,
+            _preload_content=False,
+        )
+        try:
+            response.run_forever()
+            stdout = response.read_stdout()
+            stderr = response.read_stderr()
+            return_code = response.returncode
+        finally:
+            response.close()
+
+        if return_code is None:
+            raise RuntimeError(f"Pod command did not return an exit code: {pod}")
+        if return_code != 0:
+            raise PodCommandError(
+                namespace,
+                pod,
+                command,
+                return_code,
+                stdout,
+                stderr,
+            )
+        return stdout
 
 
-def command_error(error: subprocess.CalledProcessError) -> str:
-    details = (error.stderr or "").strip() or str(error)
-    if error.stdout and error.stdout.strip():
-        details += f"\nOutput before failure:\n{error.stdout.strip()}"
-    return f"Command exited with code {error.returncode}: {details}"
+def error_details(error: Exception) -> str:
+    if isinstance(error, ApiException):
+        details = f"Kubernetes API returned {error.status}: {error.reason}"
+        if error.body:
+            details += f"\n{error.body}"
+        return details
+    return str(error)
 
 
 def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
@@ -190,28 +312,18 @@ def build_clone(source_cluster: dict, name: str, timestamp: str, run_id: str) ->
 
 
 def clone_belongs_to_run(
+    k8s: KubernetesApi,
     namespace: str,
     cluster: str,
     run_id: str,
 ) -> bool | None:
     try:
-        output = kubectl(
-            [
-                "get",
-                "postgresql",
-                cluster,
-                "--namespace",
-                namespace,
-                "-o",
-                "json",
-            ]
-        )
-        resource = json.loads(output)
-    except subprocess.CalledProcessError as error:
-        if "NotFound" in (error.stderr or ""):
+        resource = k8s.get_postgresql(namespace, cluster)
+    except ApiException as error:
+        if error.status == 404:
             return False
         print(
-            f"could not confirm clone ownership: {command_error(error)}",
+            f"could not confirm clone ownership: {error_details(error)}",
             file=sys.stderr,
         )
         return None
@@ -222,17 +334,11 @@ def clone_belongs_to_run(
 
 
 def find_source_cluster(
+    k8s: KubernetesApi,
     selector: str,
     namespace: str | None,
 ) -> dict:
-    command = ["get", "postgresql"]
-    if namespace:
-        command.extend(["--namespace", namespace])
-    else:
-        command.append("--all-namespaces")
-    command.extend(["-o", "json"])
-    output = kubectl(command)
-    clusters = json.loads(output)["items"]
+    clusters = k8s.list_postgresql_clusters(namespace)
 
     exact_name_matches = [
         cluster
@@ -292,10 +398,10 @@ def resolve_database(source_cluster: dict, selector: str, requested: str | None)
     )
 
 
-def wait_for_master(namespace: str, cluster: str) -> str:
+def wait_for_master(k8s: KubernetesApi, namespace: str, cluster: str) -> str:
     selector = f"application=spilo,cluster-name={cluster},spilo-role=master"
     while True:
-        for pod in list_resources("pods", namespace, selector):
+        for pod in k8s.list_resources("pods", namespace, selector):
             ready = any(
                 condition.get("type") == "Ready" and condition.get("status") == "True"
                 for condition in pod.get("status", {}).get("conditions", [])
@@ -305,18 +411,13 @@ def wait_for_master(namespace: str, cluster: str) -> str:
         time.sleep(K8S_POLL_INTERVAL)
 
 
-def wait_for_recovery(namespace: str, pod: str) -> None:
+def wait_for_recovery(k8s: KubernetesApi, namespace: str, pod: str) -> None:
     print("Master is ready. Waiting for pg_is_in_recovery() = f...", file=sys.stderr)
     while True:
-        result = kubectl(
+        result = k8s.exec_in_pod(
+            namespace,
+            pod,
             [
-                "exec",
-                "--namespace",
-                namespace,
-                pod,
-                "--container",
-                "postgres",
-                "--",
                 "psql",
                 "--no-psqlrc",
                 "--set",
@@ -329,7 +430,7 @@ def wait_for_recovery(namespace: str, pod: str) -> None:
                 "postgres",
                 "--command",
                 "SELECT pg_is_in_recovery();",
-            ]
+            ],
         ).strip()
         if result == "f":
             print("Recovery completed: pg_is_in_recovery() = f.", file=sys.stderr)
@@ -339,11 +440,12 @@ def wait_for_recovery(namespace: str, pod: str) -> None:
         time.sleep(RECOVERY_POLL_INTERVAL)
 
 
-def cleanup_clone_storage(namespace: str, cluster: str) -> None:
+def cleanup_clone_storage(k8s: KubernetesApi, namespace: str, cluster: str) -> None:
     selector = f"cluster-name={cluster}"
+    pvc_deletion_requested = False
     while True:
-        stateful_sets = list_resources("statefulsets", namespace, selector)
-        claims = list_resources("persistentvolumeclaims", namespace, selector)
+        stateful_sets = k8s.list_resources("statefulsets", namespace, selector)
+        claims = k8s.list_resources("persistentvolumeclaims", namespace, selector)
         if stateful_sets:
             print(
                 "Waiting for temporary cluster storage cleanup "
@@ -356,31 +458,32 @@ def cleanup_clone_storage(namespace: str, cluster: str) -> None:
         if not claims:
             return
 
-        print(
-            f"Removing {len(claims)} retained PVC(s) for {cluster}...",
-            file=sys.stderr,
-        )
-        kubectl(
-            [
-                "delete",
-                "persistentvolumeclaims",
-                "--namespace",
-                namespace,
-                "--selector",
-                selector,
-                "--ignore-not-found=true",
-                "--wait=true",
-            ]
-        )
+        if not pvc_deletion_requested:
+            print(
+                f"Removing {len(claims)} retained PVC(s) for {cluster}...",
+                file=sys.stderr,
+            )
+            k8s.delete_persistentvolumeclaims(namespace, selector)
+            pvc_deletion_requested = True
+        else:
+            print(
+                f"Waiting for {len(claims)} retained PVC(s) to be deleted...",
+                file=sys.stderr,
+            )
+            time.sleep(K8S_POLL_INTERVAL)
 
 
-def wait_for_clone_cleanup(namespace: str, cluster: str) -> None:
+def wait_for_clone_cleanup(k8s: KubernetesApi, namespace: str, cluster: str) -> None:
     kinds = (
         "pods,statefulsets,services,endpoints,endpointslices,configmaps,secrets,"
         "jobs,deployments,replicasets,persistentvolumeclaims"
     )
     while True:
-        resources = list_resources(kinds, namespace, f"cluster-name={cluster}")
+        resources = []
+        for kind in kinds.split(","):
+            resources.extend(
+                k8s.list_resources(kind, namespace, f"cluster-name={cluster}")
+            )
         if not resources:
             print("Temporary cluster cleanup completed.", file=sys.stderr)
             return
@@ -392,8 +495,8 @@ def wait_for_clone_cleanup(namespace: str, cluster: str) -> None:
         time.sleep(K8S_POLL_INTERVAL)
 
 
-def run_check(args: argparse.Namespace) -> int:
-    source = find_source_cluster(args.postgres, args.namespace)
+def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
+    source = find_source_cluster(k8s, args.postgres, args.namespace)
     database = resolve_database(source, args.postgres, args.database)
     run_id = uuid.uuid4().hex
     clone_name = temporary_cluster_name(source, run_id)
@@ -409,23 +512,15 @@ def run_check(args: argparse.Namespace) -> int:
     creation_attempted = False
     try:
         creation_attempted = True
-        kubectl(
-            ["create", "-f", "-"],
-            input_text=json.dumps(clone),
-        )
+        k8s.create_postgresql(namespace, clone)
         created = True
-        pod = wait_for_master(namespace, clone_name)
-        wait_for_recovery(namespace, pod)
+        pod = wait_for_master(k8s, namespace, clone_name)
+        wait_for_recovery(k8s, namespace, pod)
         print(f"Restore ready. Running SQL in database {database}...", file=sys.stderr)
-        result = kubectl(
+        result = k8s.exec_in_pod(
+            namespace,
+            pod,
             [
-                "exec",
-                "--namespace",
-                namespace,
-                pod,
-                "--container",
-                "postgres",
-                "--",
                 "psql",
                 "--no-psqlrc",
                 "--set",
@@ -438,7 +533,7 @@ def run_check(args: argparse.Namespace) -> int:
                 database,
                 "--command",
                 args.query,
-            ]
+            ],
         )
         print("SQL result:", flush=True)
         print(result, end="", flush=True)
@@ -449,6 +544,7 @@ def run_check(args: argparse.Namespace) -> int:
 
         if creation_attempted and not created:
             ownership = clone_belongs_to_run(
+                k8s,
                 namespace,
                 clone_name,
                 run_id,
@@ -464,28 +560,28 @@ def run_check(args: argparse.Namespace) -> int:
         if should_delete:
             print(f"Removing temporary cluster {clone_name}...", file=sys.stderr)
             try:
-                kubectl(
-                    [
-                        "delete",
-                        "postgresql",
-                        "--selector",
-                        f"{RUN_ID_LABEL}={run_id}",
-                        "--namespace",
-                        namespace,
-                        "--ignore-not-found=true",
-                        "--wait=true",
-                    ]
-                )
-                cleanup_clone_storage(namespace, clone_name)
-                wait_for_clone_cleanup(namespace, clone_name)
-            except (subprocess.CalledProcessError, ValueError, OSError) as error:
-                detail = (
-                    command_error(error)
-                    if isinstance(error, subprocess.CalledProcessError)
-                    else str(error)
+                k8s.delete_postgresqls(
+                    namespace,
+                    f"{RUN_ID_LABEL}={run_id}",
                 )
                 print(
-                    f"Cleanup failed for {namespace}/{clone_name}: {detail}",
+                    "Waiting for temporary PostgreSQL resource deletion...",
+                    file=sys.stderr,
+                )
+                while True:
+                    try:
+                        k8s.get_postgresql(namespace, clone_name)
+                    except ApiException as error:
+                        if error.status == 404:
+                            break
+                        raise
+                    time.sleep(K8S_POLL_INTERVAL)
+                cleanup_clone_storage(k8s, namespace, clone_name)
+                wait_for_clone_cleanup(k8s, namespace, clone_name)
+            except Exception as error:
+                print(
+                    f"Cleanup failed for {namespace}/{clone_name}: "
+                    f"{error_details(error)}",
                     file=sys.stderr,
                 )
                 if not operation_failed:
@@ -501,21 +597,13 @@ def run_check(args: argparse.Namespace) -> int:
 def main() -> int:
     args = parse_args()
     try:
-        return run_check(args)
-    except (
-        subprocess.CalledProcessError,
-        RuntimeError,
-        KeyError,
-        ValueError,
-        OSError,
-    ) as error:
-        if isinstance(error, subprocess.CalledProcessError):
-            print(
-                f"FAILED: backup restore check: {command_error(error)}",
-                file=sys.stderr,
-            )
-        else:
-            print(f"FAILED: backup restore check: {error}", file=sys.stderr)
+        k8s = KubernetesApi()
+        return run_check(args, k8s)
+    except Exception as error:
+        print(
+            f"FAILED: backup restore check: {error_details(error)}",
+            file=sys.stderr,
+        )
         return 1
     except KeyboardInterrupt:
         print(

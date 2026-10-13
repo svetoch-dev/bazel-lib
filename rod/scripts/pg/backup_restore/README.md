@@ -14,12 +14,15 @@ select the tool. Logical backups produced by `pg_dump` are not checked.
 - The calling repository must depend on a revision of `svetoch_bazel_lib` that
   contains this target. Update its dependency pin and keep any resulting changes
   to `MODULE.bazel.lock`. No additional Bazel target or Helm manifest is needed.
-- `kubectl` must be available in `PATH`, with an authenticated context pointing
-  to the intended Kubernetes cluster.
+- The active context in `~/.kube/config` must point to the intended Kubernetes
+  cluster, and its configured authentication method must be available locally.
+  The command uses the Kubernetes API directly; it does not require the
+  `kubectl` executable.
 - The Kubernetes user needs permission to get, list, create, and delete
-  `postgresql` resources; list Pods, StatefulSets, PVCs, Services, Endpoints, EndpointSlices,
-  ConfigMaps, Secrets, Jobs, Deployments, and ReplicaSets; execute commands in
-  Pods (`create` on `pods/exec`); and delete PVCs in the selected namespace.
+  `postgresql` resources; list Pods, StatefulSets, PVCs, Services, Endpoints,
+  EndpointSlices, ConfigMaps, Secrets, Jobs, Deployments, and ReplicaSets;
+  execute commands in Pods (`create` on `pods/exec`); and delete PVCs in the
+  selected namespace.
 - The operator and Spilo must already support restoration from the source
   cluster's physical backup storage. The temporary Pod needs storage access and
   credentials. Local cloud credentials alone do not grant access to the Pod.
@@ -43,7 +46,7 @@ bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore -- \
 For example, `example-team` resolves to the cluster whose team ID is
 `example-team`. If multiple clusters match, pass `--namespace` to narrow the
 lookup. Without `--namespace`, the command searches all namespaces, so the
-active `kubectl` context must allow listing PostgreSQL resources across
+active Kubernetes context must allow listing PostgreSQL resources across
 namespaces.
 
 The database is inferred from the source cluster: the value passed to
