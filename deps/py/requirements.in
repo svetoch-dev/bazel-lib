@@ -13,3 +13,6 @@ pydantic<3.0.0
 pydantic-settings<3.0.0
 yandexcloud<1.0.0
 requests<3.0.0
+kubernetes<38.0.0
+google-cloud-container<3.0.0
+google-auth<3.0.0

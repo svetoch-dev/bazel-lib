@@ -1,8 +1,8 @@
 from rod.libs.py.tf.tfvars import (
     tfvars,
     TfVars,
-    Env,
-    Network,
+    CloudTypeEnum,
+    DnsTypeEnum,
     update_tfvars,
     TfBackend,
     Dns,
@@ -10,7 +10,6 @@ from rod.libs.py.tf.tfvars import (
     env_network_settings,
     Location,
 )
-from rod.libs.py.settings import bazel_settings
 import argparse
 
 ALLOWED_ENVS = {
@@ -35,16 +34,15 @@ def prepare_tfvars_gcp(tfvars: TfVars):
         "type": "gar",
         "url": "{env.cloud.location.region}-docker.pkg.dev/{env.cloud.id}/containers",
     }
-    dns = {"domain": "{env.short_name}.{company.domain}.", "type": "gcp"}
+    dns = {"domain": "{env.short_name}.{company.domain}.", "type": DnsTypeEnum.gcp}
     location = {
         "region": "CHANGE_ME",
         "default_zone": "CHANGE_ME",
         "multi_region": "CHANGE_ME",
     }
 
-    for env_name, env_obj in tfvars.envs.items():
-        pod_cidr = env_obj.cloud.network.k8s_pod_cidr
-        env_obj.cloud.name = "gcp"
+    for env_obj in envs.values():
+        env_obj.cloud.name = CloudTypeEnum.gcp
         env_obj.tf_backend = TfBackend(**tf_backend)
         env_obj.registry = Registry(**registry)
         env_obj.dns = Dns(**dns)
@@ -69,7 +67,7 @@ def prepare_tfvars_yc(tfvars: TfVars):
         },
     }
     registry = {"type": "ycr", "url": ""}
-    dns = {"domain": "{env.short_name}.{company.domain}.", "type": "yc"}
+    dns = {"domain": "{env.short_name}.{company.domain}.", "type": DnsTypeEnum.yc}
     # We set locations for yc because there
     # is only one ru region and prefered location
     location = {
@@ -77,10 +75,10 @@ def prepare_tfvars_yc(tfvars: TfVars):
         "default_zone": "ru-central1-d",
         "multi_region": "",
     }
-    for env_name, env_obj in tfvars.envs.items():
+    for env_obj in envs.values():
         pod_cidr = env_obj.cloud.network.k8s_pod_cidr
         env_obj.cloud.network.k8s_pod_cidr = pod_cidr.replace("/14", "/16")
-        env_obj.cloud.name = "yc"
+        env_obj.cloud.name = CloudTypeEnum.yc
         env_obj.tf_backend = TfBackend(**tf_backend)
         env_obj.registry = Registry(**registry)
         env_obj.dns = Dns(**dns)
@@ -119,7 +117,7 @@ def prepare_tfvars(cloud: str, poduct_env_names: dict[str, str]):
         envs[env_long_name].name = env_long_name
 
     for env_name, env_obj in envs.items():
-        for app_name, app_obj in env_obj.apps.items():
+        for app_obj in env_obj.apps.values():
             app_obj.repo = None
             app_obj.cd = None
         env_obj.initial_start = True
@@ -134,9 +132,9 @@ def prepare_tfvars(cloud: str, poduct_env_names: dict[str, str]):
             env_obj.cloud.network.k8s_pod_cidr = pod_net_str
             env_obj.cloud.network.k8s_service_cidr = pod_service_net_str
 
-    if cloud == "gcp":
+    if cloud == CloudTypeEnum.gcp:
         prepare_tfvars_gcp(tf_vars)
-    elif cloud == "yc":
+    elif cloud == CloudTypeEnum.yc:
         prepare_tfvars_yc(tf_vars)
 
     update_tfvars(tf_vars)
@@ -165,7 +163,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "cloud",
-        choices=["gcp", "yc"],
+        choices=list(CloudTypeEnum),
     )
 
     parser.add_argument(

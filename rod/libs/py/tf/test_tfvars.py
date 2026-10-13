@@ -1,5 +1,6 @@
 import unittest
 from copy import deepcopy
+from unittest.mock import patch
 
 from pydantic import ValidationError
 from rod.libs.py.tf.tfvars import (
@@ -20,6 +21,8 @@ from rod.libs.py.tf.tfvars import (
     Location,
     Kubernetes,
     env_network_settings,
+    CloudTypeEnum,
+    DnsTypeEnum,
     Network,
 )
 
@@ -36,10 +39,10 @@ class TestFormattedTfvars(unittest.TestCase):
             "apps": {},
             "import_secrets": {},
             "registry": {"type": "gar", "url": "registry.example.com"},
-            "dns": {"domain": "example.com", "type": "gcp"},
+            "dns": {"domain": "example.com", "type": DnsTypeEnum.gcp},
             "tf_backend": {"type": "gcs", "configs": {"bucket": "tf-state"}},
             "cloud": {
-                "name": "gcp",
+                "name": CloudTypeEnum.gcp,
                 "id": env_type,
                 "location": {
                     "region": "europe-west2",
@@ -91,7 +94,7 @@ class TestFormattedTfvars(unittest.TestCase):
         self.assertEqual(prd.cloud.location.default_zone, "europe-west2-c")
         self.assertEqual(prd.cloud.location.multi_region, "EU")
         self.assertEqual(prd.dns.domain, "prd.rod.svetoch.dev")
-        self.assertEqual(prd.dns.type, "gcp")
+        self.assertEqual(prd.dns.type, DnsTypeEnum.gcp)
         self.assertEqual(prd.type, "product")
         self.assertEqual(prd.registry.type, "gar")
         self.assertEqual(
@@ -123,6 +126,27 @@ class TestFormattedTfvars(unittest.TestCase):
         self.assertEqual(
             dev.registry.url, "europe-west2-docker.pkg.dev/rod-development/containers"
         )
+
+    def test_formatted_tfvars_uses_enum_values_in_placeholders(self):
+        for provider in ("gcp", "yc"):
+            with self.subTest(provider=provider):
+                env = self._env("internal")
+                env["cloud"]["name"] = provider
+                env["cloud"]["folder_id"] = "test-folder"
+                env["dns"]["type"] = provider
+                env["dns"]["domain"] = "{env.dns.type}.example.com"
+                env["tf_backend"]["configs"]["bucket"] = "{env.cloud.name}-tf-state"
+                source = TfVars.model_validate(self._tfvars({"internal": env}))
+
+                with patch("rod.libs.py.tf.tfvars.tfvars", return_value=source):
+                    result = formatted_tfvars().envs["internal"]
+
+                self.assertEqual(
+                    result.tf_backend.configs["bucket"], f"{provider}-tf-state"
+                )
+                self.assertEqual(result.dns.domain, f"{provider}.example.com")
+                self.assertIs(result.cloud.name, CloudTypeEnum(provider))
+                self.assertIs(result.dns.type, DnsTypeEnum(provider))
 
     def test_formatted_tfvars_returns_validated_models(self):
 
@@ -204,8 +228,11 @@ class TestFormattedTfvars(unittest.TestCase):
         cloud = self._env("internal")["cloud"]
         del cloud["name"]
 
-        self.assertEqual(Cloud(name="gcp", **cloud).name, "gcp")
-        self.assertEqual(Cloud(name="yc", folder_id="yc-folder", **cloud).name, "yc")
+        self.assertEqual(Cloud(name=CloudTypeEnum.gcp, **cloud).name, CloudTypeEnum.gcp)
+        self.assertEqual(
+            Cloud(name=CloudTypeEnum.yc, folder_id="yc-folder", **cloud).name,
+            CloudTypeEnum.yc,
+        )
 
     def test_cloud_name_rejects_unsupported_values(self):
         cloud = self._env("internal")["cloud"]
@@ -215,13 +242,22 @@ class TestFormattedTfvars(unittest.TestCase):
 
     def test_yc_cloud_requires_folder_id(self):
         cloud = self._env("internal")["cloud"]
-        cloud["name"] = "yc"
+        cloud["name"] = CloudTypeEnum.yc
         with self.assertRaises(ValidationError):
             Cloud(**cloud)
 
     def test_dns_type_accepts_supported_values(self):
-        self.assertEqual(Dns(domain="example.com", type="gcp").type, "gcp")
-        self.assertEqual(Dns(domain="example.com", type="yc").type, "yc")
+        for dns_type in DnsTypeEnum:
+            for value in (dns_type, dns_type.value):
+                with self.subTest(dns_type=dns_type, value=value):
+                    dns = Dns(domain="example.com", type=value)
+                    self.assertIs(dns.type, dns_type)
+                    self.assertEqual(
+                        dns.model_dump(mode="json")["type"], dns_type.value
+                    )
+                    self.assertIs(
+                        Dns.model_validate_json(dns.model_dump_json()).type, dns_type
+                    )
 
     def test_dns_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
@@ -248,10 +284,10 @@ class TestEnvNetworkSettings(unittest.TestCase):
             apps={},
             import_secrets={},
             registry={"type": "gar", "url": "registry.example.com"},
-            dns={"domain": "example.com", "type": "gcp"},
+            dns={"domain": "example.com", "type": DnsTypeEnum.gcp},
             tf_backend={"type": "gcs", "configs": {"bucket": "tf-state"}},
             cloud={
-                "name": "gcp",
+                "name": CloudTypeEnum.gcp,
                 "id": name,
                 "location": {
                     "region": "europe-west2",

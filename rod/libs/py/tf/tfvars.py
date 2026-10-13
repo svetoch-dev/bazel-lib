@@ -1,4 +1,5 @@
 from typing import Literal
+from enum import Enum
 from pathlib import Path
 
 from rod.libs.py.settings import bazel_settings
@@ -7,8 +8,17 @@ from rod.libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholder
 import ipaddress
 
 
-class BaseTfVarsModel(BaseModel):
+class CloudTypeEnum(str, Enum):
+    gcp = "gcp"
+    yc = "yc"
 
+
+class DnsTypeEnum(str, Enum):
+    gcp = "gcp"
+    yc = "yc"
+
+
+class BaseTfVarsModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
@@ -49,7 +59,7 @@ class Registry(BaseTfVarsModel):
 
 class Dns(BaseTfVarsModel):
     domain: str
-    type: Literal["gcp", "yc"]
+    type: DnsTypeEnum
 
 
 class Buckets(BaseTfVarsModel):
@@ -100,7 +110,7 @@ class App(BaseTfVarsModel):
 
 
 class Cloud(BaseTfVarsModel):
-    name: Literal["gcp", "yc"]
+    name: CloudTypeEnum
     id: str
     folder_id: str | None = None
     location: Location
@@ -109,7 +119,7 @@ class Cloud(BaseTfVarsModel):
 
     @model_validator(mode="after")
     def validate_folder_id_for_yc(self):
-        if self.name == "yc" and not self.folder_id:
+        if self.name == CloudTypeEnum.yc and not self.folder_id:
             raise ValueError("folder_id must be set when cloud.name is yc")
 
         return self
@@ -189,7 +199,7 @@ def env_key(env: Env, tf_vars: TfVars) -> str:
 
 
 def formatted_tfvars():
-    tf_vars_dict = tfvars().model_dump()
+    tf_vars_dict = tfvars().model_dump(mode="json")
 
     replacement_dict = {}
 

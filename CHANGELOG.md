@@ -1,3 +1,14 @@
+# v0.26.0
+
+Features:
+* helper to create k8s client
+* init script to update local ~/.kube/config
+
+Enhancements:
+* Use enums for dns and cloud types
+* Resturcture tests for gcp/yc
+
+
 # v0.25.0
 
 Features:

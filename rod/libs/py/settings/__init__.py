@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings
+from abc import ABC, abstractmethod
+
 from pydantic import Field, computed_field
+from pydantic_settings import BaseSettings
 
 
 class YcSettings(BaseSettings):
@@ -8,6 +10,20 @@ class YcSettings(BaseSettings):
         validation_alias="USER",
         default="not identified",
     )
+
+
+class K8sClusterSettings(ABC):
+    @property
+    @abstractmethod
+    def endpoint(self) -> str:
+        """Https url of K8s cluster"""
+        ...
+
+    @property
+    @abstractmethod
+    def ca_cert(self) -> str:
+        """Base64 encoded k8s cluster ca cert"""
+        ...
 
 
 class AWSSettings(BaseSettings):

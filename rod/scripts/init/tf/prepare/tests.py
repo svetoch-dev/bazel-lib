@@ -7,10 +7,10 @@ from rod.scripts.init.tf.prepare.prepare import prepare
 from rod.scripts.init.tf.prepare.copy import copy_template
 from rod.scripts.init.tf.prepare.yc import prepare_yc
 from rod.libs.py.bazel.rc import bazelrc_str_to_obj
-from rod.libs.py.tf.tfvars import Cloud, Env
+from rod.libs.py.tf.tfvars import Cloud, Env, CloudTypeEnum, DnsTypeEnum
 
 cloud = Cloud(
-    name="yc",
+    name=CloudTypeEnum.yc,
     id="<replace-me>",
     folder_id="adadadadad",
     location={
@@ -34,7 +34,7 @@ env = Env(
     apps={},
     import_secrets={},
     registry={"type": "ycr", "url": "registry"},
-    dns={"domain": "example.com", "type": "yc"},
+    dns={"domain": "example.com", "type": DnsTypeEnum.yc},
     tf_backend={"type": "s3", "configs": {"bucket": "some-tf-state"}},
     cloud=cloud,
     kubernetes={"enabled": False},
@@ -157,7 +157,7 @@ class TestPrepare(unittest.TestCase):
 
         cloud_gcp = cloud.model_copy(deep=True)
 
-        cloud_gcp.name = "gcp"
+        cloud_gcp.name = CloudTypeEnum.gcp
         cloud_gcp.id = "project-123"
 
         env_dev.cloud = cloud_gcp
@@ -184,7 +184,7 @@ class TestPrepare(unittest.TestCase):
 
         cloud_yc = cloud.model_copy(deep=True)
 
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.id = "dadadadad"
 
         env_dev.cloud = cloud_yc
@@ -211,7 +211,7 @@ class TestPrepare(unittest.TestCase):
 
         cloud_yc = cloud.model_copy(deep=True)
 
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.id = "dadadadad"
         env_int.cloud = cloud_yc
 
@@ -268,7 +268,7 @@ class TestPrepare(unittest.TestCase):
         env_dev.name = "development"
         env_dev.short_name = "dev"
         cloud_gcp_dev = cloud.model_copy(deep=True)
-        cloud_gcp_dev.name = "gcp"
+        cloud_gcp_dev.name = CloudTypeEnum.gcp
         cloud_gcp_dev.id = "project-dev"
         env_dev.cloud = cloud_gcp_dev
 
@@ -276,7 +276,7 @@ class TestPrepare(unittest.TestCase):
         env_prd.name = "production"
         env_prd.short_name = "prd"
         cloud_gcp_prd = cloud.model_copy(deep=True)
-        cloud_gcp_prd.name = "gcp"
+        cloud_gcp_prd.name = CloudTypeEnum.gcp
         cloud_gcp_prd.id = "project-prd"
         env_prd.cloud = cloud_gcp_prd
 
@@ -285,7 +285,7 @@ class TestPrepare(unittest.TestCase):
         env_int.short_name = "int"
         env_int.type = "internal"
         cloud_yc_int = cloud.model_copy(deep=True)
-        cloud_yc_int.name = "yc"
+        cloud_yc_int.name = CloudTypeEnum.yc
         cloud_yc_int.id = "adadadadad"
         env_int.cloud = cloud_yc_int
 
