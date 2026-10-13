@@ -43,11 +43,15 @@ Run it from a repository that depends on `svetoch_bazel_lib`:
 
 ```sh
 bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore -- \
-  --environment production \
+  --environment YOUR_ENVIRONMENT \
   --postgres example-team \
   --date '2024.01.07 00:00:00' \
   --query 'SELECT count(1) FROM example_table'
 ```
+
+Replace `YOUR_ENVIRONMENT` with an environment key or unique short name from
+`terraform.tfvars.json`. You can omit `--environment` when exactly one enabled
+Kubernetes environment is configured.
 
 `--postgres` can be a Kubernetes cluster name or a Postgres Operator `teamId`.
 For example, `example-team` resolves to the cluster whose team ID is
