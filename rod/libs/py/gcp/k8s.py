@@ -4,6 +4,7 @@ from google.api_core.exceptions import NotFound, PermissionDenied
 from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
 from rod.libs.py.settings import K8sClusterSettings
 from rod.libs.py.utils.logger import BaseLogger, CliLogger
+from rod.libs.py.gcp.auth import get_creds, get_caller_email
 
 
 class GcpK8sCluster(K8sClusterSettings):
@@ -47,4 +48,6 @@ class GcpK8sCluster(K8sClusterSettings):
                 f"Cluster {self.name} in project {self.project_id} and location {self.location} not found"
             )
         except PermissionDenied as e:
-            raise K8sClusterPermissionsDenied(str(e))
+            creds = get_creds()
+            email = get_caller_email(creds)
+            raise K8sClusterPermissionsDenied(f"{email} {str(e)}")
