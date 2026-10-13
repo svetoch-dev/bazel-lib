@@ -1,3 +1,8 @@
+# v0.26.0
+
+Features:
+* `rod/libs/py/tf/tfvars.py` and `terraform/tf_variables.tf.tpl` support optional `envs.<env>.cloud.organization_id` in `terraform.tfvars.json`
+
 # v0.25.0
 
 Features:
