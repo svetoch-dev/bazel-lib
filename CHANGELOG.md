@@ -6,6 +6,7 @@ Features:
 
 Enhancements:
 * Use enums for dns and cloud types
+* Resturcture tests for gcp/yc
 
 
 # v0.25.0
