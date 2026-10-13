@@ -1,7 +1,17 @@
-# v0.26.0
+# v0.27.0
 
 Features:
 * `rod/scripts/pg/backup_restore` verify PostgreSQL physical backups and archived WAL with point-in-time restoration through the Zalando Postgres Operator
+
+# v0.26.0
+
+Features:
+* helper to create k8s client
+* init script to update local ~/.kube/config
+
+Enhancements:
+* Use enums for dns and cloud types
+* Resturcture tests for gcp/yc
 
 # v0.25.0
 
