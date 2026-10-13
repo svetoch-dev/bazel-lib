@@ -3,6 +3,11 @@
 Features:
 * `rod/scripts/pg/backup_restore` verify PostgreSQL physical backups and archived WAL with point-in-time restoration through the Zalando Postgres Operator
 
+# v0.27.0
+
+Features:
+* `rod/libs/py/tf/tfvars.py` and `terraform/tf_variables.tf.tpl` support optional `envs.<env>.cloud.organization_id` in `terraform.tfvars.json`
+
 # v0.26.0
 
 Features:

@@ -139,10 +139,11 @@ variable "envs" {
         )
         cloud = object(
           {
-            name         = string
-            id           = string
-            folder_id    = optional(string)
-            location     = object(
+            name            = string
+            id              = string
+            folder_id       = optional(string)
+            organization_id = optional(string)
+            location        = object(
               {
                 region       = string
                 default_zone = string
