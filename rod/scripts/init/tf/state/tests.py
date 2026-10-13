@@ -3,10 +3,10 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from rod.scripts.init.tf.state.create import create_state
-from rod.libs.py.tf.tfvars import TfBackend, Cloud
+from rod.libs.py.tf.tfvars import TfBackend, Cloud, CloudTypeEnum
 
 cloud = Cloud(
-    name="gcp",
+    name=CloudTypeEnum.gcp,
     id="<replace-me>",
     folder_id="adadadadad",
     location={
@@ -42,7 +42,7 @@ class TestCreateState(unittest.TestCase):
         cloud_gcp = cloud.model_copy(deep=True)
         tf_backend_gcs = tf_backend.model_copy(deep=True)
 
-        cloud_gcp.name = "gcp"
+        cloud_gcp.name = CloudTypeEnum.gcp
         cloud_gcp.id = "project-123"
         cloud_gcp.location.region = "europe-west2"
         tf_backend_gcs.type = "gcs"
@@ -80,7 +80,7 @@ class TestCreateState(unittest.TestCase):
         tf_backend_ycs3 = tf_backend.model_copy(deep=True)
 
         cloud_yc.id = "asadadadad"
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.folder_id = "folder-id"
         cloud_yc.location.region = "ru-central1"
         tf_backend_ycs3.type = "s3"
@@ -132,7 +132,7 @@ class TestCreateState(unittest.TestCase):
         cloud_yc = cloud.model_copy(deep=True)
         tf_backend_ycs3 = tf_backend.model_copy(deep=True)
 
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.folder_id = "folder-id"
         tf_backend_ycs3.type = "s3"
 
@@ -174,7 +174,7 @@ class TestCreateState(unittest.TestCase):
         cloud_yc = cloud.model_copy(deep=True)
         tf_backend_ycs3 = tf_backend.model_copy(deep=True)
 
-        cloud_yc.name = "yc"
+        cloud_yc.name = CloudTypeEnum.yc
         cloud_yc.folder_id = "folder-id"
         tf_backend_ycs3.type = "s3"
 
@@ -255,7 +255,7 @@ class TestCreateState(unittest.TestCase):
         cloud_gcp = cloud.model_copy(deep=True)
         tf_backend_azure = tf_backend.model_copy(deep=True)
 
-        cloud_gcp.name = "gcp"
+        cloud_gcp.name = CloudTypeEnum.gcp
         cloud_gcp.id = "project-123"
         cloud_gcp.location.region = "europe-west2"
         tf_backend_azure.type = "azure"

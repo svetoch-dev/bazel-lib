@@ -30,6 +30,11 @@ command(
     command = "@svetoch_bazel_lib//rod/scripts/init/tf/poststeps:update_tfvars",
 )
 
+command(
+    name = "update_kube_config",
+    command = "@svetoch_bazel_lib//rod/scripts/init/tf/poststeps:update_kube_config",
+)
+
 multirun(
     name = "init",
     commands = [

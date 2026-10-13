@@ -446,7 +446,3 @@ class TestImportSecrets(unittest.TestCase):
                 call(["bazel", "run", "//terraform/environment/prd/secrets:apply"]),
             ]
         )
-
-
-if __name__ == "__main__":
-    unittest.main()
