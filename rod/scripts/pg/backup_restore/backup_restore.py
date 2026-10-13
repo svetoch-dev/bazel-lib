@@ -11,7 +11,7 @@ from datetime import datetime
 
 
 RUN_ID_LABEL = "backup-restore-run-id"
-POLL_INTERVAL = 5
+K8S_POLL_INTERVAL = 5
 RECOVERY_POLL_INTERVAL = 3
 TIMESTAMP_FORMAT_ERROR = (
     "expected YYYY-MM-DDTHH:MM:SS with an optional fraction and timezone, "
@@ -63,7 +63,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--postgres",
         required=True,
-        help="source cluster name or Postgres teamId (for example: vaults)",
+        help="source cluster name or Postgres teamId (for example: example-team)",
     )
     parser.add_argument(
         "--namespace",
@@ -302,7 +302,7 @@ def wait_for_master(namespace: str, cluster: str) -> str:
             )
             if ready:
                 return pod["metadata"]["name"]
-        time.sleep(POLL_INTERVAL)
+        time.sleep(K8S_POLL_INTERVAL)
 
 
 def wait_for_recovery(namespace: str, pod: str) -> None:
@@ -350,7 +350,7 @@ def cleanup_clone_storage(namespace: str, cluster: str) -> None:
                 f"(StatefulSets: {len(stateful_sets)}, PVCs: {len(claims)})...",
                 file=sys.stderr,
             )
-            time.sleep(POLL_INTERVAL)
+            time.sleep(K8S_POLL_INTERVAL)
             continue
 
         if not claims:
@@ -389,7 +389,7 @@ def wait_for_clone_cleanup(namespace: str, cluster: str) -> None:
             for resource in resources
         )
         print(f"Waiting for deletion: {remaining}...", file=sys.stderr)
-        time.sleep(POLL_INTERVAL)
+        time.sleep(K8S_POLL_INTERVAL)
 
 
 def run_check(args: argparse.Namespace) -> int:

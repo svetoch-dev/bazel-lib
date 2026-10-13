@@ -34,16 +34,17 @@ Run it from a repository that depends on `svetoch_bazel_lib`:
 
 ```sh
 bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore -- \
-  --postgres vaults \
+  --postgres example-team \
   --date '2024.01.07 00:00:00' \
-  --query 'SELECT count(1) FROM farms'
+  --query 'SELECT count(1) FROM example_table'
 ```
 
 `--postgres` can be a Kubernetes cluster name or a Postgres Operator `teamId`.
-For example, `vaults` resolves to the cluster whose team ID is `vaults`. If
-multiple clusters match, pass `--namespace` to narrow the lookup. Without
-`--namespace`, the command searches all namespaces, so the active `kubectl`
-context must allow listing PostgreSQL resources across namespaces.
+For example, `example-team` resolves to the cluster whose team ID is
+`example-team`. If multiple clusters match, pass `--namespace` to narrow the
+lookup. Without `--namespace`, the command searches all namespaces, so the
+active `kubectl` context must allow listing PostgreSQL resources across
+namespaces.
 
 The database is inferred from the source cluster: the value passed to
 `--postgres` if it is a configured database, or the only configured database.
@@ -57,8 +58,8 @@ settings are not carried over to the clone.
 Temporary names use the resolved source cluster name and preserve its full
 `teamId` prefix. Only the remaining name portion is shortened: a trailing
 `-postgres-cluster` becomes `-pg-clone-<run_id>`, for example:
-`dexswap-gcp-prd-v2-postgres-cluster` becomes
-`dexswap-gcp-prd-v2-pg-clone-<run_id>`. Long names are shortened to leave room for
+`example-team-postgres-cluster` becomes
+`example-team-pg-clone-<run_id>`. Long names are shortened to leave room for
 operator-generated replica Service names, while keeping `teamId` intact. If the
 team ID alone leaves insufficient room for the clone suffix, the command fails
 before creating the clone.
