@@ -78,11 +78,19 @@ class TestGcpK8sCluster(unittest.TestCase):
     def test_translates_permission_denied_to_shared_exception(self):
         error = PermissionDenied("denied")
         self.client.get_cluster.side_effect = error
+        get_creds = self.enterContext(patch.object(k8s, "get_creds", autospec=True))
+        get_caller_email = self.enterContext(
+            patch.object(
+                k8s, "get_caller_email", autospec=True, return_value="test@example.com"
+            )
+        )
 
         with self.assertRaises(K8sClusterPermissionsDenied) as raised:
             k8s.GcpK8sCluster("test-project", "test-cluster", "europe-west2")
 
-        self.assertEqual(str(raised.exception), str(error))
+        get_creds.assert_called_once_with()
+        get_caller_email.assert_called_once_with(get_creds.return_value)
+        self.assertEqual(str(raised.exception), f"test@example.com {error}")
 
     def test_other_api_errors_propagate(self):
         error = ServiceUnavailable("unavailable")
