@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings
 
@@ -10,16 +12,18 @@ class YcSettings(BaseSettings):
     )
 
 
-class K8sClusterSettings:
+class K8sClusterSettings(ABC):
     @property
+    @abstractmethod
     def endpoint(self) -> str:
-        """Https url of K8s cluster ip"""
-        raise NotImplementedError("endpoint property should be overriden")
+        """Https url of K8s cluster"""
+        ...
 
     @property
+    @abstractmethod
     def ca_cert(self) -> str:
         """Base64 encoded k8s cluster ca cert"""
-        raise NotImplementedError("ca_cert property should be overriden")
+        ...
 
 
 class AWSSettings(BaseSettings):
