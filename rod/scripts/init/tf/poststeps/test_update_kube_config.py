@@ -8,6 +8,7 @@ import yaml
 from pydantic import ValidationError
 
 from rod.libs.py.k8s.config import KubeConfig
+from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
 from rod.scripts.init.tf.poststeps import update_kube_config as poststep
 
 
@@ -25,8 +26,8 @@ class TestUpdateKubeConfig(unittest.TestCase):
         self.factory = self.enterContext(
             patch.object(poststep, "kube_config_factory", autospec=True)
         )
-        self.dev = SimpleNamespace(name="dev")
-        self.prod = SimpleNamespace(name="prod")
+        self.dev = SimpleNamespace(name="dev", short_name="DEV")
+        self.prod = SimpleNamespace(name="prod", short_name="PROD")
         self.formatted_tfvars.return_value = SimpleNamespace(
             company=SimpleNamespace(name="acme"),
             envs={"dev": self.dev, "prod": self.prod},
@@ -176,6 +177,47 @@ class TestUpdateKubeConfig(unittest.TestCase):
 
         self.assertIs(raised.exception, error)
         self.assertEqual(self.config_path.read_text(), original)
+
+    def test_cluster_errors_skip_environment_and_keep_successful_entries(self):
+        for error_type in (K8sClusterNotFound, K8sClusterPermissionsDenied):
+            for failed_index in (0, 1):
+                with self.subTest(error_type=error_type, failed_index=failed_index):
+                    existing = self._config("existing")
+                    self._write_config(existing)
+                    configs = [self.dev_config, self.prod_config]
+                    successful = configs[1 - failed_index]
+                    error = error_type("cluster unavailable")
+                    configs[failed_index] = error
+                    self.factory.reset_mock()
+                    self.factory.side_effect = configs
+
+                    with patch.object(poststep, "CliLogger", autospec=True) as logger:
+                        poststep.update_kube_config()
+
+                    existing.clusters.extend(successful.clusters)
+                    existing.users.extend(successful.users)
+                    existing.contexts.extend(successful.contexts)
+                    self.assertEqual(self._read_config(), existing.model_dump())
+                    self.assertEqual(
+                        self.factory.call_args_list,
+                        [
+                            call(self.dev, company_name="acme", use_exec=True),
+                            call(self.prod, company_name="acme", use_exec=True),
+                        ],
+                    )
+                    logger.return_value.error.assert_called_once_with(str(error))
+
+    def test_all_cluster_errors_preserve_existing_config(self):
+        existing = self._config("existing")
+        self._write_config(existing)
+        self.factory.side_effect = [
+            K8sClusterNotFound("missing"),
+            K8sClusterPermissionsDenied("denied"),
+        ]
+
+        poststep.update_kube_config()
+
+        self.assertEqual(self._read_config(), existing.model_dump())
 
 
 if __name__ == "__main__":

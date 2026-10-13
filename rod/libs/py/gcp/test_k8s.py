@@ -1,10 +1,11 @@
 import unittest
 from unittest.mock import patch
 
-from google.api_core.exceptions import NotFound, PermissionDenied
+from google.api_core.exceptions import NotFound, PermissionDenied, ServiceUnavailable
 from google.cloud import container_v1
 
 from rod.libs.py.gcp import k8s
+from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
 from rod.libs.py.utils.logger import CliLogger
 
 
@@ -66,7 +67,7 @@ class TestGcpK8sCluster(unittest.TestCase):
     def test_translates_not_found_to_cluster_not_found(self):
         self.client.get_cluster.side_effect = NotFound("missing")
 
-        with self.assertRaises(k8s.GcpClusterNotFound) as raised:
+        with self.assertRaises(K8sClusterNotFound) as raised:
             k8s.GcpK8sCluster("test-project", "test-cluster", "europe-west2")
 
         self.assertEqual(
@@ -74,11 +75,20 @@ class TestGcpK8sCluster(unittest.TestCase):
             "Cluster test-cluster in project test-project and location europe-west2 not found",
         )
 
-    def test_other_api_errors_propagate(self):
+    def test_translates_permission_denied_to_shared_exception(self):
         error = PermissionDenied("denied")
         self.client.get_cluster.side_effect = error
 
-        with self.assertRaises(PermissionDenied) as raised:
+        with self.assertRaises(K8sClusterPermissionsDenied) as raised:
+            k8s.GcpK8sCluster("test-project", "test-cluster", "europe-west2")
+
+        self.assertEqual(str(raised.exception), str(error))
+
+    def test_other_api_errors_propagate(self):
+        error = ServiceUnavailable("unavailable")
+        self.client.get_cluster.side_effect = error
+
+        with self.assertRaises(ServiceUnavailable) as raised:
             k8s.GcpK8sCluster("test-project", "test-cluster", "europe-west2")
 
         self.assertIs(raised.exception, error)

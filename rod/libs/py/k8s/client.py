@@ -1,6 +1,6 @@
 from kubernetes import client, config as k8s_config
 
-from rod.libs.py.gcp.k8s import GcpK8sCluster, GcpClusterNotFound
+from rod.libs.py.gcp.k8s import GcpK8sCluster
 from rod.libs.py.gcp.auth import get_creds
 from rod.libs.py.k8s.config import (
     KubeConfig,
@@ -15,17 +15,54 @@ from rod.libs.py.k8s.config import (
 )
 from rod.libs.py.utils.logger import CliLogger, BaseLogger
 from rod.libs.py.tf.tfvars import Env, CloudTypeEnum
-from rod.libs.py.yc.k8s import YcK8sCluster, YcClusterNotFound
+from rod.libs.py.yc.k8s import YcK8sCluster
 from rod.libs.py.yc.client import YcSettings
 
 
 class K8sClient:
-    def __init__(self, v1: client.CoreV1Api, custom: client.CustomObjectsApi):
+    def __init__(
+        self,
+        v1: client.CoreV1Api,
+        custom: client.CustomObjectsApi,
+        apps: client.AppsV1Api,
+        batch: client.BatchV1Api,
+        networking: client.NetworkingV1Api,
+        rbac: client.RbacAuthorizationV1Api,
+        storage: client.StorageV1Api,
+        autoscaling: client.AutoscalingV1Api,
+        policy: client.PolicyV1Api,
+        scheduling: client.SchedulingV1Api,
+        coordination: client.CoordinationV1Api,
+        discovery: client.DiscoveryV1Api,
+    ):
         self.v1 = v1
         self.custom = custom
+        self.apps = apps
+        self.batch = batch
+        self.networking = networking
+        self.rbac = rbac
+        self.storage = storage
+        self.autoscaling = autoscaling
+        self.policy = policy
+        self.scheduling = scheduling
+        self.coordination = coordination
+        self.discovery = discovery
 
     def __getattr__(self, name):
-        for obj in (self.v1, self.custom):
+        for obj in (
+            self.v1,
+            self.apps,
+            self.custom,
+            self.batch,
+            self.networking,
+            self.rbac,
+            self.storage,
+            self.autoscaling,
+            self.policy,
+            self.scheduling,
+            self.coordination,
+            self.discovery,
+        ):
             try:
                 return getattr(obj, name)
             except AttributeError:
@@ -45,6 +82,16 @@ def k8s_client_get(
     return K8sClient(
         v1=client.CoreV1Api(api_client),
         custom=client.CustomObjectsApi(api_client),
+        apps=client.AppsV1Api(api_client),
+        batch=client.BatchV1Api(api_client),
+        networking=client.NetworkingV1Api(api_client),
+        rbac=client.RbacAuthorizationV1Api(api_client),
+        storage=client.StorageV1Api(api_client),
+        autoscaling=client.AutoscalingV1Api(api_client),
+        policy=client.PolicyV1Api(api_client),
+        scheduling=client.SchedulingV1Api(api_client),
+        coordination=client.CoordinationV1Api(api_client),
+        discovery=client.DiscoveryV1Api(api_client),
     )
 
 
@@ -61,11 +108,7 @@ def _gcp_kube_config(
     if not env.kubernetes.regional:
         location = env.cloud.location.default_zone
 
-    try:
-        cluster = GcpK8sCluster(env.cloud.id, cluster_name, location)
-    except GcpClusterNotFound as e:
-        logger.error(str(e))
-        return config
+    cluster = GcpK8sCluster(env.cloud.id, cluster_name, location)
 
     config.clusters.append(
         NamedCluster(
@@ -109,14 +152,10 @@ def _yc_kube_config(
 ) -> KubeConfig:
     config = KubeConfig()
     logger = logger or CliLogger("rod.libs.py.k8s.client._yc_kube_config")
-    try:
-        cluster = YcK8sCluster(
-            env.cloud.folder_id,
-            cluster_name,
-        )
-    except YcClusterNotFound as e:
-        logger.error(str(e))
-        return config
+    cluster = YcK8sCluster(
+        env.cloud.folder_id,
+        cluster_name,
+    )
 
     config.clusters.append(
         NamedCluster(

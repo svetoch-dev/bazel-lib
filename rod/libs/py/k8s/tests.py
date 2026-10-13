@@ -1,13 +1,16 @@
 import unittest
+import sys
 from pathlib import Path
 
 
-def load_tests(loader, tests, pattern):
-    return loader.discover(
-        start_dir=str(Path(__file__).parent),
+if __name__ == "__main__":
+    suite = unittest.defaultTestLoader.discover(
+        start_dir=str(Path(__file__).resolve().parent),
         pattern="test_*.py",
     )
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
 
-
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    if result.wasSuccessful():
+        sys.exit(0)
+    else:
+        sys.exit(1)

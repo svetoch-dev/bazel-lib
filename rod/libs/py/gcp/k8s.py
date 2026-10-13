@@ -1,12 +1,9 @@
 from google.cloud import container_v1
-from google.api_core.exceptions import NotFound
+from google.api_core.exceptions import NotFound, PermissionDenied
 
+from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
 from rod.libs.py.settings import K8sClusterSettings
 from rod.libs.py.utils.logger import BaseLogger, CliLogger
-
-
-class GcpClusterNotFound(BaseException):
-    pass
 
 
 class GcpK8sCluster(K8sClusterSettings):
@@ -46,6 +43,8 @@ class GcpK8sCluster(K8sClusterSettings):
                 name=f"projects/{self.project_id}/locations/{self.location}/clusters/{self.name}"
             )
         except NotFound:
-            raise GcpClusterNotFound(
+            raise K8sClusterNotFound(
                 f"Cluster {self.name} in project {self.project_id} and location {self.location} not found"
             )
+        except PermissionDenied as e:
+            raise K8sClusterPermissionsDenied(str(e))

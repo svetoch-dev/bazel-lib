@@ -1,6 +1,7 @@
 import yaml
 
-from rod.libs.py.k8s.client import kube_config_factory, KubeConfig
+from rod.libs.py.k8s.client import kube_config_factory, KubeConfig, k8s_client_get
+from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
 from rod.libs.py.tf.tfvars import formatted_tfvars
 from rod.libs.py.utils.logger import CliLogger
 from pathlib import Path
@@ -24,9 +25,14 @@ def update_kube_config():
 
     logger.info(f"Adding kuberenetes clusters to {str(kube_config_path)}")
     for env_obj in tfvars.envs.values():
-        env_config = kube_config_factory(
-            env_obj, company_name=tfvars.company.name, use_exec=True
-        )
+        try:
+            env_config = kube_config_factory(
+                env_obj, company_name=tfvars.company.name, use_exec=True
+            )
+        except (K8sClusterNotFound, K8sClusterPermissionsDenied) as e:
+            logger.error(str(e))
+            continue
+
         for ctx in env_config.contexts:
             if ctx not in kube_config.contexts:
                 kube_config.contexts.append(ctx)
@@ -38,6 +44,8 @@ def update_kube_config():
         for cluster in env_config.clusters:
             if cluster not in kube_config.clusters:
                 kube_config.clusters.append(cluster)
+
+        logger.info(f"Done for {env_obj.short_name}")
 
     with kube_config_path.open("w") as f:
         yaml.safe_dump(kube_config.model_dump(), f, sort_keys=False)

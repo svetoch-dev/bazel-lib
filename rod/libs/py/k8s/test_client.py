@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from rod.libs.py.k8s import client as k8s_client
+from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
 from rod.libs.py.tf.tfvars import CloudTypeEnum, Env
 
 
@@ -199,21 +200,22 @@ class TestKubeConfigFactory(unittest.TestCase):
                             cluster.call_args.args[1], cluster_name or "dev"
                         )
 
-    def test_missing_clusters_return_no_entries_without_fetching_tokens(self):
-        for provider, cluster, error in (
-            (CloudTypeEnum.gcp, self.gcp_cluster, k8s_client.GcpClusterNotFound),
-            (CloudTypeEnum.yc, self.yc_cluster, k8s_client.YcClusterNotFound),
+    def test_cluster_errors_propagate_without_fetching_tokens(self):
+        for provider, cluster in (
+            (CloudTypeEnum.gcp, self.gcp_cluster),
+            (CloudTypeEnum.yc, self.yc_cluster),
         ):
-            with self.subTest(provider=provider):
-                cluster.side_effect = error("cluster missing")
+            for error_type in (K8sClusterNotFound, K8sClusterPermissionsDenied):
+                with self.subTest(provider=provider, error_type=error_type):
+                    error = error_type("cluster unavailable")
+                    cluster.side_effect = error
 
-                config = k8s_client.kube_config_factory(self._env(provider))
+                    with self.assertRaises(error_type) as raised:
+                        k8s_client.kube_config_factory(self._env(provider))
 
-                self.assertEqual(config.clusters, [])
-                self.assertEqual(config.users, [])
-                self.assertEqual(config.contexts, [])
-                self.get_creds.assert_not_called()
-                self.yc_settings.assert_not_called()
+                    self.assertIs(raised.exception, error)
+                    self.get_creds.assert_not_called()
+                    self.yc_settings.assert_not_called()
 
     def test_unexpected_cluster_errors_propagate(self):
         for provider, cluster in (

@@ -12,6 +12,7 @@ from yandex.cloud.k8s.v1.cluster_service_pb2_grpc import ClusterServiceStub
 
 from rod.libs.py.utils.logger import CliLogger
 from rod.libs.py.yc import k8s
+from rod.libs.py.yc.test_helpers import RpcError
 
 
 class TestYcK8sCluster(unittest.TestCase):
@@ -84,20 +85,36 @@ class TestYcK8sCluster(unittest.TestCase):
     def test_raises_cluster_not_found_when_list_is_empty(self):
         self.service.List.return_value = ListClustersResponse()
 
-        with self.assertRaises(k8s.YcClusterNotFound) as raised:
+        with self.assertRaises(k8s.K8sClusterNotFound) as raised:
             k8s.YcK8sCluster("test-folder", "test-cluster")
 
         self.assertIn("test-folder", str(raised.exception))
         self.assertIn("test-cluster", str(raised.exception))
 
-    def test_api_errors_propagate(self):
-        error = grpc.RpcError("permission denied")
+    def test_translates_permission_denied_to_shared_exception(self):
+        error = RpcError(grpc.StatusCode.PERMISSION_DENIED)
         self.service.List.side_effect = error
 
-        with self.assertRaises(grpc.RpcError) as raised:
+        with self.assertRaises(k8s.K8sClusterPermissionsDenied) as raised:
             k8s.YcK8sCluster("test-folder", "test-cluster")
 
-        self.assertIs(raised.exception, error)
+        self.assertEqual(str(raised.exception), str(error))
+        self.assertIs(raised.exception.__cause__, error)
+
+    def test_other_api_errors_propagate(self):
+        for code in (
+            grpc.StatusCode.UNAVAILABLE,
+            grpc.StatusCode.UNAUTHENTICATED,
+            grpc.StatusCode.NOT_FOUND,
+        ):
+            with self.subTest(code=code):
+                error = RpcError(code)
+                self.service.List.side_effect = error
+
+                with self.assertRaises(grpc.RpcError) as raised:
+                    k8s.YcK8sCluster("test-folder", "test-cluster")
+
+                self.assertIs(raised.exception, error)
 
 
 if __name__ == "__main__":

@@ -45,8 +45,10 @@ py_library(
     visibility = ["//visibility:public"],
     deps = [
         ":client",
+        "@svetoch_bazel_lib//rod/libs/py/k8s:exceptions",
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("grpcio"),
         requirement("yandexcloud"),
     ],
 )
