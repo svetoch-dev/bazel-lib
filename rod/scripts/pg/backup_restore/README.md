@@ -14,15 +14,21 @@ select the tool. Logical backups produced by `pg_dump` are not checked.
 - The calling repository must depend on a revision of `svetoch_bazel_lib` that
   contains this target. Update its dependency pin and keep any resulting changes
   to `MODULE.bazel.lock`. No additional Bazel target or Helm manifest is needed.
-- The active context in `~/.kube/config` must point to the intended Kubernetes
-  cluster, and its configured authentication method must be available locally.
-  The command uses the Kubernetes API directly; it does not require the
-  `kubectl` executable.
-- The Kubernetes user needs permission to get, list, create, and delete
-  `postgresql` resources; list Pods, StatefulSets, PVCs, Services, Endpoints,
-  EndpointSlices, ConfigMaps, Secrets, Jobs, Deployments, and ReplicaSets;
-  execute commands in Pods (`create` on `pods/exec`); and delete PVCs in the
-  selected namespace.
+- The caller's workspace must contain `terraform.tfvars.json` with the target
+  environment. If exactly one Kubernetes environment is enabled, it is selected
+  automatically; otherwise pass `--environment` with its key or unique short
+  name. The shared client currently supports GCP and YC environments.
+- Cloud credentials and the provider's exec authenticator must be available:
+  Google Application Default Credentials and `gke-gcloud-auth-plugin` for GCP,
+  or YC credentials and the `yc` CLI for YC. The client connects directly to
+  the Kubernetes API and does not require an active kubeconfig context or the
+  `kubectl` executable. Exec authentication refreshes credentials during long
+  restore checks.
+- The Kubernetes user needs `get`, `list`, `create`, `delete`, and
+  `deletecollection` on `postgresql` resources; `list` on Pods, StatefulSets,
+  PVCs, Services, Endpoints, EndpointSlices, ConfigMaps, Secrets, Jobs,
+  Deployments, and ReplicaSets; `create` on `pods/exec`; and `delete` plus
+  `deletecollection` on PVCs in the selected namespace.
 - The operator and Spilo must already support restoration from the source
   cluster's physical backup storage. The temporary Pod needs storage access and
   credentials. Local cloud credentials alone do not grant access to the Pod.
@@ -37,6 +43,7 @@ Run it from a repository that depends on `svetoch_bazel_lib`:
 
 ```sh
 bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore -- \
+  --environment production \
   --postgres example-team \
   --date '2024.01.07 00:00:00' \
   --query 'SELECT count(1) FROM example_table'
@@ -45,9 +52,9 @@ bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore -- \
 `--postgres` can be a Kubernetes cluster name or a Postgres Operator `teamId`.
 For example, `example-team` resolves to the cluster whose team ID is
 `example-team`. If multiple clusters match, pass `--namespace` to narrow the
-lookup. Without `--namespace`, the command searches all namespaces, so the
-active Kubernetes context must allow listing PostgreSQL resources across
-namespaces.
+lookup. Without `--namespace`, the command searches all namespaces in the
+selected environment, so its Kubernetes identity must be allowed to list
+PostgreSQL resources across namespaces.
 
 The database is inferred from the source cluster: the value passed to
 `--postgres` if it is a configured database, or the only configured database.

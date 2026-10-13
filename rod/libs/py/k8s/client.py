@@ -74,10 +74,11 @@ class K8sClient:
 def k8s_client_get(
     env: Env,
     logger: BaseLogger | None = None,
+    use_exec: bool = False,
 ) -> K8sClient:
     if not logger:
         logger = CliLogger("rod.libs.py.k8s.client.k8s_client_get")
-    config = kube_config_factory(env)
+    config = kube_config_factory(env, use_exec=use_exec)
     api_client = k8s_config.load_kube_config_from_dict(config.model_dump())
     return K8sClient(
         v1=client.CoreV1Api(api_client),

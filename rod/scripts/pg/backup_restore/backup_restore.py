@@ -7,18 +7,19 @@ import time
 import uuid
 from datetime import datetime
 
-from kubernetes import client, config as kube_config, stream
+from kubernetes import client, stream
 from kubernetes.client.exceptions import ApiException
 
-from rod.libs.py.k8s.client import K8sClient
+from rod.libs.py.k8s.client import k8s_client_get
+from rod.libs.py.tf.tfvars import Env, formatted_tfvars
 
 
 RUN_ID_LABEL = "backup-restore-run-id"
 POSTGRES_GROUP = "acid.zalan.do"
 POSTGRES_VERSION = "v1"
 POSTGRES_PLURAL = "postgresqls"
-K8S_POLL_INTERVAL = 5
-RECOVERY_POLL_INTERVAL = 3
+K8S_RESOURCE_POLL_INTERVAL_SECONDS = 5
+POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS = 3
 TIMESTAMP_FORMAT_ERROR = (
     "expected YYYY-MM-DDTHH:MM:SS with an optional fraction and timezone, "
     "or YYYY.MM.DD HH:MM:SS"
@@ -76,6 +77,13 @@ def parse_args() -> argparse.Namespace:
         help="limit source cluster lookup and create the clone in this namespace",
     )
     parser.add_argument(
+        "--environment",
+        help=(
+            "environment key or unique short name from terraform.tfvars.json; "
+            "inferred when only one Kubernetes environment is enabled"
+        ),
+    )
+    parser.add_argument(
         "--database",
         help="database for the query (inferred from the source cluster when omitted)",
     )
@@ -95,6 +103,47 @@ def parse_args() -> argparse.Namespace:
     except argparse.ArgumentTypeError as error:
         parser.error(str(error))
     return args
+
+
+def find_environment(environment_name: str | None) -> Env:
+    environments = {
+        name: env
+        for name, env in formatted_tfvars().envs.items()
+        if env.kubernetes.enabled
+    }
+    environment_names = ", ".join(sorted(environments)) or "none"
+
+    if environment_name is not None:
+        if environment_name in environments:
+            return environments[environment_name]
+
+        matching_names = [
+            name
+            for name, env in environments.items()
+            if env.short_name == environment_name
+        ]
+        if len(matching_names) == 1:
+            return environments[matching_names[0]]
+        if matching_names:
+            names = ", ".join(sorted(matching_names))
+            raise ValueError(
+                f"environment short name {environment_name!r} is ambiguous; "
+                f"use its terraform.tfvars.json key: {names}"
+            )
+        raise ValueError(
+            f"no Kubernetes environment matched {environment_name!r}; "
+            f"available environments: {environment_names}"
+        )
+
+    if len(environments) == 1:
+        return next(iter(environments.values()))
+    if not environments:
+        raise ValueError("terraform.tfvars.json has no enabled Kubernetes environments")
+
+    raise ValueError(
+        "more than one Kubernetes environment is enabled; pass --environment "
+        f"with one of: {environment_names}"
+    )
 
 
 class PodCommandError(RuntimeError):
@@ -127,16 +176,10 @@ class PodCommandError(RuntimeError):
 class KubernetesApi:
     """Small adapter around the Kubernetes Python client used by this script."""
 
-    def __init__(self):
-        api_client = kube_config.new_client_from_config()
-        self.core = client.CoreV1Api(api_client)
-        self.apps = client.AppsV1Api(api_client)
-        self.custom = client.CustomObjectsApi(api_client)
-        self.batch = client.BatchV1Api(api_client)
-        self.discovery = client.DiscoveryV1Api(api_client)
+    def __init__(self, environment: Env):
+        self.api = k8s_client_get(environment, use_exec=True)
         # Exec uses WebSockets and changes the API client's request protocol.
-        self.exec_core = client.CoreV1Api(kube_config.new_client_from_config())
-        self.api = K8sClient(v1=self.core, custom=self.custom, apps=self.apps)
+        self.exec_core = k8s_client_get(environment, use_exec=True).v1
 
     def list_postgresql_clusters(self, namespace: str | None) -> list[dict]:
         if namespace:
@@ -182,10 +225,10 @@ class KubernetesApi:
             "statefulsets": self.api.list_namespaced_stateful_set,
             "services": self.api.list_namespaced_service,
             "endpoints": self.api.list_namespaced_endpoints,
-            "endpointslices": self.discovery.list_namespaced_endpoint_slice,
+            "endpointslices": self.api.list_namespaced_endpoint_slice,
             "configmaps": self.api.list_namespaced_config_map,
             "secrets": self.api.list_namespaced_secret,
-            "jobs": self.batch.list_namespaced_job,
+            "jobs": self.api.list_namespaced_job,
             "deployments": self.api.list_namespaced_deployment,
             "replicasets": self.api.list_namespaced_replica_set,
             "persistentvolumeclaims": self.api.list_namespaced_persistent_volume_claim,
@@ -197,7 +240,7 @@ class KubernetesApi:
         return resources
 
     def delete_persistentvolumeclaims(self, namespace: str, selector: str) -> None:
-        self.core.delete_collection_namespaced_persistent_volume_claim(
+        self.api.delete_collection_namespaced_persistent_volume_claim(
             namespace,
             label_selector=selector,
             body=client.V1DeleteOptions(),
@@ -408,7 +451,7 @@ def wait_for_master(k8s: KubernetesApi, namespace: str, cluster: str) -> str:
             )
             if ready:
                 return pod["metadata"]["name"]
-        time.sleep(K8S_POLL_INTERVAL)
+        time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
 
 
 def wait_for_recovery(k8s: KubernetesApi, namespace: str, pod: str) -> None:
@@ -437,7 +480,7 @@ def wait_for_recovery(k8s: KubernetesApi, namespace: str, pod: str) -> None:
             return
         if result != "t":
             raise RuntimeError(f"Unexpected pg_is_in_recovery() result: {result!r}")
-        time.sleep(RECOVERY_POLL_INTERVAL)
+        time.sleep(POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS)
 
 
 def cleanup_clone_storage(k8s: KubernetesApi, namespace: str, cluster: str) -> None:
@@ -452,7 +495,7 @@ def cleanup_clone_storage(k8s: KubernetesApi, namespace: str, cluster: str) -> N
                 f"(StatefulSets: {len(stateful_sets)}, PVCs: {len(claims)})...",
                 file=sys.stderr,
             )
-            time.sleep(K8S_POLL_INTERVAL)
+            time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
             continue
 
         if not claims:
@@ -470,7 +513,7 @@ def cleanup_clone_storage(k8s: KubernetesApi, namespace: str, cluster: str) -> N
                 f"Waiting for {len(claims)} retained PVC(s) to be deleted...",
                 file=sys.stderr,
             )
-            time.sleep(K8S_POLL_INTERVAL)
+            time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
 
 
 def wait_for_clone_cleanup(k8s: KubernetesApi, namespace: str, cluster: str) -> None:
@@ -492,7 +535,7 @@ def wait_for_clone_cleanup(k8s: KubernetesApi, namespace: str, cluster: str) -> 
             for resource in resources
         )
         print(f"Waiting for deletion: {remaining}...", file=sys.stderr)
-        time.sleep(K8S_POLL_INTERVAL)
+        time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
 
 
 def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
@@ -575,7 +618,7 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
                         if error.status == 404:
                             break
                         raise
-                    time.sleep(K8S_POLL_INTERVAL)
+                    time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
                 cleanup_clone_storage(k8s, namespace, clone_name)
                 wait_for_clone_cleanup(k8s, namespace, clone_name)
             except Exception as error:
@@ -597,7 +640,12 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
 def main() -> int:
     args = parse_args()
     try:
-        k8s = KubernetesApi()
+        environment = find_environment(args.environment)
+        print(
+            f"Using Kubernetes environment {environment.short_name}...",
+            file=sys.stderr,
+        )
+        k8s = KubernetesApi(environment)
         return run_check(args, k8s)
     except Exception as error:
         print(
