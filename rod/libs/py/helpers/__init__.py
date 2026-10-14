@@ -3,34 +3,9 @@ from rod.libs.py.utils.logger import CliLogger, BaseLogger
 from pathlib import Path
 from typing import Any
 import subprocess
-import glob
 import re
-import os
 import sys
 import json
-
-MASK_STR = "##MASKED##"
-UNMASK_STR = ""
-
-
-def unmask_tf(folder, mask_str=MASK_STR, unmask_str=UNMASK_STR):
-    """
-    Remove mask string from tf files of a bazel target
-
-    Args:
-        folder(str): folder with .tf files
-        mask_str(str): string that should be unmasked
-        unmask_str(str): unmasked str
-    """
-    tf_files = glob.glob(f"{folder}/*.tf")
-    for file in tf_files:
-        with open(file, "r") as f:
-            content = f.read()
-
-        content = re.sub(mask_str, unmask_str, content)
-
-        with open(file, "w") as f:
-            f.write(content)
 
 
 def run_command(
@@ -207,6 +182,22 @@ def create_file(file_name: str, logger: BaseLogger | None = None) -> None:
     except PermissionError:
         logger.error("Permission denied: Unable to create the file.")
 
+
+def get_folder_files(
+    folder_path: str, extensions: list[str] | None = None
+) -> list[Path]:
+    folder = Path(folder_path)
+
+    if not folder.is_dir():
+        raise FileNotFoundError(f"Directory not found: {folder}")
+
+    if extensions:
+        files = []
+        for e in extensions:
+            files += list(folder.glob(f"*{e}"))
+        return files
+
+    return list(folder.iterdir())
 
 
 def switch_index(array: list[Any], element: Any, index: int) -> None:

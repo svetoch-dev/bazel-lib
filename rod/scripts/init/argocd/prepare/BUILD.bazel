@@ -1,5 +1,6 @@
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
+load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 
 py_lint()
 
@@ -7,8 +8,17 @@ py_binary(
     name = "prepare",
     srcs = ["prepare.py"],
     visibility = ["//visibility:public"],
+    data = [
+        "@helm_exec//:executable",
+    ],
+    env = {
+        "HELM_EXECUTABLE": "$(rootpath @helm_exec//:executable)",
+    },
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/k8s",
         "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/helpers",
+        requirement("GitPython"),
     ],
 )
