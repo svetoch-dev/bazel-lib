@@ -22,6 +22,7 @@ from rod.libs.py.yc.client import YcSettings
 class K8sClient:
     def __init__(
         self,
+        client: client.ApiClient,
         v1: client.CoreV1Api,
         custom: client.CustomObjectsApi,
         apps: client.AppsV1Api,
@@ -35,6 +36,7 @@ class K8sClient:
         coordination: client.CoordinationV1Api,
         discovery: client.DiscoveryV1Api,
     ):
+        self.client = client
         self.v1 = v1
         self.custom = custom
         self.apps = apps
@@ -105,6 +107,7 @@ def k8s_client_get(
     config = kube_config_factory(env, use_exec=use_exec)
     api_client = k8s_config.load_kube_config_from_dict(config.model_dump())
     return K8sClient(
+        client=client.ApiClient(api_client),
         v1=client.CoreV1Api(api_client),
         custom=client.CustomObjectsApi(api_client),
         apps=client.AppsV1Api(api_client),

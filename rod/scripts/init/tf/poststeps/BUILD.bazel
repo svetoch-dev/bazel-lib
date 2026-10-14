@@ -26,6 +26,7 @@ py_binary(
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/tf",
         "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/helpers",
         requirement("PyYaml"),
     ],
 )

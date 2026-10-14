@@ -105,7 +105,6 @@ def dict_to_dot_notation(
     results = {}
 
     for key, value in dictionary.items():
-
         if initial_key:
             results_key = f"{initial_key}.{key}"
         else:
@@ -153,9 +152,7 @@ def replace_dotted_placeholders(
     return json.loads(json_str)
 
 
-def create_dir(
-    dir_name: str, logger: BaseLogger = CliLogger("helpers.create_dir")
-) -> bool:
+def create_dir(dir_name: str, logger: BaseLogger | None = None) -> bool:
     """
     Create a directory.
 
@@ -168,6 +165,7 @@ def create_dir(
     Returns:
         True if the directory was created, False otherwise.
     """
+    logger = logger or CliLogger("helpers.create_dir")
     try:
         Path(dir_name).mkdir(parents=True, exist_ok=True)
         logger.info(f"Directory '{dir_name}' created successfully.")
@@ -178,9 +176,7 @@ def create_dir(
     return False
 
 
-def create_file(
-    file_name: str, logger: BaseLogger = CliLogger("helpers.create_dir")
-) -> None:
+def create_file(file_name: str, logger: BaseLogger | None = None) -> None:
     """
     Create an empty file if it does not already exist.
 
@@ -196,6 +192,7 @@ def create_file(
     Returns:
         True if the file was created, False otherwise.
     """
+    logger = logger or CliLogger("helpers.create_dir")
     path = Path(file_name)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -205,13 +202,11 @@ def create_file(
             pass
 
         logger.info(f"File '{file_name}' created successfully.")
-        return True
     except FileExistsError:
         logger.info(f"File '{file_name}' already exists.")
     except PermissionError:
         logger.error("Permission denied: Unable to create the file.")
 
-    return False
 
 
 def switch_index(array: list[Any], element: Any, index: int) -> None:
