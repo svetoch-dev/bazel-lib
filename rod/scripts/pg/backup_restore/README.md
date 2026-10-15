@@ -46,8 +46,16 @@ bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore -- \
   --environment YOUR_ENVIRONMENT \
   --postgres example-team \
   --date '2024.01.07 00:00:00' \
+  --k8s-resource-poll-interval-seconds 5 \
+  --postgres-recovery-poll-interval-seconds 3 \
   --query 'SELECT count(1) FROM example_table'
 ```
+
+The polling options are optional. Kubernetes resource readiness and cleanup
+checks use `--k8s-resource-poll-interval-seconds` (default: 5 seconds);
+PostgreSQL recovery checks
+use `--postgres-recovery-poll-interval-seconds` (default: 3 seconds). Both
+values must be positive whole numbers of seconds.
 
 Replace `YOUR_ENVIRONMENT` with an environment key or unique short name from
 `terraform.tfvars.json`. You can omit `--environment` when exactly one enabled
@@ -79,10 +87,12 @@ team ID alone leaves insufficient room for the clone suffix, the command fails
 before creating the clone.
 
 The command waits for a Ready master Pod, then polls `pg_is_in_recovery()` in
-the `postgres` database every 3 seconds until it returns `false`. Only then
-does it run the user's query and remove the temporary cluster. A failed SQL
-probe or an unexpected result fails the check and triggers cleanup.
-It has no built-in timeout; readiness and recovery waits can continue indefinitely.
+the `postgres` database until it returns `false`. The intervals are controlled
+by `--k8s-resource-poll-interval-seconds` and
+`--postgres-recovery-poll-interval-seconds`. Only then does it run the user's
+query and remove the temporary cluster. A failed SQL probe or an unexpected
+result fails the check and triggers cleanup. It has no built-in timeout;
+readiness and recovery waits can continue indefinitely.
 
 SQL results include column headings. The command waits for the PostgreSQL
 resource to be deleted, removes retained PVCs, and waits for the listed resource

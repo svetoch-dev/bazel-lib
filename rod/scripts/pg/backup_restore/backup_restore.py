@@ -18,8 +18,8 @@ RUN_ID_LABEL = "backup-restore-run-id"
 POSTGRES_GROUP = "acid.zalan.do"
 POSTGRES_VERSION = "v1"
 POSTGRES_PLURAL = "postgresqls"
-K8S_RESOURCE_POLL_INTERVAL_SECONDS = 5
-POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS = 3
+DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS = 5
+DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS = 3
 TIMESTAMP_FORMAT_ERROR = (
     "expected YYYY-MM-DDTHH:MM:SS with an optional fraction and timezone, "
     "or YYYY.MM.DD HH:MM:SS"
@@ -33,6 +33,18 @@ ISO_TIMESTAMP_PATTERN = re.compile(
     r"(?P<fraction>\.\d+)?"
     r"(?P<offset>Z|z|[+-]\d{2}:\d{2})?$"
 )
+
+
+def positive_seconds(value: str) -> int:
+    try:
+        seconds = int(value)
+    except ValueError:
+        pass
+    else:
+        if seconds > 0:
+            return seconds
+
+    raise argparse.ArgumentTypeError("must be a positive whole number of seconds")
 
 
 def parse_timestamp(value: str) -> str:
@@ -97,6 +109,24 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--query", required=True, help="SQL query to run on the clone")
+    parser.add_argument(
+        "--k8s-resource-poll-interval-seconds",
+        type=positive_seconds,
+        default=DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS,
+        help=(
+            "seconds between Kubernetes resource readiness and cleanup checks "
+            f"(default: {DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS})"
+        ),
+    )
+    parser.add_argument(
+        "--postgres-recovery-poll-interval-seconds",
+        type=positive_seconds,
+        default=DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS,
+        help=(
+            "seconds between PostgreSQL recovery checks "
+            f"(default: {DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS})"
+        ),
+    )
     args = parser.parse_args()
     try:
         args.timestamp = parse_timestamp(" ".join(args.date))
@@ -441,7 +471,12 @@ def resolve_database(source_cluster: dict, selector: str, requested: str | None)
     )
 
 
-def wait_for_master(k8s: KubernetesApi, namespace: str, cluster: str) -> str:
+def wait_for_master(
+    k8s: KubernetesApi,
+    namespace: str,
+    cluster: str,
+    poll_interval_seconds: int,
+) -> str:
     selector = f"application=spilo,cluster-name={cluster},spilo-role=master"
     while True:
         for pod in k8s.list_resources("pods", namespace, selector):
@@ -451,10 +486,15 @@ def wait_for_master(k8s: KubernetesApi, namespace: str, cluster: str) -> str:
             )
             if ready:
                 return pod["metadata"]["name"]
-        time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
+        time.sleep(poll_interval_seconds)
 
 
-def wait_for_recovery(k8s: KubernetesApi, namespace: str, pod: str) -> None:
+def wait_for_recovery(
+    k8s: KubernetesApi,
+    namespace: str,
+    pod: str,
+    poll_interval_seconds: int,
+) -> None:
     print("Master is ready. Waiting for pg_is_in_recovery() = f...", file=sys.stderr)
     while True:
         result = k8s.exec_in_pod(
@@ -480,10 +520,15 @@ def wait_for_recovery(k8s: KubernetesApi, namespace: str, pod: str) -> None:
             return
         if result != "t":
             raise RuntimeError(f"Unexpected pg_is_in_recovery() result: {result!r}")
-        time.sleep(POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS)
+        time.sleep(poll_interval_seconds)
 
 
-def cleanup_clone_storage(k8s: KubernetesApi, namespace: str, cluster: str) -> None:
+def cleanup_clone_storage(
+    k8s: KubernetesApi,
+    namespace: str,
+    cluster: str,
+    poll_interval_seconds: int,
+) -> None:
     selector = f"cluster-name={cluster}"
     pvc_deletion_requested = False
     while True:
@@ -495,7 +540,7 @@ def cleanup_clone_storage(k8s: KubernetesApi, namespace: str, cluster: str) -> N
                 f"(StatefulSets: {len(stateful_sets)}, PVCs: {len(claims)})...",
                 file=sys.stderr,
             )
-            time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
+            time.sleep(poll_interval_seconds)
             continue
 
         if not claims:
@@ -513,10 +558,15 @@ def cleanup_clone_storage(k8s: KubernetesApi, namespace: str, cluster: str) -> N
                 f"Waiting for {len(claims)} retained PVC(s) to be deleted...",
                 file=sys.stderr,
             )
-            time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
+            time.sleep(poll_interval_seconds)
 
 
-def wait_for_clone_cleanup(k8s: KubernetesApi, namespace: str, cluster: str) -> None:
+def wait_for_clone_cleanup(
+    k8s: KubernetesApi,
+    namespace: str,
+    cluster: str,
+    poll_interval_seconds: int,
+) -> None:
     kinds = (
         "pods,statefulsets,services,endpoints,endpointslices,configmaps,secrets,"
         "jobs,deployments,replicasets,persistentvolumeclaims"
@@ -535,10 +585,20 @@ def wait_for_clone_cleanup(k8s: KubernetesApi, namespace: str, cluster: str) -> 
             for resource in resources
         )
         print(f"Waiting for deletion: {remaining}...", file=sys.stderr)
-        time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
+        time.sleep(poll_interval_seconds)
 
 
 def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
+    k8s_resource_poll_interval_seconds = getattr(
+        args,
+        "k8s_resource_poll_interval_seconds",
+        DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS,
+    )
+    recovery_poll_interval_seconds = getattr(
+        args,
+        "postgres_recovery_poll_interval_seconds",
+        DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS,
+    )
     source = find_source_cluster(k8s, args.postgres, args.namespace)
     database = resolve_database(source, args.postgres, args.database)
     run_id = uuid.uuid4().hex
@@ -557,8 +617,10 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
         creation_attempted = True
         k8s.create_postgresql(namespace, clone)
         created = True
-        pod = wait_for_master(k8s, namespace, clone_name)
-        wait_for_recovery(k8s, namespace, pod)
+        pod = wait_for_master(
+            k8s, namespace, clone_name, k8s_resource_poll_interval_seconds
+        )
+        wait_for_recovery(k8s, namespace, pod, recovery_poll_interval_seconds)
         print(f"Restore ready. Running SQL in database {database}...", file=sys.stderr)
         result = k8s.exec_in_pod(
             namespace,
@@ -618,9 +680,13 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
                         if error.status == 404:
                             break
                         raise
-                    time.sleep(K8S_RESOURCE_POLL_INTERVAL_SECONDS)
-                cleanup_clone_storage(k8s, namespace, clone_name)
-                wait_for_clone_cleanup(k8s, namespace, clone_name)
+                    time.sleep(k8s_resource_poll_interval_seconds)
+                cleanup_clone_storage(
+                    k8s, namespace, clone_name, k8s_resource_poll_interval_seconds
+                )
+                wait_for_clone_cleanup(
+                    k8s, namespace, clone_name, k8s_resource_poll_interval_seconds
+                )
             except Exception as error:
                 print(
                     f"Cleanup failed for {namespace}/{clone_name}: "
