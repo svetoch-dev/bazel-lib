@@ -27,7 +27,7 @@ select the tool. Logical backups produced by `pg_dump` are not checked.
 - The Kubernetes user needs `get`, `list`, `create`, `delete`, and
   `deletecollection` on `postgresql` resources; `list` on Pods, StatefulSets,
   PVCs, Services, Endpoints, EndpointSlices, ConfigMaps, Secrets, Jobs,
-  Deployments, and ReplicaSets; `create` on `pods/exec`; and `delete` plus
+  Deployments, and ReplicaSets; `get` and `create` on `pods/exec`; and `delete` plus
   `deletecollection` on PVCs in the selected namespace.
 - The operator and Spilo must already support restoration from the source
   cluster's physical backup storage. The temporary Pod needs storage access and

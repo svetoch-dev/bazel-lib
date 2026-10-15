@@ -40,9 +40,7 @@ def positive_seconds(value: str) -> int:
         seconds = None
 
     if seconds is None or seconds <= 0:
-        raise argparse.ArgumentTypeError(
-            "must be a positive whole number of seconds"
-        )
+        raise argparse.ArgumentTypeError("must be a positive whole number of seconds")
 
     return seconds
 
@@ -54,9 +52,7 @@ def parse_timestamp(value: str) -> str:
     if match is None:
         raise argparse.ArgumentTypeError(TIMESTAMP_FORMAT_ERROR)
 
-    date, time, fraction, offset = match.group(
-        "date", "time", "fraction", "offset"
-    )
+    date, time, fraction, offset = match.group("date", "time", "fraction", "offset")
     date = date.replace(".", "-")
     fraction = fraction or ""
     if not offset or offset.lower() == "z":
