@@ -75,13 +75,11 @@ source cluster's PostgreSQL version, volume size, and storage class, with one
 instance. Custom PostgreSQL parameters and other optional source cluster
 settings are not carried over to the clone.
 
-Temporary names use the resolved source cluster name and preserve its full
-`teamId` prefix. Only the remaining name portion is shortened: a trailing
-`-postgres-cluster` becomes `-pg-clone-<run_id>`, for example:
+Temporary clone names preserve the beginning of the source cluster name. A
+trailing `-postgres-cluster` becomes `-pg` before `-clone-<run_id>` is added.
+For example:
 `example-postgres-cluster` becomes `example-pg-clone-<run_id>`. Long names are
-shortened to leave room for operator-generated replica Service names, while
-keeping `teamId` intact. If the team ID alone leaves insufficient room for the
-clone suffix, the command fails before creating the clone.
+shortened to leave room for operator-generated replica Service names.
 
 The command waits for a Ready master Pod, then polls `pg_is_in_recovery()` in
 the `postgres` database until it returns `false`. The intervals are controlled

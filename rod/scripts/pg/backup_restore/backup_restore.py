@@ -299,29 +299,21 @@ def error_details(error: Exception) -> str:
 def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
     team_id = source_cluster["spec"]["teamId"]
     source_name = source_cluster["metadata"]["name"]
-    cluster_name = source_name.removeprefix(f"{team_id}-")
-    allowed = "abcdefghijklmnopqrstuvwxyz0123456789-"
-    cluster_name = "".join(
-        char if char in allowed else "-" for char in cluster_name.lower()
-    )
-    cluster_name = cluster_name.removesuffix("-cluster")
-    if cluster_name == "cluster":
-        cluster_name = ""
-    elif cluster_name == "postgres":
-        cluster_name = "pg"
-    elif cluster_name.endswith("-postgres"):
-        cluster_name = cluster_name.removesuffix("-postgres") + "-pg"
+    name_prefix = source_name
+    if name_prefix == "postgres-cluster":
+        name_prefix = "pg"
+    elif name_prefix.endswith("-postgres-cluster"):
+        name_prefix = name_prefix.removesuffix("-postgres-cluster") + "-pg"
 
-    suffix = f"-clone-{run_id[:12]}"
+    clone_suffix = f"-clone-{run_id[:12]}"
     # Reserve space for the operator's replica Service name.
-    max_prefix_length = 63 - len("-repl") - len(suffix)
-    if len(team_id) > max_prefix_length:
+    max_name_prefix_length = 63 - len("-repl") - len(clone_suffix)
+    team_prefix = f"{team_id}-"
+    if source_name.startswith(team_prefix) and len(team_id) > max_name_prefix_length:
         raise ValueError(f"teamId {team_id!r} is too long for a temporary clone name")
 
-    available_length = max(0, max_prefix_length - len(team_id) - 1)
-    cluster_name = cluster_name[:available_length].strip("-")
-    prefix = f"{team_id}-{cluster_name}" if cluster_name else team_id
-    return f"{prefix}{suffix}"
+    name_prefix = name_prefix[:max_name_prefix_length].rstrip("-")
+    return f"{name_prefix}{clone_suffix}"
 
 
 def build_clone(source_cluster: dict, name: str, timestamp: str, run_id: str) -> dict:
