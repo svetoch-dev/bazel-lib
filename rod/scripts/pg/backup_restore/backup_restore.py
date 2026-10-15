@@ -90,10 +90,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--environment",
-        help=(
-            "environment key or unique short name from terraform.tfvars.json; "
-            "inferred when only one Kubernetes environment is enabled"
-        ),
+        required=True,
+        type=parse_environment,
+        metavar="ENVIRONMENT",
+        help="environment key from terraform.tfvars.json",
     )
     parser.add_argument(
         "--database",
@@ -135,45 +135,20 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def find_environment(environment_name: str | None) -> Env:
+def parse_environment(environment_name: str) -> Env:
     environments = {
         name: env
         for name, env in formatted_tfvars().envs.items()
         if env.kubernetes.enabled
     }
-    environment_names = ", ".join(sorted(environments)) or "none"
-
-    if environment_name is not None:
-        if environment_name in environments:
-            return environments[environment_name]
-
-        matching_names = [
-            name
-            for name, env in environments.items()
-            if env.short_name == environment_name
-        ]
-        if len(matching_names) == 1:
-            return environments[matching_names[0]]
-        if matching_names:
-            names = ", ".join(sorted(matching_names))
-            raise ValueError(
-                f"environment short name {environment_name!r} is ambiguous; "
-                f"use its terraform.tfvars.json key: {names}"
-            )
-        raise ValueError(
-            f"no Kubernetes environment matched {environment_name!r}; "
-            f"available environments: {environment_names}"
-        )
-
-    if len(environments) == 1:
-        return next(iter(environments.values()))
     if not environments:
-        raise ValueError("terraform.tfvars.json has no enabled Kubernetes environments")
-
-    raise ValueError(
-        "more than one Kubernetes environment is enabled; pass --environment "
-        f"with one of: {environment_names}"
-    )
+        raise argparse.ArgumentTypeError(
+            "terraform.tfvars.json has no enabled Kubernetes environments"
+        )
+    if environment_name not in environments:
+        available_names = ", ".join(sorted(environments))
+        raise argparse.ArgumentTypeError(f"must be one of: {available_names}")
+    return environments[environment_name]
 
 
 class PodCommandError(RuntimeError):
@@ -704,9 +679,9 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
 
 
 def main() -> int:
-    args = parse_args()
     try:
-        environment = find_environment(args.environment)
+        args = parse_args()
+        environment = args.environment
         print(
             f"Using Kubernetes environment {environment.short_name}...",
             file=sys.stderr,

@@ -15,9 +15,9 @@ select the tool. Logical backups produced by `pg_dump` are not checked.
   contains this target. Update its dependency pin and keep any resulting changes
   to `MODULE.bazel.lock`. No additional Bazel target or Helm manifest is needed.
 - The caller's workspace must contain `terraform.tfvars.json` with the target
-  environment. If exactly one Kubernetes environment is enabled, it is selected
-  automatically; otherwise pass `--environment` with its key or unique short
-  name. The shared client currently supports GCP and YC environments.
+  environment. Pass its key with the required `--environment` option. Valid
+  values are the keys of enabled Kubernetes environments. The shared client
+  currently supports GCP and YC environments.
 - Cloud credentials and the provider's exec authenticator must be available:
   Google Application Default Credentials and `gke-gcloud-auth-plugin` for GCP,
   or YC credentials and the `yc` CLI for YC. The client connects directly to
@@ -57,9 +57,9 @@ PostgreSQL recovery checks
 use `--postgres-recovery-poll-interval-seconds` (default: 3 seconds). Both
 values must be positive whole numbers of seconds.
 
-Replace `YOUR_ENVIRONMENT` with an environment key or unique short name from
-`terraform.tfvars.json`. You can omit `--environment` when exactly one enabled
-Kubernetes environment is configured.
+Replace `YOUR_ENVIRONMENT` with the key of an enabled Kubernetes environment
+from `terraform.tfvars.json`. The command reports the available keys if the
+value is invalid.
 
 `--postgres` can be a Kubernetes cluster name or a Postgres Operator `teamId`.
 For example, `example-team` resolves to the cluster whose team ID is
