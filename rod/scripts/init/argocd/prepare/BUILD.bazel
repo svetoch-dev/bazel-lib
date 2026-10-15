@@ -37,6 +37,20 @@ py_binary(
     ],
 )
 
+
+py_binary(
+    name = "git_submodules_init",
+    srcs = [
+        "git_submodules_init.py",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        "@svetoch_bazel_lib//rod/libs/py/git",
+    ],
+)
+
 py_binary(
     name = "configure_envs_yaml",
     srcs = [

@@ -11,15 +11,21 @@ command(
 )
 
 command(
-    name = "configure_envs",
+    name = "configure_envs_yaml",
     command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:configure_envs_yaml",
+)
+
+command(
+    name = "git_submodules_init",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:git_submodules_init",
 )
 
 multirun(
     name = "init",
     commands = [
+        "git_submodules_init",
         "copy_from_template",
-        "configure_envs",
+        "configure_envs_yaml",
         "prepare",
     ],
     visibility = ["//visibility:public"],
