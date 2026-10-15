@@ -318,11 +318,8 @@ def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
 
 def build_clone(source_cluster: dict, name: str, timestamp: str, run_id: str) -> dict:
     source_spec = source_cluster["spec"]
-    source_volume = source_spec["volume"]
-    volume = {}
-    for field in ("size", "storageClass"):
-        if field in source_volume:
-            volume[field] = source_volume[field]
+    volume = source_spec["volume"].copy()
+    volume.pop("selector", None)
 
     spec = {
         "clone": {

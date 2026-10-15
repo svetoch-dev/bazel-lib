@@ -71,9 +71,10 @@ resources across namespaces.
 Pass the database to check with the required `--database` option. Timestamps
 without a timezone are interpreted as UTC; ISO timestamps with an explicit
 offset are also accepted. The temporary clone uses the
-source cluster's PostgreSQL version, volume size, and storage class, with one
-instance. Custom PostgreSQL parameters and other optional source cluster
-settings are not carried over to the clone.
+source cluster's PostgreSQL version and volume settings, with one instance.
+The volume `selector` is omitted so Kubernetes can provision a new PVC for the
+clone. Custom PostgreSQL parameters and other optional source cluster settings
+are not carried over to the clone.
 
 Temporary clone names preserve the beginning of the source cluster name. A
 trailing `-postgres-cluster` becomes `-pg` before `-clone-<run_id>` is added.
