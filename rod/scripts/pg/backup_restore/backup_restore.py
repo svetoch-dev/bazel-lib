@@ -7,19 +7,16 @@ import time
 import uuid
 from datetime import datetime
 
-from kubernetes import client, stream
 from kubernetes.client.exceptions import ApiException
 
-from rod.libs.py.k8s.client import k8s_client_get
+from rod.libs.py.k8s.api import KubernetesApi, error_details
+from rod.libs.py.k8s.postgres import KubernetesPostgresApi
 from rod.libs.py.tf.tfvars import Env, formatted_tfvars
 from rod.libs.py.utils.logger import CliLogger
 
 
 logger = CliLogger("rod.scripts.pg.backup_restore.backup_restore")
 RUN_ID_LABEL = "backup-restore-run-id"
-POSTGRES_GROUP = "acid.zalan.do"
-POSTGRES_VERSION = "v1"
-POSTGRES_PLURAL = "postgresqls"
 DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS = 5
 DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS = 3
 TIMESTAMP_FORMAT_ERROR = (
@@ -154,150 +151,6 @@ def parse_environment(environment_name: str) -> Env:
     return environments[environment_name]
 
 
-class PodCommandError(RuntimeError):
-    def __init__(
-        self,
-        namespace: str,
-        pod: str,
-        command: list[str],
-        return_code: int,
-        stdout: str,
-        stderr: str,
-    ):
-        self.namespace = namespace
-        self.pod = pod
-        self.command = command
-        self.return_code = return_code
-        self.stdout = stdout
-        self.stderr = stderr
-        message = (
-            f"Command {command[0]!r} in pod {namespace}/{pod} "
-            f"exited with code {return_code}"
-        )
-        if stderr.strip():
-            message += f"\nstderr:\n{stderr.strip()}"
-        if stdout.strip():
-            message += f"\nstdout before failure:\n{stdout.strip()}"
-        super().__init__(message)
-
-
-class KubernetesApi:
-    """Small adapter around the Kubernetes Python client used by this script."""
-
-    def __init__(self, environment: Env):
-        self.api = k8s_client_get(environment, use_exec=True)
-        # Exec uses WebSockets and changes the API client's request protocol.
-        self.exec_core = k8s_client_get(environment, use_exec=True).v1
-
-    def list_postgresql_clusters(self, namespace: str | None) -> list[dict]:
-        if namespace:
-            result = self.api.list_namespaced_custom_object(
-                POSTGRES_GROUP, POSTGRES_VERSION, namespace, POSTGRES_PLURAL
-            )
-        else:
-            result = self.api.list_cluster_custom_object(
-                POSTGRES_GROUP, POSTGRES_VERSION, POSTGRES_PLURAL
-            )
-        return result["items"]
-
-    def get_postgresql(self, namespace: str, name: str) -> dict:
-        return self.api.get_namespaced_custom_object(
-            POSTGRES_GROUP,
-            POSTGRES_VERSION,
-            namespace,
-            POSTGRES_PLURAL,
-            name,
-        )
-
-    def create_postgresql(self, namespace: str, resource: dict) -> None:
-        self.api.create_namespaced_custom_object(
-            POSTGRES_GROUP,
-            POSTGRES_VERSION,
-            namespace,
-            POSTGRES_PLURAL,
-            resource,
-        )
-
-    def delete_postgresqls(self, namespace: str, selector: str) -> None:
-        self.api.delete_collection_namespaced_custom_object(
-            POSTGRES_GROUP,
-            POSTGRES_VERSION,
-            namespace,
-            POSTGRES_PLURAL,
-            label_selector=selector,
-        )
-
-    def list_resources(self, kind: str, namespace: str, selector: str) -> list[dict]:
-        list_methods = {
-            "pods": self.api.list_namespaced_pod,
-            "statefulsets": self.api.list_namespaced_stateful_set,
-            "services": self.api.list_namespaced_service,
-            "endpoints": self.api.list_namespaced_endpoints,
-            "endpointslices": self.api.list_namespaced_endpoint_slice,
-            "configmaps": self.api.list_namespaced_config_map,
-            "secrets": self.api.list_namespaced_secret,
-            "jobs": self.api.list_namespaced_job,
-            "deployments": self.api.list_namespaced_deployment,
-            "replicasets": self.api.list_namespaced_replica_set,
-            "persistentvolumeclaims": self.api.list_namespaced_persistent_volume_claim,
-        }
-        result = list_methods[kind](namespace, label_selector=selector)
-        resources = [resource.to_dict() for resource in result.items]
-        for resource in resources:
-            resource["kind"] = kind
-        return resources
-
-    def delete_persistentvolumeclaims(self, namespace: str, selector: str) -> None:
-        self.api.delete_collection_namespaced_persistent_volume_claim(
-            namespace,
-            label_selector=selector,
-            body=client.V1DeleteOptions(),
-        )
-
-    def exec_in_pod(self, namespace: str, pod: str, command: list[str]) -> str:
-        response = stream.stream(
-            self.exec_core.connect_get_namespaced_pod_exec,
-            pod,
-            namespace,
-            command=command,
-            container="postgres",
-            stderr=True,
-            stdin=False,
-            stdout=True,
-            tty=False,
-            _preload_content=False,
-        )
-        try:
-            response.run_forever()
-            stdout = response.read_stdout()
-            stderr = response.read_stderr()
-            return_code = response.returncode
-        finally:
-            response.close()
-
-        if return_code is None:
-            raise RuntimeError(f"Pod command did not return an exit code: {pod}")
-        if return_code != 0:
-            raise PodCommandError(
-                namespace,
-                pod,
-                command,
-                return_code,
-                stdout,
-                stderr,
-            )
-        return stdout
-
-
-def error_details(error: Exception) -> str:
-    if isinstance(error, ApiException):
-        details = f"Kubernetes API returned {error.status}: {error.reason}"
-        if error.body:
-            details += f"\n{error.body}"
-        return details
-    return str(error)
-
-
 def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
     team_id = source_cluster["spec"]["teamId"]
     source_name = source_cluster["metadata"]["name"]
@@ -352,7 +205,7 @@ def build_clone(source_cluster: dict, name: str, timestamp: str, run_id: str) ->
 
 
 def clone_belongs_to_run(
-    k8s: KubernetesApi,
+    k8s: KubernetesPostgresApi,
     namespace: str,
     cluster: str,
     run_id: str,
@@ -371,7 +224,7 @@ def clone_belongs_to_run(
 
 
 def find_source_cluster(
-    k8s: KubernetesApi,
+    k8s: KubernetesPostgresApi,
     selector: str,
     namespace: str | None,
 ) -> dict:
@@ -452,7 +305,7 @@ def wait_for_recovery(
 
 
 def cleanup_clone_storage(
-    k8s: KubernetesApi,
+    k8s: KubernetesPostgresApi,
     namespace: str,
     cluster: str,
     poll_interval_seconds: int,
@@ -509,7 +362,7 @@ def wait_for_clone_cleanup(
         time.sleep(poll_interval_seconds)
 
 
-def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
+def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
     k8s_resource_poll_interval_seconds = getattr(
         args,
         "k8s_resource_poll_interval_seconds",
@@ -622,7 +475,7 @@ def main() -> int:
         args = parse_args()
         environment = args.environment
         logger.info(f"Using Kubernetes environment {environment.short_name}...")
-        k8s = KubernetesApi(environment)
+        k8s = KubernetesPostgresApi(environment)
         return run_check(args, k8s)
     except Exception as error:
         logger.error(f"FAILED: backup restore check: {error_details(error)}")
