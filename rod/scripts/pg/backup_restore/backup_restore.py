@@ -2,7 +2,6 @@
 
 import argparse
 import re
-import sys
 import time
 import uuid
 from datetime import datetime
@@ -38,12 +37,14 @@ def positive_seconds(value: str) -> int:
     try:
         seconds = int(value)
     except ValueError:
-        pass
-    else:
-        if seconds > 0:
-            return seconds
+        seconds = None
 
-    raise argparse.ArgumentTypeError("must be a positive whole number of seconds")
+    if seconds is None or seconds <= 0:
+        raise argparse.ArgumentTypeError(
+            "must be a positive whole number of seconds"
+        )
+
+    return seconds
 
 
 def parse_timestamp(value: str) -> str:
@@ -53,17 +54,16 @@ def parse_timestamp(value: str) -> str:
     if match is None:
         raise argparse.ArgumentTypeError(TIMESTAMP_FORMAT_ERROR)
 
-    parts = match.groupdict()
-    date = parts["date"].replace(".", "-")
-    time = parts["time"]
-    fraction = parts["fraction"] or ""
-    offset = parts["offset"] or "+00:00"
-    if offset.lower() == "z":
+    date, time, fraction, offset = match.group(
+        "date", "time", "fraction", "offset"
+    )
+    date = date.replace(".", "-")
+    fraction = fraction or ""
+    if not offset or offset.lower() == "z":
         offset = "+00:00"
 
     try:
-        # datetime validates the timestamp but stores only six fraction digits.
-        # Validate a six-digit prefix and return the full original fraction below.
+        # Validate microseconds; return the full fractional part below.
         datetime.fromisoformat(f"{date}T{time}{fraction[:7]}{offset}")
     except ValueError as error:
         raise argparse.ArgumentTypeError(TIMESTAMP_FORMAT_ERROR) from error
@@ -152,7 +152,6 @@ def parse_environment(environment_name: str) -> Env:
 
 
 def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
-    team_id = source_cluster["spec"]["teamId"]
     source_name = source_cluster["metadata"]["name"]
     name_prefix = source_name
     if name_prefix == "postgres-cluster":
@@ -161,11 +160,8 @@ def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
         name_prefix = name_prefix.removesuffix("-postgres-cluster") + "-pg"
 
     clone_suffix = f"-clone-{run_id[:12]}"
-    # Reserve space for the operator's replica Service name.
+    # Kubernetes names are limited to 63 characters; reserve room for "-repl".
     max_name_prefix_length = 63 - len("-repl") - len(clone_suffix)
-    team_prefix = f"{team_id}-"
-    if source_name.startswith(team_prefix) and len(team_id) > max_name_prefix_length:
-        raise ValueError(f"teamId {team_id!r} is too long for a temporary clone name")
 
     name_prefix = name_prefix[:max_name_prefix_length].rstrip("-")
     return f"{name_prefix}{clone_suffix}"
@@ -341,13 +337,22 @@ def wait_for_clone_cleanup(
     cluster: str,
     poll_interval_seconds: int,
 ) -> None:
-    kinds = (
-        "pods,statefulsets,services,endpoints,endpointslices,configmaps,secrets,"
-        "jobs,deployments,replicasets,persistentvolumeclaims"
+    resource_types = (
+        "pods",
+        "statefulsets",
+        "services",
+        "endpoints",
+        "endpointslices",
+        "configmaps",
+        "secrets",
+        "jobs",
+        "deployments",
+        "replicasets",
+        "persistentvolumeclaims",
     )
     while True:
         resources = []
-        for kind in kinds.split(","):
+        for kind in resource_types:
             resources.extend(
                 k8s.list_resources(kind, namespace, f"cluster-name={cluster}")
             )
@@ -363,16 +368,8 @@ def wait_for_clone_cleanup(
 
 
 def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
-    k8s_resource_poll_interval_seconds = getattr(
-        args,
-        "k8s_resource_poll_interval_seconds",
-        DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS,
-    )
-    recovery_poll_interval_seconds = getattr(
-        args,
-        "postgres_recovery_poll_interval_seconds",
-        DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS,
-    )
+    k8s_resource_poll_interval_seconds = args.k8s_resource_poll_interval_seconds
+    recovery_poll_interval_seconds = args.postgres_recovery_poll_interval_seconds
     source = find_source_cluster(k8s, args.postgres, args.namespace)
     database = args.database
     run_id = uuid.uuid4().hex
@@ -385,9 +382,8 @@ def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
         f"into temporary cluster {clone_name} in namespace {namespace}..."
     )
     created = False
-    creation_attempted = False
+    operation_failed = False
     try:
-        creation_attempted = True
         k8s.create_postgresql(namespace, clone)
         created = True
         pod = wait_for_master(
@@ -415,11 +411,13 @@ def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
         )
         logger.info(f"SQL result:\n{result.rstrip()}")
         logger.info("SQL completed successfully.")
+    except BaseException:
+        operation_failed = True
+        raise
     finally:
-        operation_failed = sys.exc_info()[0] is not None
         should_delete = created
 
-        if creation_attempted and not created:
+        if not created:
             ownership = clone_belongs_to_run(
                 k8s,
                 namespace,

@@ -87,14 +87,15 @@ the `postgres` database until it returns `false`. The intervals are controlled
 by `--k8s-resource-poll-interval-seconds` and
 `--postgres-recovery-poll-interval-seconds`. Only then does it run the user's
 query and remove the temporary cluster. A failed SQL probe or an unexpected
-result fails the check and triggers cleanup. It has no built-in timeout;
-readiness and recovery waits can continue indefinitely.
+result fails the check and triggers cleanup. It has no built-in timeout, so
+readiness, recovery, and cleanup waits can continue indefinitely.
 
 SQL results include column headings. The command waits for the PostgreSQL
 resource to be deleted, removes retained PVCs, and waits for the listed resource
 types carrying the temporary clone's `cluster-name` label to disappear.
 Unlabelled resources and cloud disk deletion are not verified.
 `SUCCESS` is printed only after SQL and cleanup finish, with exit code 0.
-Errors print `FAILED` and return a nonzero exit code. SQL success means the query
-executed without errors; the caller must evaluate whether its returned values
-meet the expected result.
+Runtime failures print `FAILED` and return a nonzero exit code. Invalid command
+line arguments are reported by `argparse` and also return a nonzero exit code.
+SQL success means the query executed without errors; the caller must evaluate
+whether its returned values meet the expected result.
