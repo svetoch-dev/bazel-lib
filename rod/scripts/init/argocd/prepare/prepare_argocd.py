@@ -15,26 +15,33 @@ def prepare_argocd():
     int_env = next((e for e in tfvars.envs.values() if e.type == "internal"), None)
     argocd_crds_dir = bazel_settings.argocd_crds_dir + "/argocd"
 
-    # try:
-    #     apply_manifests(int_env, dir_path=argocd_crds_dir)
-    # except Exception as e:
-    #     logger.error(f"Failed to apply crd manifests.{str(e)}")
-    #     return
+    try:
+        apply_manifests(int_env, dir_path=argocd_crds_dir)
+    except Exception as e:
+        logger.error(f"Failed to apply crd manifests.{str(e)}")
+        return
 
     cloud_short_name = f"{int_env.cloud.name.value}-{int_env.short_name}"
+    argocd_envs_folder = bazel_settings.argocd_environments_dir
     argocd_folder = bazel_settings.argocd_dir
     argocd_charts = bazel_settings.argocd_chart_dir
     with open(f"{bazel_settings.deps_images_dir}/argocd/image_tag.txt") as f:
         image_tag = f.readline().strip()
 
     # fmt: off
+    helm_argocd_dependecy_update = [
+       f"{HELM_EXECUTABLE}",
+       "dependency", "update",
+       f"{argocd_charts}/argocd/",
+    ]
+
     helm_argocd_init_cmd = [
        f"{HELM_EXECUTABLE}",
        "template",
        f"argocd-{cloud_short_name}",
        f"{argocd_charts}/argocd/",
        "--set", "redis.enabled=false",
-       "--values", f"{argocd_folder}/environments/{cloud_short_name}/argocd/values.yaml",
+       "--values", f"{argocd_envs_folder}/{cloud_short_name}/argocd/values.yaml",
        "--values", f"{argocd_charts}/globals.yaml",
        "--namespace", "argocd",
        "--set", "argocd.enabled=true",
@@ -49,14 +56,36 @@ def prepare_argocd():
        "--set", f"global.env.cloud_short_name={cloud_short_name}",
        "--set-string", f"global.env.dns.domain={int_env.dns.domain}"
     ]
+
+    helm_environments_init_cmd = [
+       f"{HELM_EXECUTABLE}",
+       "template",
+       "root",
+       f"{argocd_charts}/environments/",
+       "--values", f"{argocd_folder}/envs.yaml",
+       "--values", f"{argocd_charts}/globals.yaml",
+       "--set-file", f"tfvars={bazel_settings.tfvars_file}",
+       "--namespace", "argocd",
+    ]
     # fmt: on
     try:
         _, _, out = run_command(
+            helm_argocd_dependecy_update, print_stdout=False, raise_exception=True
+        )
+        _, _, out = run_command(
             helm_argocd_init_cmd, print_stdout=False, raise_exception=True
         )
-        print(out)
+        print("\n".join(out))
     except CommandException as e:
         logger.error(f"helm argocd init failed.{str(e)}")
+
+    try:
+        _, _, out = run_command(
+            helm_environments_init_cmd, print_stdout=False, raise_exception=True
+        )
+        print("\n".join(out))
+    except CommandException as e:
+        logger.error(f"helm environments init failed.{str(e)}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,26 @@
+load("@rules_multirun//:defs.bzl", "command", "multirun")
+
+command(
+    name = "prepare",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:prepare_argocd",
+)
+
+command(
+    name = "copy_from_template",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:copy",
+)
+
+command(
+    name = "configure_envs",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:configure_envs_yaml",
+)
+
+multirun(
+    name = "init",
+    commands = [
+        "copy_from_template",
+        "configure_envs",
+        "prepare",
+    ],
+    visibility = ["//visibility:public"],
+)

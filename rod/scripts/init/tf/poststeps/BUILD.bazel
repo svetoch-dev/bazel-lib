@@ -21,12 +21,12 @@ py_binary(
     srcs = ["update_kube_config.py"],
     visibility = ["//visibility:public"],
     deps = [
+        "@svetoch_bazel_lib//rod/libs/py/helpers",
         "@svetoch_bazel_lib//rod/libs/py/k8s",
         "@svetoch_bazel_lib//rod/libs/py/k8s:exceptions",
         "@svetoch_bazel_lib//rod/libs/py/settings",
         "@svetoch_bazel_lib//rod/libs/py/tf",
         "@svetoch_bazel_lib//rod/libs/py/utils",
-        "@svetoch_bazel_lib//rod/libs/py/helpers",
         requirement("PyYaml"),
     ],
 )

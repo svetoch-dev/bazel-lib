@@ -58,6 +58,7 @@ class BazelSettings(BaseSettings):
     rc_cloud_override: str | None = None
 
     argocd_dir_override: str | None = None
+    argocd_environments_dir_override: str | None = None
     argocd_chart_dir_override: str | None = None
     argocd_app_chart_dir_override: str | None = None
     argocd_crds_dir_override: str | None = None
@@ -85,6 +86,13 @@ class BazelSettings(BaseSettings):
         if self.argocd_dir_override:
             return f"{self.workspace}/{self.argocd_dir_override}"
         return f"{self.workspace}/argocd"
+
+    @computed_field
+    @property
+    def argocd_environments_dir(self) -> str:
+        if self.argocd_environments_dir_override:
+            return f"{self.argocd_dir}/{self.argocd_environments_dir_override}"
+        return f"{self.argocd_dir}/environments"
 
     @computed_field
     @property

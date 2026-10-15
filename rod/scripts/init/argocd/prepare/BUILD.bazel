@@ -5,20 +5,49 @@ load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 py_lint()
 
 py_binary(
-    name = "prepare",
-    srcs = ["prepare.py"],
-    visibility = ["//visibility:public"],
+    name = "prepare_argocd",
+    srcs = ["prepare_argocd.py"],
     data = [
         "@helm_exec//:executable",
     ],
     env = {
         "HELM_EXECUTABLE": "$(rootpath @helm_exec//:executable)",
     },
+    visibility = ["//visibility:public"],
     deps = [
+        "@svetoch_bazel_lib//rod/libs/py/helpers",
         "@svetoch_bazel_lib//rod/libs/py/k8s",
         "@svetoch_bazel_lib//rod/libs/py/tf",
         "@svetoch_bazel_lib//rod/libs/py/utils",
-        "@svetoch_bazel_lib//rod/libs/py/helpers",
         requirement("GitPython"),
+    ],
+)
+
+py_binary(
+    name = "copy",
+    srcs = [
+        "copy.py",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+    ],
+)
+
+py_binary(
+    name = "configure_envs_yaml",
+    srcs = [
+        "configure_envs_yaml.py",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/k8s",
+        "@svetoch_bazel_lib//rod/libs/py/k8s:exceptions",
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("PyYaml"),
     ],
 )
