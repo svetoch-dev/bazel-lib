@@ -44,9 +44,9 @@ Run it from a repository that depends on `svetoch_bazel_lib`:
 ```sh
 bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore -- \
   --environment YOUR_ENVIRONMENT \
-  --postgres example-team \
+  --postgres example-postgres-cluster \
   --database example_database \
-  --date '2024.01.07 00:00:00' \
+  --date '2026.01.07 00:00:00' \
   --k8s-resource-poll-interval-seconds 5 \
   --postgres-recovery-poll-interval-seconds 3 \
   --query 'SELECT count(1) FROM example_table'
@@ -62,12 +62,11 @@ Replace `YOUR_ENVIRONMENT` with the key of an enabled Kubernetes environment
 from `terraform.tfvars.json`. The command reports the available keys if the
 value is invalid.
 
-`--postgres` can be a Kubernetes cluster name or a Postgres Operator `teamId`.
-For example, `example-team` resolves to the cluster whose team ID is
-`example-team`. If multiple clusters match, pass `--namespace` to narrow the
-lookup. Without `--namespace`, the command searches all namespaces in the
-selected environment, so its Kubernetes identity must be allowed to list
-PostgreSQL resources across namespaces.
+`--postgres` must be the exact PostgreSQL cluster name (`metadata.name`). If
+the same name exists in multiple namespaces, pass `--namespace` to select one.
+Without `--namespace`, the command searches all namespaces in the selected
+environment, so its Kubernetes identity must be allowed to list PostgreSQL
+resources across namespaces.
 
 Pass the database to check with the required `--database` option. Timestamps
 without a timezone are interpreted as UTC; ISO timestamps with an explicit
@@ -79,11 +78,10 @@ settings are not carried over to the clone.
 Temporary names use the resolved source cluster name and preserve its full
 `teamId` prefix. Only the remaining name portion is shortened: a trailing
 `-postgres-cluster` becomes `-pg-clone-<run_id>`, for example:
-`example-team-postgres-cluster` becomes
-`example-team-pg-clone-<run_id>`. Long names are shortened to leave room for
-operator-generated replica Service names, while keeping `teamId` intact. If the
-team ID alone leaves insufficient room for the clone suffix, the command fails
-before creating the clone.
+`example-postgres-cluster` becomes `example-pg-clone-<run_id>`. Long names are
+shortened to leave room for operator-generated replica Service names, while
+keeping `teamId` intact. If the team ID alone leaves insufficient room for the
+clone suffix, the command fails before creating the clone.
 
 The command waits for a Ready master Pod, then polls `pg_is_in_recovery()` in
 the `postgres` database until it returns `false`. The intervals are controlled

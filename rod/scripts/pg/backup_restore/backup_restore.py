@@ -82,7 +82,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--postgres",
         required=True,
-        help="source cluster name or Postgres teamId (for example: example-team)",
+        help="exact source PostgreSQL cluster name (metadata.name)",
     )
     parser.add_argument(
         "--namespace",
@@ -388,26 +388,11 @@ def find_source_cluster(
     namespace: str | None,
 ) -> dict:
     clusters = k8s.list_postgresql_clusters(namespace)
-
-    exact_name_matches = [
+    matches = [
         cluster
         for cluster in clusters
         if cluster.get("metadata", {}).get("name") == selector
     ]
-    if exact_name_matches:
-        matches = exact_name_matches
-    else:
-        team_matches = [
-            cluster
-            for cluster in clusters
-            if cluster.get("spec", {}).get("teamId") == selector
-        ]
-        namespace_matches = [
-            cluster
-            for cluster in clusters
-            if cluster.get("metadata", {}).get("namespace") == selector
-        ]
-        matches = team_matches or namespace_matches
 
     if len(matches) == 1:
         return matches[0]
