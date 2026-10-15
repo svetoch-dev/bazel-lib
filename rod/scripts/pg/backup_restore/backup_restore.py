@@ -97,7 +97,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--database",
-        help="database for the query (inferred from the source cluster when omitted)",
+        required=True,
+        help="database for the query",
     )
     parser.add_argument(
         "--date",
@@ -425,27 +426,6 @@ def find_source_cluster(
     )
 
 
-def resolve_database(source_cluster: dict, selector: str, requested: str | None) -> str:
-    if requested:
-        return requested
-
-    spec = source_cluster.get("spec", {})
-    configured_databases = list((spec.get("databases") or {}).keys())
-    for database in spec.get("preparedDatabases") or {}:
-        if database not in configured_databases:
-            configured_databases.append(database)
-    if selector in configured_databases:
-        return selector
-    if len(configured_databases) == 1:
-        return configured_databases[0]
-    if not configured_databases:
-        return "postgres"
-    raise ValueError(
-        "could not infer the query database; pass --database. Configured "
-        f"databases: {', '.join(configured_databases)}"
-    )
-
-
 def wait_for_master(
     k8s: KubernetesApi,
     namespace: str,
@@ -575,7 +555,7 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
         DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS,
     )
     source = find_source_cluster(k8s, args.postgres, args.namespace)
-    database = resolve_database(source, args.postgres, args.database)
+    database = args.database
     run_id = uuid.uuid4().hex
     clone_name = temporary_cluster_name(source, run_id)
     clone = build_clone(source, clone_name, args.timestamp, run_id)

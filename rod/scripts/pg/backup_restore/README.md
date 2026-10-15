@@ -45,6 +45,7 @@ Run it from a repository that depends on `svetoch_bazel_lib`:
 bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore -- \
   --environment YOUR_ENVIRONMENT \
   --postgres example-team \
+  --database example_database \
   --date '2024.01.07 00:00:00' \
   --k8s-resource-poll-interval-seconds 5 \
   --postgres-recovery-poll-interval-seconds 3 \
@@ -68,11 +69,9 @@ lookup. Without `--namespace`, the command searches all namespaces in the
 selected environment, so its Kubernetes identity must be allowed to list
 PostgreSQL resources across namespaces.
 
-The database is inferred from the source cluster: the value passed to
-`--postgres` if it is a configured database, or the only configured database.
-For clusters with several databases, pass `--database`. Timestamps without a
-timezone are interpreted as UTC; ISO timestamps with an explicit offset are
-also accepted. The temporary clone uses the
+Pass the database to check with the required `--database` option. Timestamps
+without a timezone are interpreted as UTC; ISO timestamps with an explicit
+offset are also accepted. The temporary clone uses the
 source cluster's PostgreSQL version, volume size, and storage class, with one
 instance. Custom PostgreSQL parameters and other optional source cluster
 settings are not carried over to the clone.
