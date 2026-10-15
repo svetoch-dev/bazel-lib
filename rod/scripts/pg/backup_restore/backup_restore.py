@@ -12,8 +12,10 @@ from kubernetes.client.exceptions import ApiException
 
 from rod.libs.py.k8s.client import k8s_client_get
 from rod.libs.py.tf.tfvars import Env, formatted_tfvars
+from rod.libs.py.utils.logger import CliLogger
 
 
+logger = CliLogger("rod.scripts.pg.backup_restore.backup_restore")
 RUN_ID_LABEL = "backup-restore-run-id"
 POSTGRES_GROUP = "acid.zalan.do"
 POSTGRES_VERSION = "v1"
@@ -360,13 +362,10 @@ def clone_belongs_to_run(
     except ApiException as error:
         if error.status == 404:
             return False
-        print(
-            f"could not confirm clone ownership: {error_details(error)}",
-            file=sys.stderr,
-        )
+        logger.error(f"Could not confirm clone ownership: {error_details(error)}")
         return None
     except (ValueError, OSError) as error:
-        print(f"could not confirm clone ownership: {error}", file=sys.stderr)
+        logger.error(f"Could not confirm clone ownership: {error}")
         return None
     return resource.get("metadata", {}).get("labels", {}).get(RUN_ID_LABEL) == run_id
 
@@ -424,7 +423,7 @@ def wait_for_recovery(
     pod: str,
     poll_interval_seconds: int,
 ) -> None:
-    print("Master is ready. Waiting for pg_is_in_recovery() = f...", file=sys.stderr)
+    logger.info("Master is ready. Waiting for pg_is_in_recovery() = f...")
     while True:
         result = k8s.exec_in_pod(
             namespace,
@@ -445,7 +444,7 @@ def wait_for_recovery(
             ],
         ).strip()
         if result == "f":
-            print("Recovery completed: pg_is_in_recovery() = f.", file=sys.stderr)
+            logger.info("Recovery completed: pg_is_in_recovery() = f.")
             return
         if result != "t":
             raise RuntimeError(f"Unexpected pg_is_in_recovery() result: {result!r}")
@@ -464,10 +463,9 @@ def cleanup_clone_storage(
         stateful_sets = k8s.list_resources("statefulsets", namespace, selector)
         claims = k8s.list_resources("persistentvolumeclaims", namespace, selector)
         if stateful_sets:
-            print(
+            logger.info(
                 "Waiting for temporary cluster storage cleanup "
-                f"(StatefulSets: {len(stateful_sets)}, PVCs: {len(claims)})...",
-                file=sys.stderr,
+                f"(StatefulSets: {len(stateful_sets)}, PVCs: {len(claims)})..."
             )
             time.sleep(poll_interval_seconds)
             continue
@@ -476,17 +474,11 @@ def cleanup_clone_storage(
             return
 
         if not pvc_deletion_requested:
-            print(
-                f"Removing {len(claims)} retained PVC(s) for {cluster}...",
-                file=sys.stderr,
-            )
+            logger.info(f"Removing {len(claims)} retained PVC(s) for {cluster}...")
             k8s.delete_persistentvolumeclaims(namespace, selector)
             pvc_deletion_requested = True
         else:
-            print(
-                f"Waiting for {len(claims)} retained PVC(s) to be deleted...",
-                file=sys.stderr,
-            )
+            logger.info(f"Waiting for {len(claims)} retained PVC(s) to be deleted...")
             time.sleep(poll_interval_seconds)
 
 
@@ -507,13 +499,13 @@ def wait_for_clone_cleanup(
                 k8s.list_resources(kind, namespace, f"cluster-name={cluster}")
             )
         if not resources:
-            print("Temporary cluster cleanup completed.", file=sys.stderr)
+            logger.info("Temporary cluster cleanup completed.")
             return
         remaining = ", ".join(
             f"{resource['kind']}/{resource['metadata']['name']}"
             for resource in resources
         )
-        print(f"Waiting for deletion: {remaining}...", file=sys.stderr)
+        logger.info(f"Waiting for deletion: {remaining}...")
         time.sleep(poll_interval_seconds)
 
 
@@ -535,10 +527,9 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
     clone = build_clone(source, clone_name, args.timestamp, run_id)
     namespace = source["metadata"]["namespace"]
 
-    print(
+    logger.info(
         f"Restoring {args.postgres} at {args.timestamp} "
-        f"into temporary cluster {clone_name} in namespace {namespace}...",
-        file=sys.stderr,
+        f"into temporary cluster {clone_name} in namespace {namespace}..."
     )
     created = False
     creation_attempted = False
@@ -550,7 +541,7 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
             k8s, namespace, clone_name, k8s_resource_poll_interval_seconds
         )
         wait_for_recovery(k8s, namespace, pod, recovery_poll_interval_seconds)
-        print(f"Restore ready. Running SQL in database {database}...", file=sys.stderr)
+        logger.info(f"Restore ready. Running SQL in database {database}...")
         result = k8s.exec_in_pod(
             namespace,
             pod,
@@ -569,9 +560,8 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
                 args.query,
             ],
         )
-        print("SQL result:", flush=True)
-        print(result, end="", flush=True)
-        print("SQL completed successfully.", file=sys.stderr)
+        logger.info(f"SQL result:\n{result.rstrip()}")
+        logger.info("SQL completed successfully.")
     finally:
         operation_failed = sys.exc_info()[0] is not None
         should_delete = created
@@ -585,23 +575,20 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
             )
             if ownership is None:
                 detail = f"could not confirm ownership of {namespace}/{clone_name}"
-                print(detail, file=sys.stderr)
+                logger.error(detail)
                 if not operation_failed:
                     raise RuntimeError(detail)
             else:
                 should_delete = ownership
 
         if should_delete:
-            print(f"Removing temporary cluster {clone_name}...", file=sys.stderr)
+            logger.info(f"Removing temporary cluster {clone_name}...")
             try:
                 k8s.delete_postgresqls(
                     namespace,
                     f"{RUN_ID_LABEL}={run_id}",
                 )
-                print(
-                    "Waiting for temporary PostgreSQL resource deletion...",
-                    file=sys.stderr,
-                )
+                logger.info("Waiting for temporary PostgreSQL resource deletion...")
                 while True:
                     try:
                         k8s.get_postgresql(namespace, clone_name)
@@ -617,17 +604,15 @@ def run_check(args: argparse.Namespace, k8s: KubernetesApi) -> int:
                     k8s, namespace, clone_name, k8s_resource_poll_interval_seconds
                 )
             except Exception as error:
-                print(
+                logger.error(
                     f"Cleanup failed for {namespace}/{clone_name}: "
-                    f"{error_details(error)}",
-                    file=sys.stderr,
+                    f"{error_details(error)}"
                 )
                 if not operation_failed:
                     raise
 
-    print(
+    logger.info(
         "SUCCESS: backup restored, SQL completed, temporary cluster resources removed.",
-        file=sys.stderr,
     )
     return 0
 
@@ -636,22 +621,15 @@ def main() -> int:
     try:
         args = parse_args()
         environment = args.environment
-        print(
-            f"Using Kubernetes environment {environment.short_name}...",
-            file=sys.stderr,
-        )
+        logger.info(f"Using Kubernetes environment {environment.short_name}...")
         k8s = KubernetesApi(environment)
         return run_check(args, k8s)
     except Exception as error:
-        print(
-            f"FAILED: backup restore check: {error_details(error)}",
-            file=sys.stderr,
-        )
+        logger.error(f"FAILED: backup restore check: {error_details(error)}")
         return 1
     except KeyboardInterrupt:
-        print(
-            "FAILED: backup restore check interrupted; cleanup may be incomplete.",
-            file=sys.stderr,
+        logger.error(
+            "FAILED: backup restore check interrupted; cleanup may be incomplete."
         )
         return 130
 

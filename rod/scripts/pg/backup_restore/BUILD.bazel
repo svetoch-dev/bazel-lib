@@ -11,6 +11,7 @@ py_binary(
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/k8s",
         "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
         requirement("kubernetes"),
     ],
 )
