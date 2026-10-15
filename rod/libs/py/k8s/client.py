@@ -239,7 +239,9 @@ def kube_config_factory(
     elif env.cloud.name == CloudTypeEnum.yc:
         config = _yc_kube_config(env, global_name, cluster_name, use_exec)
     else:
-        raise NotImplementedError(f"kube_config not implemented for {env.cloud.name}")
+        raise NotImplementedError(
+            f"kube_config not implemented for {env.cloud.name.value}"
+        )
     config.current_context = global_name
 
     return config
