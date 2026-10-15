@@ -1,6 +1,8 @@
 import os
+import tempfile
 
 from rod.libs.py.k8s.manifests import apply_manifests
+from rod.libs.py.k8s.exceptions import K8sApiException
 from rod.libs.py.settings import common_paths
 from rod.libs.py.tf.tfvars import formatted_tfvars
 from rod.libs.py.utils.logger import CliLogger
@@ -17,7 +19,7 @@ def prepare_argocd():
 
     try:
         apply_manifests(int_env, dir_path=argocd_crds_dir)
-    except Exception as e:
+    except K8sApiException as e:
         logger.error(f"Failed to apply crd manifests.{str(e)}")
         return
 
@@ -54,7 +56,7 @@ def prepare_argocd():
        "--set", "global.env.name=internal",
        "--set", "global.env.short_name=int",
        "--set", f"global.env.cloud_short_name={cloud_short_name}",
-       "--set-string", f"global.env.dns.domain={int_env.dns.domain}"
+       "--set-string", f"global.env.dns.domain={int_env.dns.domain.strip('.')}"
     ]
 
     helm_environments_init_cmd = [
@@ -75,15 +77,27 @@ def prepare_argocd():
         _, _, out = run_command(
             helm_argocd_init_cmd, print_stdout=False, raise_exception=True
         )
-        print("\n".join(out))
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as f:
+            f.write("\n".join(out))
+            f.flush()
+            apply_manifests(int_env, file_path=f.name, namespace="argocd")
+
     except CommandException as e:
         logger.error(f"helm argocd init failed.{str(e)}")
+        return
+    except K8sApiException as e:
+        logger.error(f"Failed to apply helm manifests.{str(e)}")
+        return
 
     try:
         _, _, out = run_command(
             helm_environments_init_cmd, print_stdout=False, raise_exception=True
         )
-        print("\n".join(out))
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as f:
+            f.write("\n".join(out))
+            f.flush()
+            apply_manifests(int_env, file_path=f.name, namespace="argocd")
     except CommandException as e:
         logger.error(f"helm environments init failed.{str(e)}")
 
