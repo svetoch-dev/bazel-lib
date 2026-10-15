@@ -6,23 +6,12 @@ py_lint()
 py_library(
     name = "helpers",
     srcs = [
-        "exceptions.py",
         "__init__.py",
+        "exceptions.py",
     ],
     visibility = ["//visibility:public"],
     deps = [
         "@svetoch_bazel_lib//rod/libs/py/utils",
-    ],
-)
-
-py_library(
-    name = "cloud",
-    srcs = [
-        "cloud.py",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "@svetoch_bazel_lib//rod/libs/py/gcp:network",
     ],
 )
 

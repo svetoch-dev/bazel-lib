@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import call, patch
 
-from google.api_core.exceptions import Forbidden, NotFound, PermissionDenied
+from google.api_core.exceptions import NotFound, PermissionDenied
 from google.cloud import compute_v1
 
-from rod.libs.py.gcp.network import NatGw, NetworkPermissionsDenied, list_nat_gws
+from rod.libs.py.gcp.network import NatGw, list_nat_gws
 
 
 class TestListNatGws(unittest.TestCase):
@@ -156,51 +156,14 @@ class TestListNatGws(unittest.TestCase):
     @patch("rod.libs.py.gcp.network.compute_v1.AddressesClient")
     @patch("rod.libs.py.gcp.network.compute_v1.RoutersClient")
     def test_router_listing_error_propagates(self, routers_client, addresses_client):
-        error = NotFound("Project not found")
+        error = PermissionDenied("Router access denied")
         routers_client.return_value.list.side_effect = error
 
-        with self.assertRaises(NotFound) as raised:
+        with self.assertRaises(PermissionDenied) as raised:
             list_nat_gws("project", "europe-west1")
 
         self.assertIs(raised.exception, error)
         addresses_client.return_value.get.assert_not_called()
-
-    @patch("rod.libs.py.gcp.network.compute_v1.AddressesClient")
-    @patch("rod.libs.py.gcp.network.compute_v1.RoutersClient")
-    def test_permission_errors_raise_network_permissions_denied(
-        self, routers_client, addresses_client
-    ):
-        for error_type in (Forbidden, PermissionDenied):
-            for operation in ("list", "get"):
-                with self.subTest(error_type=error_type, operation=operation):
-                    error = error_type("Network access denied")
-                    routers_client.return_value.list.side_effect = None
-                    addresses_client.return_value.get.side_effect = None
-                    routers_client.return_value.list.return_value = [
-                        compute_v1.Router(
-                            name="router",
-                            nats=[
-                                compute_v1.RouterNat(
-                                    name="nat",
-                                    nat_ips=[
-                                        "projects/project/regions/europe-west1/addresses/ip"
-                                    ],
-                                )
-                            ],
-                        )
-                    ]
-                    if operation == "list":
-                        routers_client.return_value.list.side_effect = error
-                    else:
-                        addresses_client.return_value.get.side_effect = error
-
-                    with self.assertRaises(NetworkPermissionsDenied) as raised:
-                        list_nat_gws("project", "europe-west1")
-
-                    self.assertIs(raised.exception.__cause__, error)
-                    self.assertIn("project", str(raised.exception))
-                    self.assertIn("europe-west1", str(raised.exception))
-                    self.assertIn("Network access denied", str(raised.exception))
 
     @patch("rod.libs.py.gcp.network.compute_v1.AddressesClient")
     @patch("rod.libs.py.gcp.network.compute_v1.RoutersClient")

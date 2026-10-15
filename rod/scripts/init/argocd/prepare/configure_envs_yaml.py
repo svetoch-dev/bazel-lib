@@ -5,7 +5,8 @@ from rod.libs.py.tf.tfvars import formatted_tfvars
 from rod.libs.py.k8s.client import kube_config_factory
 from rod.libs.py.utils.logger import CliLogger
 from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
-from rod.libs.py.helpers.cloud import nat_gw_ips
+from rod.libs.py.cloud import nat_gw_ips
+from rod.libs.py.cloud.exceptions import CloudPermissionsDenied
 
 
 def configure_envs_yaml():
@@ -13,10 +14,20 @@ def configure_envs_yaml():
     tfvars = formatted_tfvars()
     envs_yaml_file = common_paths.argocd_dir + "/envs.yaml"
     envs_yaml = {"global": {"envs": {}}}
+
     with open(envs_yaml_file, "r") as f:
         result = yaml.safe_load(f)
         if isinstance(result, dict):
             envs_yaml = envs_yaml | result
+
+    int_env = next((e for e in tfvars.envs.values() if e.type == "internal"), None)
+
+    try:
+        int_nat_gw = nat_gw_ips(int_env)[0]
+    except CloudPermissionsDenied as e:
+        logger.error(str(e))
+        return
+
     for env_name, env_obj in tfvars.envs.items():
         if not env_obj.kubernetes.enabled:
             continue
@@ -44,7 +55,7 @@ def configure_envs_yaml():
         env = {
             "cloud": {
                 "network": {
-                    "int_nat_gw": nat_gw_ips(env_obj)[0]
+                    "int_nat_gw": int_nat_gw
                 }
             },
             "kubernetes": {
