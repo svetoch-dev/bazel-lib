@@ -27,6 +27,9 @@ def update_kube_config():
 
     logger.info(f"Adding kuberenetes clusters to {str(kube_config_path)}")
     for env_obj in tfvars.envs.values():
+        if not env_obj.kubernetes.enabled:
+            continue
+
         try:
             env_config = kube_config_factory(
                 env_obj, company_name=tfvars.company.name, use_exec=True

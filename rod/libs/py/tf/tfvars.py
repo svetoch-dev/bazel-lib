@@ -2,7 +2,7 @@ from typing import Literal
 from enum import Enum
 from pathlib import Path
 
-from rod.libs.py.settings import bazel_settings
+from rod.libs.py.settings import common_paths
 from pydantic import BaseModel, ConfigDict, model_validator
 from rod.libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholders
 import ipaddress
@@ -179,7 +179,7 @@ class TfVars(BaseTfVarsModel):
 
 
 def tfvars():
-    with open(bazel_settings.tfvars_file, "r") as f:
+    with open(common_paths.tfvars_file, "r") as f:
         content = f.read()
 
     return TfVars.model_validate_json(content)
@@ -219,7 +219,7 @@ def formatted_tfvars():
 
 
 def update_tfvars(tf_vars: TfVars) -> None:
-    Path(bazel_settings.tfvars_file).write_text(
+    Path(common_paths.tfvars_file).write_text(
         tf_vars.model_dump_json(indent=2),
         encoding="utf-8",
     )

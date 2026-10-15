@@ -151,7 +151,7 @@ def create_dir(dir_name: str, logger: BaseLogger | None = None) -> bool:
     return False
 
 
-def create_file(file_name: str, logger: BaseLogger | None = None) -> None:
+def create_file(file_name: str, logger: BaseLogger | None = None) -> bool:
     """
     Create an empty file if it does not already exist.
 
@@ -177,10 +177,13 @@ def create_file(file_name: str, logger: BaseLogger | None = None) -> None:
             pass
 
         logger.info(f"File '{file_name}' created successfully.")
+        return True
     except FileExistsError:
         logger.info(f"File '{file_name}' already exists.")
     except PermissionError:
         logger.error("Permission denied: Unable to create the file.")
+
+    return False
 
 
 def get_folder_files(

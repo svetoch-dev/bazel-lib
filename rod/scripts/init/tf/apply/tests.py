@@ -64,7 +64,6 @@ class TestApply(unittest.TestCase):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
 
-        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
         env_int.short_name = "int"
@@ -125,7 +124,6 @@ class TestApply(unittest.TestCase):
     ):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
-        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
 
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
@@ -180,7 +178,6 @@ class TestApply(unittest.TestCase):
     ):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
-        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
 
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
@@ -241,7 +238,6 @@ class TestApply(unittest.TestCase):
     ):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
-        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
 
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"

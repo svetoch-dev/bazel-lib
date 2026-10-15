@@ -1,6 +1,3 @@
-from pathlib import Path
-
-from rod.libs.py.settings import bazel_settings
 from rod.libs.py.utils.logger import CliLogger
 from rod.libs.py.tf.tfvars import formatted_tfvars, update_tfvars as tfvars_update
 from rod.libs.py.yc.registry import YcRegistry

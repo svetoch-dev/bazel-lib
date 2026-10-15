@@ -1,6 +1,6 @@
 import yaml
 
-from rod.libs.py.settings import bazel_settings
+from rod.libs.py.settings import common_paths
 from rod.libs.py.tf.tfvars import formatted_tfvars
 from rod.libs.py.k8s.client import kube_config_factory
 from rod.libs.py.utils.logger import CliLogger
@@ -10,7 +10,7 @@ from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissions
 def configure_envs_yaml():
     logger = CliLogger("rod.scripts.init.argocd.prepare.configure_envs_yaml")
     tfvars = formatted_tfvars()
-    envs_yaml_file = bazel_settings.argocd_dir + "/envs.yaml"
+    envs_yaml_file = common_paths.argocd_dir + "/envs.yaml"
     envs_yaml = {"global": {"envs": {}}}
     for env_name, env_obj in tfvars.envs.items():
         if not env_obj.kubernetes.enabled:

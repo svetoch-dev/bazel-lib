@@ -43,7 +43,7 @@ class InitSettings(BaseSettings):
     )
 
 
-class BazelSettings(BaseSettings):
+class CommonPaths(BaseSettings):
     workspace: str = Field(
         validation_alias="BUILD_WORKSPACE_DIRECTORY",
         default=".",
@@ -165,6 +165,40 @@ class BazelSettings(BaseSettings):
         return f"{self.workspace}/.bazelrc.cloud.gcp"
 
 
+class BazelSettings(BaseSettings):
+    workspace: str = Field(
+        validation_alias="BUILD_WORKSPACE_DIRECTORY",
+        default=".",
+    )
+
+    tf_dir_override: str | None = None
+    tf_env_dir_override: str | None = None
+    tf_product_dir_override: str | None = None
+
+    @computed_field
+    @property
+    # Relative to workspace root
+    def tf_dir(self) -> str:
+        if self.tf_dir_override:
+            return self.tf_dir_override
+        return f"terraform"
+
+    @computed_field
+    @property
+    def tf_env_dir(self) -> str:
+        if self.tf_env_dir_override:
+            return self.tf_env_dir_override
+        return f"{self.tf_dir}/environments"
+
+    @computed_field
+    @property
+    def tf_product_dir(self) -> str:
+        if self.tf_product_dir_override:
+            return self.tf_product_dir_override
+        return f"{self.tf_env_dir}/product"
+
+
+common_paths = CommonPaths()
 log_settings = LogSettings()
 bazel_settings = BazelSettings()
 init_settings = InitSettings()

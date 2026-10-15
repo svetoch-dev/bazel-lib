@@ -1,12 +1,12 @@
 from shutil import copytree
 from pathlib import Path
 from rod.libs.py.tf.tfvars import formatted_tfvars
-from rod.libs.py.settings import bazel_settings
+from rod.libs.py.settings import common_paths
 from rod.libs.py.utils.logger import CliLogger
 import sys
 
-PRODUCT_DIR = Path(bazel_settings.argocd_environments_dir + "/product")
-INTERNAL_DIR = Path(bazel_settings.argocd_environments_dir + "/int")
+PRODUCT_DIR = Path(common_paths.argocd_environments_dir + "/product")
+INTERNAL_DIR = Path(common_paths.argocd_environments_dir + "/int")
 
 
 def copy_template() -> None:
@@ -23,7 +23,7 @@ def copy_template() -> None:
     for env_obj in tfvars.envs.values():
         cloud_short_name = f"{env_obj.cloud.name.value}-{env_obj.short_name}"
         copy_to_dir = Path(
-            bazel_settings.argocd_environments_dir + "/" + cloud_short_name
+            common_paths.argocd_environments_dir + "/" + cloud_short_name
         )
         if env_obj.type == "internal" and not copy_to_dir.exists():
             copytree(INTERNAL_DIR, copy_to_dir)

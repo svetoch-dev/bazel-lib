@@ -2,13 +2,13 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from rod.libs.py.settings import bazel_settings, init_settings
+from rod.libs.py.settings import common_paths, init_settings
 
 
 def clean() -> None:
-    os.chdir(bazel_settings.workspace)
+    os.chdir(common_paths.workspace)
     shutil.rmtree("tests/e2e")
-    shutil.rmtree(bazel_settings.tf_product_dir)
+    shutil.rmtree(common_paths.tf_product_dir)
 
     gitpath = Path(".git")
     if gitpath.exists() and gitpath.is_dir():

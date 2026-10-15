@@ -26,8 +26,12 @@ class TestUpdateKubeConfig(unittest.TestCase):
         self.factory = self.enterContext(
             patch.object(poststep, "kube_config_factory", autospec=True)
         )
-        self.dev = SimpleNamespace(name="dev", short_name="DEV")
-        self.prod = SimpleNamespace(name="prod", short_name="PROD")
+        self.dev = SimpleNamespace(
+            name="dev", short_name="DEV", kubernetes=SimpleNamespace(enabled=True)
+        )
+        self.prod = SimpleNamespace(
+            name="prod", short_name="PROD", kubernetes=SimpleNamespace(enabled=True)
+        )
         self.formatted_tfvars.return_value = SimpleNamespace(
             company=SimpleNamespace(name="acme"),
             envs={"dev": self.dev, "prod": self.prod},
@@ -76,6 +80,7 @@ class TestUpdateKubeConfig(unittest.TestCase):
             clusters=self.dev_config.clusters + self.prod_config.clusters,
             users=self.dev_config.users + self.prod_config.users,
             contexts=self.dev_config.contexts + self.prod_config.contexts,
+            current_context=self.prod_config.current_context,
         )
 
     def test_creates_config_and_parent_directories(self):
@@ -101,7 +106,7 @@ class TestUpdateKubeConfig(unittest.TestCase):
         self.assertEqual(self._read_config(), self._merged_config().model_dump())
         self.assertEqual(unrelated_file.read_text(), "keep me")
 
-    def test_preserves_existing_entries_preferences_and_current_context(self):
+    def test_preserves_existing_entries_and_preferences_and_selects_last_context(self):
         existing = self._config("existing")
         existing.preferences.colors = True
         existing.contexts[0].context.namespace = "custom-namespace"
@@ -111,6 +116,7 @@ class TestUpdateKubeConfig(unittest.TestCase):
             expected.contexts.extend(config.contexts)
             expected.users.extend(config.users)
             expected.clusters.extend(config.clusters)
+        expected.current_context = self.prod_config.current_context
 
         poststep.update_kube_config()
 
@@ -130,17 +136,47 @@ class TestUpdateKubeConfig(unittest.TestCase):
         poststep.update_kube_config()
 
         expected = self._merged_config()
-        expected.current_context = self.dev_config.current_context
         self.assertEqual(self._read_config(), expected.model_dump())
         self.assertEqual(self.config_path.read_text(), first_run)
 
-    def test_empty_environment_configs_preserve_existing_config(self):
+    def test_empty_environment_configs_preserve_entries_and_clear_current_context(self):
         existing = self._config("existing")
         self._write_config(existing)
         self.factory.side_effect = [KubeConfig(), KubeConfig()]
 
         poststep.update_kube_config()
 
+        existing.current_context = ""
+        self.assertEqual(self._read_config(), existing.model_dump())
+
+    def test_disabled_environments_are_skipped(self):
+        for disabled_index in (0, 1):
+            with self.subTest(disabled_index=disabled_index):
+                envs = [self.dev, self.prod]
+                for index, env in enumerate(envs):
+                    env.kubernetes.enabled = index != disabled_index
+                enabled = envs[1 - disabled_index]
+                config = [self.dev_config, self.prod_config][1 - disabled_index]
+                self._write_config(KubeConfig())
+                self.factory.reset_mock()
+                self.factory.side_effect = [config]
+
+                poststep.update_kube_config()
+
+                self.factory.assert_called_once_with(
+                    enabled, company_name="acme", use_exec=True
+                )
+                self.assertEqual(self._read_config(), config.model_dump())
+
+    def test_all_environments_disabled_preserve_existing_config(self):
+        existing = self._config("existing")
+        self._write_config(existing)
+        self.dev.kubernetes.enabled = False
+        self.prod.kubernetes.enabled = False
+
+        poststep.update_kube_config()
+
+        self.factory.assert_not_called()
         self.assertEqual(self._read_config(), existing.model_dump())
 
     def test_no_environments_writes_empty_config(self):
@@ -197,6 +233,7 @@ class TestUpdateKubeConfig(unittest.TestCase):
                     existing.clusters.extend(successful.clusters)
                     existing.users.extend(successful.users)
                     existing.contexts.extend(successful.contexts)
+                    existing.current_context = successful.current_context
                     self.assertEqual(self._read_config(), existing.model_dump())
                     self.assertEqual(
                         self.factory.call_args_list,

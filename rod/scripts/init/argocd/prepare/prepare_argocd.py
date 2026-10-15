@@ -1,7 +1,7 @@
 import os
 
 from rod.libs.py.k8s.manifests import apply_manifests
-from rod.libs.py.settings import bazel_settings
+from rod.libs.py.settings import common_paths
 from rod.libs.py.tf.tfvars import formatted_tfvars
 from rod.libs.py.utils.logger import CliLogger
 from rod.libs.py.helpers import run_command, CommandException
@@ -13,7 +13,7 @@ def prepare_argocd():
     logger = CliLogger("rod.scripts.init.argocd.prepare.prepare_argocd")
     tfvars = formatted_tfvars()
     int_env = next((e for e in tfvars.envs.values() if e.type == "internal"), None)
-    argocd_crds_dir = bazel_settings.argocd_crds_dir + "/argocd"
+    argocd_crds_dir = common_paths.argocd_crds_dir + "/argocd"
 
     try:
         apply_manifests(int_env, dir_path=argocd_crds_dir)
@@ -22,10 +22,10 @@ def prepare_argocd():
         return
 
     cloud_short_name = f"{int_env.cloud.name.value}-{int_env.short_name}"
-    argocd_envs_folder = bazel_settings.argocd_environments_dir
-    argocd_folder = bazel_settings.argocd_dir
-    argocd_charts = bazel_settings.argocd_chart_dir
-    with open(f"{bazel_settings.deps_images_dir}/argocd/image_tag.txt") as f:
+    argocd_envs_folder = common_paths.argocd_environments_dir
+    argocd_folder = common_paths.argocd_dir
+    argocd_charts = common_paths.argocd_chart_dir
+    with open(f"{common_paths.deps_images_dir}/argocd/image_tag.txt") as f:
         image_tag = f.readline().strip()
 
     # fmt: off
@@ -64,7 +64,7 @@ def prepare_argocd():
        f"{argocd_charts}/environments/",
        "--values", f"{argocd_folder}/envs.yaml",
        "--values", f"{argocd_charts}/globals.yaml",
-       "--set-file", f"tfvars={bazel_settings.tfvars_file}",
+       "--set-file", f"tfvars={common_paths.tfvars_file}",
        "--namespace", "argocd",
     ]
     # fmt: on
