@@ -72,7 +72,8 @@ Without `--namespace`, the command searches all namespaces in the selected
 environment, so its Kubernetes identity must be allowed to list PostgreSQL
 resources across namespaces.
 
-Pass the database to check with the required `--database` option. Timestamps
+Pass the database to check with the required `--database` option. A date without
+time, such as `2026-10-01`, means `2026-10-01T00:00:00+00:00`. Timestamps
 without a timezone are interpreted as UTC; ISO timestamps with an explicit
 offset are also accepted. The temporary clone uses the
 source cluster's PostgreSQL version and volume settings, with one instance.

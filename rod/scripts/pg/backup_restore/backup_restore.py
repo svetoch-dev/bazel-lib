@@ -20,7 +20,7 @@ DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS = 5
 DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS = 3
 TIMESTAMP_FORMAT_ERROR = (
     "expected YYYY-MM-DDTHH:MM:SS with an optional fraction and timezone, "
-    "or YYYY.MM.DD HH:MM:SS"
+    "YYYY.MM.DD HH:MM:SS, or YYYY-MM-DD (midnight UTC)"
 )
 
 # Named groups make it clear which parts are normalized or kept as provided.
@@ -60,8 +60,9 @@ def parse_timestamp(value: str) -> str:
     """Normalize the recovery target while preserving fractional seconds.
 
     Args:
-        value: Date and time with hyphens or dots in the date. Missing timezone
-            means UTC; explicit offsets and Z are accepted.
+        value: Date with optional time, using hyphens or dots in the date.
+            Missing time means midnight UTC. Missing timezone means UTC;
+            explicit offsets and Z are accepted when time is provided.
 
     Returns:
         Timestamp with a T separator and an explicit timezone offset.
@@ -70,6 +71,9 @@ def parse_timestamp(value: str) -> str:
         argparse.ArgumentTypeError: The format or date is invalid.
     """
     timestamp = " ".join(value.split())
+    # A date without a time means midnight UTC.
+    if len(timestamp) == 10:
+        timestamp += "T00:00:00"
     match = ISO_TIMESTAMP_PATTERN.fullmatch(timestamp)
     if match is None:
         raise argparse.ArgumentTypeError(TIMESTAMP_FORMAT_ERROR)
@@ -127,8 +131,9 @@ def parse_args() -> argparse.Namespace:
         required=True,
         nargs="+",
         help=(
-            "point-in-time recovery target; accepts the form "
-            "'2024.01.07 00:00:00' or an ISO timestamp. Missing timezone is UTC."
+            "point-in-time recovery target; accepts an ISO timestamp, "
+            "'2024.01.07 00:00:00', or '2024-01-07' (midnight UTC). "
+            "Missing timezone is UTC."
         ),
     )
     parser.add_argument("--query", required=True, help="SQL query to run on the clone")
