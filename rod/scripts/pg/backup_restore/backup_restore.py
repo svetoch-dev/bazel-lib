@@ -1,6 +1,7 @@
 """Restore a PostgreSQL backup into a temporary cluster and run a query."""
 
 import argparse
+import os
 import re
 import time
 import uuid
@@ -94,11 +95,16 @@ def parse_timestamp(value: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    """Read and validate command line arguments.
+    """Read and validate CLI arguments, using environment variables as defaults.
 
     Returns:
         Parsed arguments with the environment object and normalized timestamp.
     """
+    environment = os.getenv("K8S_ENVIRONMENT")
+    postgres = os.getenv("PG_CLUSTER")
+    database = os.getenv("PG_DATABASE")
+    date = os.getenv("RESTORE_DATE", "").split()
+    query = os.getenv("CHECK_QUERY")
     parser = argparse.ArgumentParser(
         description=(
             "Restore a PostgreSQL cluster backup into a temporary cluster, "
@@ -107,52 +113,66 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--postgres",
-        required=True,
-        help="exact source PostgreSQL cluster name (metadata.name)",
+        default=postgres,
+        required=not postgres,
+        help="exact source PostgreSQL cluster name (env: PG_CLUSTER)",
     )
     parser.add_argument(
         "--namespace",
-        help="limit source cluster lookup and create the clone in this namespace",
+        default=os.getenv("PG_NAMESPACE") or None,
+        help="namespace for source lookup and clone creation (env: PG_NAMESPACE)",
     )
     parser.add_argument(
         "--environment",
-        required=True,
+        default=environment,
+        required=not environment,
         type=parse_environment,
         metavar="ENVIRONMENT",
-        help="environment key from terraform.tfvars.json",
+        help="environment key from terraform.tfvars.json (env: K8S_ENVIRONMENT)",
     )
     parser.add_argument(
         "--database",
-        required=True,
-        help="database for the query",
+        default=database,
+        required=not database,
+        help="database for the query (env: PG_DATABASE)",
     )
     parser.add_argument(
         "--date",
-        required=True,
+        default=date,
+        required=not date,
         nargs="+",
         help=(
             "point-in-time recovery target; accepts an ISO timestamp, "
             "'2024.01.07 00:00:00', or '2024-01-07' (midnight UTC). "
-            "Missing timezone is UTC."
+            "Missing timezone is UTC (env: RESTORE_DATE)."
         ),
     )
-    parser.add_argument("--query", required=True, help="SQL query to run on the clone")
+    parser.add_argument(
+        "--query",
+        default=query,
+        required=not query,
+        help="SQL query to run on the clone (env: CHECK_QUERY)",
+    )
     parser.add_argument(
         "--k8s-resource-poll-interval-seconds",
         type=positive_seconds,
-        default=DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS,
+        default=os.getenv("K8S_RESOURCE_POLL_INTERVAL_SECONDS")
+        or DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS,
         help=(
             "seconds between Kubernetes resource readiness and cleanup checks "
-            f"(default: {DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS})"
+            f"(default: {DEFAULT_K8S_RESOURCE_POLL_INTERVAL_SECONDS}; "
+            "env: K8S_RESOURCE_POLL_INTERVAL_SECONDS)"
         ),
     )
     parser.add_argument(
         "--postgres-recovery-poll-interval-seconds",
         type=positive_seconds,
-        default=DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS,
+        default=os.getenv("POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS")
+        or DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS,
         help=(
             "seconds between PostgreSQL recovery checks "
-            f"(default: {DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS})"
+            f"(default: {DEFAULT_POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS}; "
+            "env: POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS)"
         ),
     )
     args = parser.parse_args()

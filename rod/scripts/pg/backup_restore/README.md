@@ -15,7 +15,7 @@ select the tool. Logical backups produced by `pg_dump` are not checked.
   contains this target. Update its dependency pin and keep any resulting changes
   to `MODULE.bazel.lock`. No additional Bazel target or Helm manifest is needed.
 - The caller's workspace must contain `terraform.tfvars.json` with the target
-  environment. Pass its key with the required `--environment` option. Valid
+  environment. Pass its key with `--environment` or `K8S_ENVIRONMENT`. Valid
   values are the keys of enabled Kubernetes environments. The shared client
   currently supports GCP and YC environments.
 - Cloud credentials must be available: Google Application Default Credentials
@@ -62,6 +62,34 @@ PostgreSQL recovery checks
 use `--postgres-recovery-poll-interval-seconds` (default: 3 seconds). Both
 values must be positive whole numbers of seconds.
 
+All options can also be supplied through environment variables. CLI arguments
+take precedence over environment variables. Required values must be supplied
+through one of these methods and are validated in both cases.
+
+| CLI option | Environment variable |
+| --- | --- |
+| `--environment` | `K8S_ENVIRONMENT` |
+| `--postgres` | `PG_CLUSTER` |
+| `--namespace` | `PG_NAMESPACE` |
+| `--database` | `PG_DATABASE` |
+| `--date` | `RESTORE_DATE` |
+| `--query` | `CHECK_QUERY` |
+| `--k8s-resource-poll-interval-seconds` | `K8S_RESOURCE_POLL_INTERVAL_SECONDS` |
+| `--postgres-recovery-poll-interval-seconds` | `POSTGRES_RECOVERY_POLL_INTERVAL_SECONDS` |
+
+For example:
+
+```sh
+export K8S_ENVIRONMENT=YOUR_ENVIRONMENT
+export PG_CLUSTER=example-postgres-cluster
+export PG_NAMESPACE=example_namespace
+export PG_DATABASE=example_database
+export RESTORE_DATE=2026-10-01
+export CHECK_QUERY='BEGIN READ ONLY; SELECT count(*) FROM example_table; COMMIT;'
+
+bazel run @svetoch_bazel_lib//rod/scripts/pg/backup_restore
+```
+
 Replace `YOUR_ENVIRONMENT` with the key of an enabled Kubernetes environment
 from `terraform.tfvars.json`. The command reports the available keys if the
 value is invalid.
@@ -72,7 +100,7 @@ Without `--namespace`, the command searches all namespaces in the selected
 environment, so its Kubernetes identity must be allowed to list PostgreSQL
 resources across namespaces.
 
-Pass the database to check with the required `--database` option. A date without
+Pass the database to check with `--database` or `PG_DATABASE`. A date without
 time, such as `2026-10-01`, means `2026-10-01T00:00:00+00:00`. Timestamps
 without a timezone are interpreted as UTC; ISO timestamps with an explicit
 offset are also accepted. The temporary clone uses the
