@@ -418,6 +418,7 @@ def wait_for_recovery(
                 "--command",
                 "SELECT pg_is_in_recovery();",
             ],
+            container="postgres",
         ).strip()
         if result == "f":
             logger.info("Recovery completed: pg_is_in_recovery() = f.")
@@ -428,7 +429,7 @@ def wait_for_recovery(
 
 
 def cleanup_clone_storage(
-    k8s: KubernetesPostgresApi,
+    k8s: KubernetesApi,
     namespace: str,
     cluster: str,
     poll_interval_seconds: int,
@@ -436,7 +437,7 @@ def cleanup_clone_storage(
     """Wait for StatefulSets to disappear, then delete retained PVCs.
 
     Args:
-        k8s: PostgreSQL API wrapper.
+        k8s: Kubernetes API wrapper.
         namespace: Namespace containing the clone's storage.
         cluster: Temporary cluster name used in resource labels.
         poll_interval_seconds: Delay between storage checks.
@@ -572,6 +573,7 @@ def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
                 "--command",
                 args.query,
             ],
+            container="postgres",
         )
         logger.info(f"SQL result:\n{result.rstrip()}")
         logger.info("SQL completed successfully.")

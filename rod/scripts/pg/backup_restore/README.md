@@ -103,7 +103,8 @@ resources across namespaces.
 Pass the database to check with `--database` or `PG_DATABASE`. A date without
 time, such as `2026-10-01`, means `2026-10-01T00:00:00+00:00`. Timestamps
 without a timezone are interpreted as UTC; ISO timestamps with an explicit
-offset are also accepted. The temporary clone uses the
+offset are also accepted. Offset hours must be 00-15 and minutes 00-59;
+invalid values are rejected before restoration starts. The temporary clone uses the
 source cluster's PostgreSQL version and volume settings, with one instance.
 The volume `selector` is omitted so Kubernetes can provision a new PVC for the
 clone. Custom PostgreSQL parameters and other optional source cluster settings
@@ -128,9 +129,12 @@ query and remove the temporary cluster. A failed SQL probe or an unexpected
 result fails the check and triggers cleanup. It has no built-in timeout, so
 readiness, recovery, and cleanup waits can continue indefinitely.
 
-SQL results include column headings. The command waits for the PostgreSQL
-resource to be deleted, removes retained PVCs, and waits for the listed resource
-types carrying the temporary clone's `cluster-name` label to disappear.
+SQL runs in the Pod's `postgres` container. Results include column headings.
+For cleanup, the command deletes the PostgreSQL resource using the full run ID
+label. The operator and Kubernetes remove its StatefulSet and Pods.
+After the PostgreSQL resource and StatefulSet disappear, the command deletes
+retained PVCs in the clone's namespace with `cluster-name=<clone_name>` and
+waits for the listed resource types carrying this label to disappear.
 Unlabelled resources and cloud disk deletion are not verified.
 `SUCCESS` is printed only after SQL and cleanup finish, with exit code 0.
 Runtime failures print `FAILED` and return a nonzero exit code. Invalid command

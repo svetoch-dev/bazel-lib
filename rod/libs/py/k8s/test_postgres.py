@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from kubernetes import client
 from kubernetes.client.exceptions import ApiException
 
 from rod.libs.py.k8s.postgres import KubernetesPostgresApi
@@ -68,16 +67,6 @@ class TestKubernetesPostgresApi(unittest.TestCase):
             label_selector="run-id=abcd",
         )
 
-    def test_delete_pvcs_is_scoped_and_uses_delete_options(self):
-        self.api.delete_persistentvolumeclaims("database", "run-id=abcd")
-        method = self.client.delete_collection_namespaced_persistent_volume_claim
-        method.assert_called_once()
-        args, kwargs = method.call_args
-        self.assertEqual(args, ("database",))
-        self.assertEqual(kwargs["label_selector"], "run-id=abcd")
-        self.assertIsInstance(kwargs["body"], client.V1DeleteOptions)
-        self.assertEqual(set(kwargs), {"label_selector", "body"})
-
     def test_api_errors_propagate(self):
         operations = (
             (
@@ -99,11 +88,6 @@ class TestKubernetesPostgresApi(unittest.TestCase):
             (
                 "delete_collection_namespaced_custom_object",
                 self.api.delete_postgresqls,
-                ("database", "run-id=abcd"),
-            ),
-            (
-                "delete_collection_namespaced_persistent_volume_claim",
-                self.api.delete_persistentvolumeclaims,
                 ("database", "run-id=abcd"),
             ),
         )

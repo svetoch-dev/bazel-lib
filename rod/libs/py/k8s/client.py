@@ -48,6 +48,30 @@ class K8sClient:
         self.coordination = coordination
         self.discovery = discovery
 
+    def close(self) -> None:
+        """Close thread pools and HTTP connections for each underlying client."""
+        # Resource APIs can share a client; close each client only once.
+        api_clients = {
+            resource_api.api_client
+            for resource_api in (
+                self.v1,
+                self.custom,
+                self.apps,
+                self.batch,
+                self.networking,
+                self.rbac,
+                self.storage,
+                self.autoscaling,
+                self.policy,
+                self.scheduling,
+                self.coordination,
+                self.discovery,
+            )
+        }
+        for api_client in api_clients:
+            api_client.close()
+            api_client.rest_client.pool_manager.clear()
+
     def __getattr__(self, name):
         for obj in (
             self.v1,

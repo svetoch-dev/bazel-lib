@@ -1,6 +1,6 @@
 import time
 
-from kubernetes import stream
+from kubernetes import client, stream
 from kubernetes.client.exceptions import ApiException
 
 from rod.libs.py.k8s.client import k8s_client_get
@@ -74,31 +74,6 @@ class KubernetesApi:
         self._client_created_at = time.monotonic()
         self._api = k8s_client_get(environment)
 
-    @staticmethod
-    def _close_client(api) -> None:
-        """Close the client's thread pools and release HTTP connections.
-
-        Args:
-            api: Client returned by k8s_client_get().
-        """
-        for resource_api in (
-            api.v1,
-            api.custom,
-            api.apps,
-            api.batch,
-            api.networking,
-            api.rbac,
-            api.storage,
-            api.autoscaling,
-            api.policy,
-            api.scheduling,
-            api.coordination,
-            api.discovery,
-        ):
-            api_client = resource_api.api_client
-            api_client.close()
-            api_client.rest_client.pool_manager.clear()
-
     @property
     def api(self):
         """Return the client, recreating it after 40 minutes.
@@ -111,7 +86,7 @@ class KubernetesApi:
             old_api = self._api
             self._api = k8s_client_get(self.environment)
             self._client_created_at = now
-            self._close_client(old_api)
+            old_api.close()
         return self._api
 
     def list_resources(self, kind: str, namespace: str, selector: str) -> list[dict]:
@@ -148,13 +123,29 @@ class KubernetesApi:
             resource["kind"] = kind
         return resources
 
-    def exec_in_pod(self, namespace: str, pod: str, command: list[str]) -> str:
-        """Run a command in the Pod's postgres container.
+    def delete_persistentvolumeclaims(self, namespace: str, selector: str) -> None:
+        """Request deletion of PVCs matching a label selector.
+
+        Args:
+            namespace: Namespace containing the PVCs.
+            selector: Kubernetes label selector identifying PVCs to delete.
+        """
+        self.api.delete_collection_namespaced_persistent_volume_claim(
+            namespace,
+            label_selector=selector,
+            body=client.V1DeleteOptions(),
+        )
+
+    def exec_in_pod(
+        self, namespace: str, pod: str, command: list[str], container: str
+    ) -> str:
+        """Run a command in the selected Pod container.
 
         Args:
             namespace: Namespace containing the Pod.
             pod: Pod name.
             command: Command and arguments, without shell interpretation.
+            container: Name of the container where the command runs.
 
         Returns:
             Captured standard output.
@@ -168,7 +159,7 @@ class KubernetesApi:
             pod,
             namespace,
             command=command,
-            container="postgres",
+            container=container,
             stderr=True,
             stdin=False,
             stdout=True,
@@ -187,11 +178,11 @@ class KubernetesApi:
             raise RuntimeError(f"Pod command did not return an exit code: {pod}")
         if return_code != 0:
             raise PodCommandError(
-                namespace,
-                pod,
-                command,
-                return_code,
-                stdout,
-                stderr,
+                namespace=namespace,
+                pod=pod,
+                command=command,
+                return_code=return_code,
+                stdout=stdout,
+                stderr=stderr,
             )
         return stdout

@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
+from kubernetes import client
 from kubernetes.client.exceptions import ApiException
 
 from rod.libs.py.k8s.api import KubernetesApi, PodCommandError, get_error_details
@@ -23,7 +24,7 @@ class TestKubernetesApi(unittest.TestCase):
         self.clock.return_value = 40 * 60 - 1
         self.assertIs(self.api.api, self.client)
         self.create_client.assert_called_once()
-        self.client.v1.api_client.close.assert_not_called()
+        self.client.close.assert_not_called()
 
     def test_client_is_replaced_at_40_minutes(self):
         replacement = Mock()
@@ -31,27 +32,11 @@ class TestKubernetesApi(unittest.TestCase):
         self.clock.return_value = 40 * 60
         self.assertIs(self.api.api, replacement)
         self.assertEqual(self.create_client.call_count, 2)
-        for name in (
-            "v1",
-            "custom",
-            "apps",
-            "batch",
-            "networking",
-            "rbac",
-            "storage",
-            "autoscaling",
-            "policy",
-            "scheduling",
-            "coordination",
-            "discovery",
-        ):
-            api_client = getattr(self.client, name).api_client
-            api_client.close.assert_called_once_with()
-            api_client.rest_client.pool_manager.clear.assert_called_once_with()
+        self.client.close.assert_called_once_with()
         self.assertIs(self.api.api, replacement)
         self.assertEqual(self.create_client.call_count, 2)
         self.create_client.assert_called_with(self.environment)
-        replacement.v1.api_client.close.assert_not_called()
+        replacement.close.assert_not_called()
 
     def test_refresh_interval_restarts_after_client_replacement(self):
         replacement = Mock()
@@ -68,14 +53,14 @@ class TestKubernetesApi(unittest.TestCase):
         self.clock.return_value = 80 * 60
         self.assertIs(self.api.api, next_client)
         self.assertEqual(self.create_client.call_count, 3)
-        replacement.v1.api_client.close.assert_called_once_with()
+        replacement.close.assert_called_once_with()
 
     def test_failed_refresh_keeps_old_client_and_retries(self):
         self.clock.return_value = 40 * 60
         self.create_client.side_effect = RuntimeError("authentication failed")
         with self.assertRaisesRegex(RuntimeError, "authentication failed"):
             self.api.api
-        self.client.v1.api_client.close.assert_not_called()
+        self.client.close.assert_not_called()
         self.assertIs(self.api._api, self.client)
 
         replacement = Mock()
@@ -110,6 +95,25 @@ class TestKubernetesApi(unittest.TestCase):
                     "database", label_selector="run-id=abcd"
                 )
 
+    def test_delete_pvcs_is_scoped_and_uses_delete_options(self):
+        self.api.delete_persistentvolumeclaims("database", "run-id=abcd")
+        method = self.client.delete_collection_namespaced_persistent_volume_claim
+        method.assert_called_once()
+        args, kwargs = method.call_args
+        self.assertEqual(args, ("database",))
+        self.assertEqual(kwargs["label_selector"], "run-id=abcd")
+        self.assertIsInstance(kwargs["body"], client.V1DeleteOptions)
+        self.assertEqual(set(kwargs), {"label_selector", "body"})
+
+    def test_delete_pvc_errors_propagate(self):
+        error = ApiException(status=403, reason="Forbidden")
+        self.client.delete_collection_namespaced_persistent_volume_claim.side_effect = (
+            error
+        )
+        with self.assertRaises(ApiException) as raised:
+            self.api.delete_persistentvolumeclaims("database", "run-id=abcd")
+        self.assertIs(raised.exception, error)
+
     def test_exec_returns_stdout_and_passes_command_without_shell(self):
         with patch("rod.libs.py.k8s.api.stream.stream") as stream:
             response = stream.return_value
@@ -120,6 +124,7 @@ class TestKubernetesApi(unittest.TestCase):
                     "database",
                     "example-postgres-clone-a1b2-0",
                     ["psql", "-Atc", "SQL"],
+                    container="worker",
                 ),
                 "f\n",
             )
@@ -128,7 +133,7 @@ class TestKubernetesApi(unittest.TestCase):
                 "example-postgres-clone-a1b2-0",
                 "database",
                 command=["psql", "-Atc", "SQL"],
-                container="postgres",
+                container="worker",
                 stderr=True,
                 stdin=False,
                 stdout=True,
@@ -151,6 +156,7 @@ class TestKubernetesApi(unittest.TestCase):
                     "database",
                     "example-postgres-clone-a1b2-0",
                     ["psql"],
+                    container="worker",
                 )
             self.assertEqual(raised.exception.stdout, "partial result")
             self.assertEqual(raised.exception.stderr, "SQL failed")
@@ -166,6 +172,7 @@ class TestKubernetesApi(unittest.TestCase):
                     "database",
                     "example-postgres-clone-a1b2-0",
                     ["psql"],
+                    container="worker",
                 )
             response.close.assert_called_once_with()
 
@@ -180,6 +187,7 @@ class TestKubernetesApi(unittest.TestCase):
                             "database",
                             "example-postgres-clone-a1b2-0",
                             ["psql"],
+                            container="worker",
                         )
                     response.close.assert_called_once_with()
 

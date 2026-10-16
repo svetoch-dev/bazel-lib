@@ -1,5 +1,3 @@
-from kubernetes import client
-
 from rod.libs.py.k8s.api import KubernetesApi
 
 
@@ -9,7 +7,7 @@ POSTGRES_PLURAL = "postgresqls"
 
 
 class KubernetesPostgresApi(KubernetesApi):
-    """Kubernetes operations for PostgreSQL custom resources and PVCs."""
+    """Kubernetes operations for PostgreSQL custom resources."""
 
     def list_postgresql_clusters(self, namespace: str | None) -> list[dict]:
         """List PostgreSQL custom resources.
@@ -76,17 +74,4 @@ class KubernetesPostgresApi(KubernetesApi):
             namespace,
             POSTGRES_PLURAL,
             label_selector=selector,
-        )
-
-    def delete_persistentvolumeclaims(self, namespace: str, selector: str) -> None:
-        """Request deletion of PVCs matching a label selector.
-
-        Args:
-            namespace: Namespace containing the PVCs.
-            selector: Kubernetes label selector identifying PVCs to delete.
-        """
-        self.api.delete_collection_namespaced_persistent_volume_claim(
-            namespace,
-            label_selector=selector,
-            body=client.V1DeleteOptions(),
         )
