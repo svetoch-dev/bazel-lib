@@ -149,17 +149,11 @@ def parse_environment(environment_name: str) -> Env:
 
 def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
     source_name = source_cluster["metadata"]["name"]
-    name_prefix = source_name
-    if name_prefix == "postgres-cluster":
-        name_prefix = "pg"
-    elif name_prefix.endswith("-postgres-cluster"):
-        name_prefix = name_prefix.removesuffix("-postgres-cluster") + "-pg"
-
-    clone_suffix = f"-clone-{run_id[:12]}"
+    clone_suffix = f"-clone-{run_id[:4]}"
     # Kubernetes names are limited to 63 characters; reserve room for "-repl".
     max_name_prefix_length = 63 - len("-repl") - len(clone_suffix)
 
-    name_prefix = name_prefix[:max_name_prefix_length].rstrip("-")
+    name_prefix = source_name[:max_name_prefix_length].rstrip("-")
     return f"{name_prefix}{clone_suffix}"
 
 

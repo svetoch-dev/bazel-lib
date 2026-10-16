@@ -80,11 +80,13 @@ The volume `selector` is omitted so Kubernetes can provision a new PVC for the
 clone. Custom PostgreSQL parameters and other optional source cluster settings
 are not carried over to the clone.
 
-Temporary clone names preserve the beginning of the source cluster name. A
-trailing `-postgres-cluster` becomes `-pg` before `-clone-<run_id>` is added.
-For example:
-`example-postgres-cluster` becomes `example-pg-clone-<run_id>`. Long names are
-shortened to leave room for operator-generated replica Service names.
+Temporary clone names use the source cluster name followed by `-clone-<run_id>`.
+For example, `example-postgres-cluster` becomes
+`example-postgres-cluster-clone-a1b2`. The source name is shortened to at most
+47 characters, with any trailing dash removed, so the clone name and the
+operator-generated `-repl` Service name fit within 63 characters.
+The name uses the first four characters of the run ID; the full ID is kept in
+the ownership label used for cleanup.
 
 The command waits for a Ready master Pod, then polls `pg_is_in_recovery()` in
 the `postgres` database until it returns `false`. The intervals are controlled
