@@ -48,6 +48,30 @@ class K8sClient:
         self.coordination = coordination
         self.discovery = discovery
 
+    def close(self) -> None:
+        """Close thread pools and HTTP connections for each underlying client."""
+        # Resource APIs can share a client; close each client only once.
+        api_clients = {
+            resource_api.api_client
+            for resource_api in (
+                self.v1,
+                self.custom,
+                self.apps,
+                self.batch,
+                self.networking,
+                self.rbac,
+                self.storage,
+                self.autoscaling,
+                self.policy,
+                self.scheduling,
+                self.coordination,
+                self.discovery,
+            )
+        }
+        for api_client in api_clients:
+            api_client.close()
+            api_client.rest_client.pool_manager.clear()
+
     def __getattr__(self, name):
         for obj in (
             self.v1,
@@ -74,10 +98,11 @@ class K8sClient:
 def k8s_client_get(
     env: Env,
     logger: BaseLogger | None = None,
+    use_exec: bool = False,
 ) -> K8sClient:
     if not logger:
         logger = CliLogger("rod.libs.py.k8s.client.k8s_client_get")
-    config = kube_config_factory(env)
+    config = kube_config_factory(env, use_exec=use_exec)
     api_client = k8s_config.load_kube_config_from_dict(config.model_dump())
     return K8sClient(
         v1=client.CoreV1Api(api_client),

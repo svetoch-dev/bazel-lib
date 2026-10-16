@@ -1,10 +1,42 @@
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from rod.libs.py.k8s import client as k8s_client
 from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
 from rod.libs.py.tf.tfvars import CloudTypeEnum, Env
+
+
+class TestK8sClient(unittest.TestCase):
+    def test_close_releases_separate_and_shared_clients_once(self):
+        for shared in (False, True):
+            with self.subTest(shared=shared):
+                shared_client = Mock()
+                resource_apis = {
+                    name: SimpleNamespace(
+                        api_client=shared_client if shared else Mock()
+                    )
+                    for name in (
+                        "v1",
+                        "custom",
+                        "apps",
+                        "batch",
+                        "networking",
+                        "rbac",
+                        "storage",
+                        "autoscaling",
+                        "policy",
+                        "scheduling",
+                        "coordination",
+                        "discovery",
+                    )
+                }
+                api = k8s_client.K8sClient(**resource_apis)
+                api.close()
+                for resource_api in resource_apis.values():
+                    api_client = resource_api.api_client
+                    api_client.close.assert_called_once_with()
+                    api_client.rest_client.pool_manager.clear.assert_called_once_with()
 
 
 class TestKubeConfigFactory(unittest.TestCase):
