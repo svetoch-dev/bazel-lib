@@ -107,6 +107,9 @@ class TestUpdateKubeConfig(unittest.TestCase):
         self.assertEqual(unrelated_file.read_text(), "keep me")
 
     def test_preserves_existing_entries_and_preferences_and_selects_last_context(self):
+        """
+        Verify existing entries are preserved and the last cluster is selected.
+        """
         existing = self._config("existing")
         existing.preferences.colors = True
         existing.contexts[0].context.namespace = "custom-namespace"
@@ -140,6 +143,9 @@ class TestUpdateKubeConfig(unittest.TestCase):
         self.assertEqual(self.config_path.read_text(), first_run)
 
     def test_empty_environment_configs_preserve_entries_and_clear_current_context(self):
+        """
+        Verify empty cluster configs preserve entries and clear the selection.
+        """
         existing = self._config("existing")
         self._write_config(existing)
         self.factory.side_effect = [KubeConfig(), KubeConfig()]
@@ -150,6 +156,9 @@ class TestUpdateKubeConfig(unittest.TestCase):
         self.assertEqual(self._read_config(), existing.model_dump())
 
     def test_disabled_environments_are_skipped(self):
+        """
+        Verify disabled Kubernetes environments are neither fetched nor merged.
+        """
         for disabled_index in (0, 1):
             with self.subTest(disabled_index=disabled_index):
                 envs = [self.dev, self.prod]
@@ -169,6 +178,9 @@ class TestUpdateKubeConfig(unittest.TestCase):
                 self.assertEqual(self._read_config(), config.model_dump())
 
     def test_all_environments_disabled_preserve_existing_config(self):
+        """
+        Verify disabling every environment preserves the existing kubeconfig.
+        """
         existing = self._config("existing")
         self._write_config(existing)
         self.dev.kubernetes.enabled = False

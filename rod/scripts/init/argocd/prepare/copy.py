@@ -10,6 +10,16 @@ INTERNAL_DIR = Path(common_paths.argocd_environments_dir + "/int")
 
 
 def copy_template() -> None:
+    """
+    Copy Argo CD environment templates into missing environment directories.
+
+    Uses the internal or product template according to each environment's type.
+    Destination names combine the cloud name and environment short name.
+    Existing destination directories are preserved.
+
+    Raises:
+        SystemExit: Either required template directory is missing.
+    """
     tfvars = formatted_tfvars()
     logger = CliLogger("rod.scripts.init.argocd.prepare.copy")
     if not PRODUCT_DIR.exists():

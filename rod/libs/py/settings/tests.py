@@ -18,7 +18,31 @@ class TestBazelSettings(unittest.TestCase):
 
 
 class TestCommonPaths(unittest.TestCase):
+    """
+    Verify default filesystem paths and parent-relative overrides.
+    """
+
+    def test_filesystem_and_bazel_environment_paths_agree(self):
+        """
+        Verify template destinations and Bazel targets resolve to the same folder.
+        """
+        for overrides in (
+            {},
+            {"tf_dir_override": "infra"},
+            {"tf_env_dir_override": "envs"},
+            {"tf_dir_override": "infra", "tf_env_dir_override": "envs"},
+        ):
+            with self.subTest(overrides=overrides):
+                paths = CommonPaths(BUILD_WORKSPACE_DIRECTORY="/workspace", **overrides)
+                bazel = BazelSettings(
+                    BUILD_WORKSPACE_DIRECTORY="/workspace", **overrides
+                )
+                self.assertEqual(paths.tf_env_dir, f"/workspace/{bazel.tf_env_dir}")
+
     def test_default_paths_include_workspace(self):
+        """
+        Verify all default filesystem paths include the workspace root.
+        """
         paths = CommonPaths(BUILD_WORKSPACE_DIRECTORY="/workspace")
 
         for name, relative_path in {
@@ -41,6 +65,9 @@ class TestCommonPaths(unittest.TestCase):
                 self.assertEqual(getattr(paths, name), f"/workspace/{relative_path}")
 
     def test_overrides_are_resolved_against_parent_directories(self):
+        """
+        Verify each path override is resolved against its configured parent.
+        """
         paths = CommonPaths(
             BUILD_WORKSPACE_DIRECTORY="/workspace",
             tf_dir_override="infra",

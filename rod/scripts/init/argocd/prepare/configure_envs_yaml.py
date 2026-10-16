@@ -1,4 +1,5 @@
 import yaml
+import sys
 
 from rod.libs.py.settings import common_paths
 from rod.libs.py.tf.tfvars import formatted_tfvars
@@ -10,6 +11,17 @@ from rod.libs.py.cloud.exceptions import CloudPermissionsDenied
 
 
 def configure_envs_yaml():
+    """
+    Write discovered cluster endpoints and the internal NAT IP to envs.yaml.
+
+    Reads the existing Argo CD values file and updates entries for environments
+    with Kubernetes enabled. The internal environment uses the in-cluster API
+    address; product endpoints are discovered from their cloud providers.
+    Product clusters that cannot be read are logged and skipped.
+
+    Raises:
+        SystemExit: The caller cannot read the internal NAT gateway addresses.
+    """
     logger = CliLogger("rod.scripts.init.argocd.prepare.configure_envs_yaml")
     tfvars = formatted_tfvars()
     envs_yaml_file = common_paths.argocd_dir + "/envs.yaml"
@@ -26,7 +38,7 @@ def configure_envs_yaml():
         int_nat_gw = nat_gw_ips(int_env)[0]
     except CloudPermissionsDenied as e:
         logger.error(str(e))
-        return
+        sys.exit(1)
 
     for env_name, env_obj in tfvars.envs.items():
         if not env_obj.kubernetes.enabled:

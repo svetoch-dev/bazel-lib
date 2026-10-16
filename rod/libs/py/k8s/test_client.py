@@ -266,5 +266,64 @@ class TestKubeConfigFactory(unittest.TestCase):
                 self.yc_settings.assert_not_called()
 
 
+class TestK8sClientGet(unittest.TestCase):
+    """
+    Verify raw and generated Kubernetes clients use the selected cluster.
+    """
+
+    def test_clients_use_loaded_endpoint_and_credentials(self):
+        """
+        Verify the new raw client receives the same configuration as API wrappers.
+        """
+        config = {
+            "apiVersion": "v1",
+            "kind": "Config",
+            "clusters": [
+                {"name": "test", "cluster": {"server": "https://cluster.example.com"}}
+            ],
+            "users": [{"name": "test", "user": {"token": "test-token"}}],
+            "contexts": [
+                {"name": "test", "context": {"cluster": "test", "user": "test"}}
+            ],
+            "current-context": "test",
+        }
+        env = Mock()
+        with patch.object(
+            k8s_client.client.Configuration, "_default", None
+        ), patch.object(
+            k8s_client,
+            "kube_config_factory",
+            return_value=SimpleNamespace(model_dump=Mock(return_value=config)),
+        ) as factory:
+            result = k8s_client.k8s_client_get(env)
+            factory.assert_called_once_with(env)
+            clients = [result.client] + [
+                getattr(result, attribute).api_client
+                for attribute in (
+                    "v1",
+                    "custom",
+                    "apps",
+                    "batch",
+                    "networking",
+                    "rbac",
+                    "storage",
+                    "autoscaling",
+                    "policy",
+                    "scheduling",
+                    "coordination",
+                    "discovery",
+                )
+            ]
+            for api_client in clients:
+                self.addCleanup(api_client.close)
+                self.assertEqual(
+                    api_client.configuration.host, "https://cluster.example.com"
+                )
+                self.assertEqual(
+                    api_client.configuration.api_key["authorization"],
+                    "Bearer test-token",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

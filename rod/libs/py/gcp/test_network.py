@@ -8,9 +8,20 @@ from rod.libs.py.gcp.network import NatGw, list_nat_gws
 
 
 class TestListNatGws(unittest.TestCase):
+    """
+    Verify GCP NAT gateway discovery and static address resolution.
+    """
+
     @patch("rod.libs.py.gcp.network.compute_v1.AddressesClient")
     @patch("rod.libs.py.gcp.network.compute_v1.RoutersClient")
     def test_resolves_address_urls_to_ips(self, routers_client, addresses_client):
+        """
+        Verify configured address URLs are resolved to static IP addresses.
+
+        Args:
+            routers_client: Mocked GCP routers client constructor.
+            addresses_client: Mocked GCP addresses client constructor.
+        """
         address_prefix = (
             "https://www.googleapis.com/compute/v1/projects/project"
             "/regions/europe-west1/addresses"
@@ -64,6 +75,13 @@ class TestListNatGws(unittest.TestCase):
     def test_nat_without_address_urls_keeps_empty_ips(
         self, routers_client, addresses_client
     ):
+        """
+        Verify gateways without configured addresses retain an empty IP list.
+
+        Args:
+            routers_client: Mocked GCP routers client constructor.
+            addresses_client: Mocked GCP addresses client constructor.
+        """
         routers_client.return_value.list.return_value = [
             compute_v1.Router(name="router", nats=[compute_v1.RouterNat(name="nat")])
         ]
@@ -77,6 +95,13 @@ class TestListNatGws(unittest.TestCase):
     @patch("rod.libs.py.gcp.network.compute_v1.AddressesClient")
     @patch("rod.libs.py.gcp.network.compute_v1.RoutersClient")
     def test_no_nat_gateways_returns_empty_list(self, routers_client, addresses_client):
+        """
+        Verify projects without NAT gateways produce an empty result.
+
+        Args:
+            routers_client: Mocked GCP routers client constructor.
+            addresses_client: Mocked GCP addresses client constructor.
+        """
         for routers in ([], [compute_v1.Router(name="router")]):
             with self.subTest(routers=routers):
                 routers_client.return_value.list.return_value = routers
@@ -88,6 +113,13 @@ class TestListNatGws(unittest.TestCase):
     @patch("rod.libs.py.gcp.network.compute_v1.AddressesClient")
     @patch("rod.libs.py.gcp.network.compute_v1.RoutersClient")
     def test_returns_all_nats_across_routers(self, routers_client, addresses_client):
+        """
+        Verify every NAT gateway across all returned routers is included.
+
+        Args:
+            routers_client: Mocked GCP routers client constructor.
+            addresses_client: Mocked GCP addresses client constructor.
+        """
         address_prefix = "projects/project/regions/europe-west1/addresses"
         routers_client.return_value.list.return_value = iter(
             [
@@ -156,6 +188,13 @@ class TestListNatGws(unittest.TestCase):
     @patch("rod.libs.py.gcp.network.compute_v1.AddressesClient")
     @patch("rod.libs.py.gcp.network.compute_v1.RoutersClient")
     def test_router_listing_error_propagates(self, routers_client, addresses_client):
+        """
+        Verify router lookup errors propagate without resolving addresses.
+
+        Args:
+            routers_client: Mocked GCP routers client constructor.
+            addresses_client: Mocked GCP addresses client constructor.
+        """
         error = PermissionDenied("Router access denied")
         routers_client.return_value.list.side_effect = error
 
@@ -168,6 +207,13 @@ class TestListNatGws(unittest.TestCase):
     @patch("rod.libs.py.gcp.network.compute_v1.AddressesClient")
     @patch("rod.libs.py.gcp.network.compute_v1.RoutersClient")
     def test_address_lookup_error_propagates(self, routers_client, addresses_client):
+        """
+        Verify address resolution errors propagate unchanged.
+
+        Args:
+            routers_client: Mocked GCP routers client constructor.
+            addresses_client: Mocked GCP addresses client constructor.
+        """
         address_prefix = "projects/project/regions/europe-west1/addresses"
         routers_client.return_value.list.return_value = [
             compute_v1.Router(

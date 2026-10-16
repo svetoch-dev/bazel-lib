@@ -4,6 +4,11 @@ from rod.libs.py.utils.logger import CliLogger
 
 
 def git_init_submodules():
+    """
+    Initialize and recursively update submodules in the Bazel workspace.
+
+    Logs the operation and uses the configured workspace as the repository path.
+    """
     logger = CliLogger("rod.scripts.init.argocd.prepare.init_submodules")
     logger.info("Init git submodules")
     init_submodules(bazel_settings.workspace)

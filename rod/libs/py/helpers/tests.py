@@ -17,6 +17,7 @@ from rod.libs.py.helpers import (
     find_value,
 )
 from rod.libs.py.helpers.exceptions import CommandException
+from rod.libs.py.helpers.test_get_folder_files import TestGetFolderFiles
 
 
 class TestSwitchIndex(unittest.TestCase):

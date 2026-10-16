@@ -7,4 +7,6 @@ class K8sClusterPermissionsDenied(Exception):
 
 
 class K8sApiException(Exception):
-    """Api exception"""
+    """
+    Indicate that one or more Kubernetes manifest operations failed.
+    """

@@ -1,8 +1,26 @@
-load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_test")
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 load("@svetoch_bazel_lib_py_deps//:requirements.bzl", "requirement")
 
 py_lint()
+
+py_test(
+    name = "tests",
+    srcs = glob(["*.py"]),
+    env = {"HELM_EXECUTABLE": "helm-test"},
+    deps = [
+        "@svetoch_bazel_lib//rod/libs/py/cloud",
+        "@svetoch_bazel_lib//rod/libs/py/cloud:exceptions",
+        "@svetoch_bazel_lib//rod/libs/py/git",
+        "@svetoch_bazel_lib//rod/libs/py/helpers",
+        "@svetoch_bazel_lib//rod/libs/py/k8s",
+        "@svetoch_bazel_lib//rod/libs/py/k8s:exceptions",
+        "@svetoch_bazel_lib//rod/libs/py/settings",
+        "@svetoch_bazel_lib//rod/libs/py/tf",
+        "@svetoch_bazel_lib//rod/libs/py/utils",
+        requirement("PyYaml"),
+    ],
+)
 
 py_binary(
     name = "prepare_argocd",

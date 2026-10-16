@@ -20,6 +20,7 @@ py_library(
         "@svetoch_bazel_lib//rod/libs/py/yc:client",
         "@svetoch_bazel_lib//rod/libs/py/yc:k8s",
         requirement("kubernetes"),
+        requirement("PyYaml"),
         requirement("pydantic"),
     ],
 )

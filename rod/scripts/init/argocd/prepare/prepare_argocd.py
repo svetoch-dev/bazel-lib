@@ -1,5 +1,6 @@
 import os
 import tempfile
+import sys
 
 from rod.libs.py.k8s.manifests import apply_manifests
 from rod.libs.py.k8s.exceptions import K8sApiException
@@ -12,6 +13,18 @@ HELM_EXECUTABLE = os.environ["HELM_EXECUTABLE"]
 
 
 def prepare_argocd():
+    """
+    Bootstrap Argo CD and its root environment applications.
+
+    Applies Argo CD CRDs to the internal cluster, updates chart dependencies,
+    and renders and applies the Argo CD and environment charts. Uses the
+    configured environment values, image tag, registry, and Terraform variables.
+
+    Raises:
+        SystemExit: A Helm command fails, or applying CRDs or the Argo CD
+            chart raises K8sApiException.
+        K8sApiException: Applying the rendered environment chart fails.
+    """
     logger = CliLogger("rod.scripts.init.argocd.prepare.prepare_argocd")
     tfvars = formatted_tfvars()
     int_env = next((e for e in tfvars.envs.values() if e.type == "internal"), None)
@@ -21,7 +34,7 @@ def prepare_argocd():
         apply_manifests(int_env, dir_path=argocd_crds_dir)
     except K8sApiException as e:
         logger.error(f"Failed to apply crd manifests.{str(e)}")
-        return
+        sys.exit(1)
 
     cloud_short_name = f"{int_env.cloud.name.value}-{int_env.short_name}"
     argocd_envs_folder = common_paths.argocd_environments_dir
@@ -81,14 +94,14 @@ def prepare_argocd():
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as f:
             f.write("\n".join(out))
             f.flush()
-            apply_manifests(int_env, file_path=f.name, namespace="argocd")
+            apply_manifests(int_env, file_path=f.name)
 
     except CommandException as e:
         logger.error(f"helm argocd init failed.{str(e)}")
-        return
+        sys.exit(1)
     except K8sApiException as e:
         logger.error(f"Failed to apply helm manifests.{str(e)}")
-        return
+        sys.exit(1)
 
     try:
         _, _, out = run_command(
@@ -97,9 +110,10 @@ def prepare_argocd():
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as f:
             f.write("\n".join(out))
             f.flush()
-            apply_manifests(int_env, file_path=f.name, namespace="argocd")
+            apply_manifests(int_env, file_path=f.name)
     except CommandException as e:
         logger.error(f"helm environments init failed.{str(e)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

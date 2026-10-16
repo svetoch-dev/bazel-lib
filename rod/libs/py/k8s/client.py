@@ -20,6 +20,30 @@ from rod.libs.py.yc.client import YcSettings
 
 
 class K8sClient:
+    """Aggregates the standard Kubernetes API clients into a single object.
+
+    Wraps an ``ApiClient`` together with all commonly used typed API
+    implementations (core, apps, batch, networking, RBAC, and so on). Any
+    attribute not explicitly stored is looked up on the wrapped API objects
+    in turn, so the instance can be used as if it implemented every API group
+    directly.
+
+    Attributes:
+        client: The underlying ``ApiClient`` shared by all API objects.
+        v1: Core V1 API.
+        custom: Custom objects API.
+        apps: Apps V1 API.
+        batch: Batch V1 API.
+        networking: Networking V1 API.
+        rbac: RBAC Authorization V1 API.
+        storage: Storage V1 API.
+        autoscaling: Autoscaling V1 API.
+        policy: Policy V1 API.
+        scheduling: Scheduling V1 API.
+        coordination: Coordination V1 API.
+        discovery: Discovery V1 API.
+    """
+
     def __init__(
         self,
         client: client.ApiClient,
@@ -102,6 +126,20 @@ def k8s_client_get(
     logger: BaseLogger | None = None,
     use_exec: bool = False,
 ) -> K8sClient:
+    """
+    Build a K8sClient for the cluster associated with the given environment.
+
+    Generates a kubeconfig for the environment via ``kube_config_factory``,
+    loads it into the Kubernetes client configuration, and creates all typed
+    API objects bound to that configuration.
+
+    Args:
+        env: Environment describing the cloud and target cluster.
+        logger: Optional logger to use; a default one is created if omitted.
+
+    Returns:
+        A K8sClient with all API objects ready to use.
+    """
     if not logger:
         logger = CliLogger("rod.libs.py.k8s.client.k8s_client_get")
     config = kube_config_factory(env, use_exec=use_exec)
@@ -130,6 +168,24 @@ def _gcp_kube_config(
     use_exec: bool,
     logger: BaseLogger | None = None,
 ) -> KubeConfig:
+    """
+    Build a kubeconfig for a GKE cluster, either static-token or exec-based.
+
+    Resolves the cluster endpoint and CA certificate from the GCP project.
+    With ``use_exec``, the config authenticates through the
+    ``gke-gcloud-auth-plugin`` exec plugin; otherwise a static OAuth token is
+    fetched from application default credentials.
+
+    Args:
+        env: Environment describing the cloud and target cluster.
+        global_name: Name for the cluster, context, and user entries.
+        cluster_name: Name of the cluster within the GCP project.
+        use_exec: Whether to use the exec auth plugin instead of a static token.
+        logger: Optional logger to use; a default one is created if omitted.
+
+    Returns:
+        A KubeConfig with single cluster, context, and user entries.
+    """
     config = KubeConfig()
     logger = logger or CliLogger("rod.libs.py.k8s.client._gcp_kube_config")
     location = env.cloud.location.region
@@ -178,6 +234,23 @@ def _yc_kube_config(
     use_exec: bool,
     logger: BaseLogger | None = None,
 ) -> KubeConfig:
+    """
+    Build a kubeconfig for a Yandex Cloud cluster, token or exec-based.
+
+    Resolves the cluster endpoint and CA certificate from the YC folder.
+    With ``use_exec``, the config authenticates via ``yc k8s create-token``
+    exec plugin; otherwise a static token is taken from YC settings.
+
+    Args:
+        env: Environment describing the cloud and target cluster.
+        global_name: Name for the cluster, context, and user entries.
+        cluster_name: Name of the cluster within the YC folder.
+        use_exec: Whether to use the exec auth plugin instead of a static token.
+        logger: Optional logger to use; a default one is created if omitted.
+
+    Returns:
+        A KubeConfig with single cluster, context, and user entries.
+    """
     config = KubeConfig()
     logger = logger or CliLogger("rod.libs.py.k8s.client._yc_kube_config")
     cluster = YcK8sCluster(
@@ -225,6 +298,29 @@ def kube_config_factory(
     use_exec: bool = False,
     logger: BaseLogger | None = None,
 ) -> KubeConfig:
+    """
+    Create a KubeConfig for the cluster associated with the given environment.
+
+    Builds the global config name from the cloud and environment short names,
+    optionally prefixed with a company name. Dispatches to the cloud-specific
+    builder based on the cloud type (GCP or YC). The current context is set
+    to the global name.
+
+    Args:
+        env: Environment describing the cloud and target cluster.
+        company_name: Optional prefix prepended to the global config name.
+        cluster_name: Cluster name; defaults to the environment short name
+            in lowercase.
+        use_exec: Whether to use exec-based authentication instead of a
+            static token.
+        logger: Optional logger to use; a default one is created if omitted.
+
+    Returns:
+        A fully populated KubeConfig with the current context set.
+
+    Raises:
+        NotImplementedError: If the cloud type is not supported.
+    """
     config = KubeConfig()
     logger = logger or CliLogger("rod.libs.py.k8s.client.k8s_config_factory")
     global_name = f"{env.cloud.name.value}-{env.short_name}"

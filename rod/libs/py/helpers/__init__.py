@@ -189,6 +189,23 @@ def create_file(file_name: str, logger: BaseLogger | None = None) -> bool:
 def get_folder_files(
     folder_path: str, extensions: list[str] | None = None
 ) -> list[Path]:
+    """
+    List entries in a folder, optionally filtering by filename extension.
+
+    Searches only the folder itself. Without an extension filter, returns all
+    entries, including directories. Results are not sorted.
+
+    Args:
+        folder_path: Directory whose entries should be listed.
+        extensions: Filename suffixes to match, such as ".yaml" and ".yml".
+            If omitted or empty, all entries are returned.
+
+    Returns:
+        Paths to matching entries in the folder.
+
+    Raises:
+        FileNotFoundError: The supplied path does not identify a directory.
+    """
     folder = Path(folder_path)
 
     if not folder.is_dir():
