@@ -1,3 +1,5 @@
+import time
+
 from kubernetes import stream
 from kubernetes.client.exceptions import ApiException
 
@@ -45,23 +47,54 @@ class KubernetesApi:
     """Common Kubernetes operations used by command line tools."""
 
     def __init__(self, environment: Env):
-        self.api = k8s_client_get(environment, use_exec=True)
-        # Exec uses WebSockets and changes the API client's request protocol.
-        self.exec_core = k8s_client_get(environment, use_exec=True).v1
+        self.environment = environment
+        self._client_created_at = time.monotonic()
+        self._api = k8s_client_get(environment)
+
+    @staticmethod
+    def _close_client(api) -> None:
+        for resource_api in (
+            api.v1,
+            api.custom,
+            api.apps,
+            api.batch,
+            api.networking,
+            api.rbac,
+            api.storage,
+            api.autoscaling,
+            api.policy,
+            api.scheduling,
+            api.coordination,
+            api.discovery,
+        ):
+            api_client = resource_api.api_client
+            api_client.close()
+            api_client.rest_client.pool_manager.clear()
+
+    @property
+    def api(self):
+        now = time.monotonic()
+        if now - self._client_created_at >= 40 * 60:
+            old_api = self._api
+            self._api = k8s_client_get(self.environment)
+            self._client_created_at = now
+            self._close_client(old_api)
+        return self._api
 
     def list_resources(self, kind: str, namespace: str, selector: str) -> list[dict]:
+        api = self.api
         list_methods = {
-            "pods": self.api.list_namespaced_pod,
-            "statefulsets": self.api.list_namespaced_stateful_set,
-            "services": self.api.list_namespaced_service,
-            "endpoints": self.api.list_namespaced_endpoints,
-            "endpointslices": self.api.list_namespaced_endpoint_slice,
-            "configmaps": self.api.list_namespaced_config_map,
-            "secrets": self.api.list_namespaced_secret,
-            "jobs": self.api.list_namespaced_job,
-            "deployments": self.api.list_namespaced_deployment,
-            "replicasets": self.api.list_namespaced_replica_set,
-            "persistentvolumeclaims": self.api.list_namespaced_persistent_volume_claim,
+            "pods": api.list_namespaced_pod,
+            "statefulsets": api.list_namespaced_stateful_set,
+            "services": api.list_namespaced_service,
+            "endpoints": api.list_namespaced_endpoints,
+            "endpointslices": api.list_namespaced_endpoint_slice,
+            "configmaps": api.list_namespaced_config_map,
+            "secrets": api.list_namespaced_secret,
+            "jobs": api.list_namespaced_job,
+            "deployments": api.list_namespaced_deployment,
+            "replicasets": api.list_namespaced_replica_set,
+            "persistentvolumeclaims": api.list_namespaced_persistent_volume_claim,
         }
         result = list_methods[kind](namespace, label_selector=selector)
         resources = [resource.to_dict() for resource in result.items]
@@ -71,7 +104,7 @@ class KubernetesApi:
 
     def exec_in_pod(self, namespace: str, pod: str, command: list[str]) -> str:
         response = stream.stream(
-            self.exec_core.connect_get_namespaced_pod_exec,
+            self.api.v1.connect_get_namespaced_pod_exec,
             pod,
             namespace,
             command=command,

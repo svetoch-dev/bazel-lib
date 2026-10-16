@@ -18,12 +18,16 @@ select the tool. Logical backups produced by `pg_dump` are not checked.
   environment. Pass its key with the required `--environment` option. Valid
   values are the keys of enabled Kubernetes environments. The shared client
   currently supports GCP and YC environments.
-- Cloud credentials and the provider's exec authenticator must be available:
-  Google Application Default Credentials and `gke-gcloud-auth-plugin` for GCP,
-  or YC credentials and the `yc` CLI for YC. The client connects directly to
-  the Kubernetes API and does not require an active kubeconfig context or the
-  `kubectl` executable. Exec authentication refreshes credentials during long
-  restore checks.
+- Cloud credentials must be available: Google Application Default Credentials
+  for GCP, or `YC_TOKEN` / instance service account metadata for YC. The client
+  connects directly to the Kubernetes API. No kubeconfig, `kubectl`,
+  `gke-gcloud-auth-plugin`, or `yc` executable is required by the script.
+  The client is created at startup through `k8s_client_get()`, which obtains a
+  fresh GCP token. Before API calls, the script checks the age of its client
+  and recreates it if 40 minutes have elapsed. This also rereads YC credentials.
+  A token passed through `YC_TOKEN`
+  is not renewed by recreating the client. Obtain a fresh `YC_TOKEN`
+  before starting the check in CI and ensure it remains valid through cleanup.
 - The Kubernetes user needs `get`, `list`, `create`, `delete`, and
   `deletecollection` on `postgresql` resources; `list` on Pods, StatefulSets,
   PVCs, Services, Endpoints, EndpointSlices, ConfigMaps, Secrets, Jobs,
