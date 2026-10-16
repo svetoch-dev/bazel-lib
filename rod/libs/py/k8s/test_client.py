@@ -9,8 +9,8 @@ from rod.libs.py.tf.tfvars import RegistryTypeEnum, CloudTypeEnum, Env
 
 class TestK8sClient(unittest.TestCase):
     def test_close_releases_separate_and_shared_clients_once(self):
-        for shared in (False, True):
-            with self.subTest(shared=shared):
+        for shared, raw_shared in ((False, False), (True, False), (True, True)):
+            with self.subTest(shared=shared, raw_shared=raw_shared):
                 shared_client = Mock()
                 resource_apis = {
                     name: SimpleNamespace(
@@ -31,10 +31,13 @@ class TestK8sClient(unittest.TestCase):
                         "discovery",
                     )
                 }
-                api = k8s_client.K8sClient(**resource_apis)
+                raw_client = shared_client if raw_shared else Mock()
+                api = k8s_client.K8sClient(client=raw_client, **resource_apis)
                 api.close()
-                for resource_api in resource_apis.values():
-                    api_client = resource_api.api_client
+                api_clients = {raw_client} | {
+                    resource_api.api_client for resource_api in resource_apis.values()
+                }
+                for api_client in api_clients:
                     api_client.close.assert_called_once_with()
                     api_client.rest_client.pool_manager.clear.assert_called_once_with()
 
@@ -296,7 +299,7 @@ class TestK8sClientGet(unittest.TestCase):
             return_value=SimpleNamespace(model_dump=Mock(return_value=config)),
         ) as factory:
             result = k8s_client.k8s_client_get(env)
-            factory.assert_called_once_with(env)
+            factory.assert_called_once_with(env, use_exec=False)
             clients = [result.client] + [
                 getattr(result, attribute).api_client
                 for attribute in (

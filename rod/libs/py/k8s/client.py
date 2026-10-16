@@ -94,6 +94,9 @@ class K8sClient:
                 self.discovery,
             )
         }
+        # self.client is a raw api client so
+        # it does not have .api_client attr
+        api_clients.add(self.client)
         for api_client in api_clients:
             api_client.close()
             api_client.rest_client.pool_manager.clear()
