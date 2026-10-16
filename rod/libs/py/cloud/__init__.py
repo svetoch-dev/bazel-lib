@@ -38,6 +38,6 @@ def nat_gw_ips(env: Env) -> list[str]:
             ) from error
         for gw in gws:
             ips += gw.nat_ips
-        return ips if len(ips) > 0 else ["0.0.0.0"]
+        return ips or ["0.0.0.0"]
     else:
         raise NotImplementedError(f"Not implemented for {env.cloud.name.value}")

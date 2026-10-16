@@ -198,8 +198,8 @@ class TestPrepareArgocd(unittest.TestCase):
                 self.apply.side_effect = [None] * failure_index + [
                     step.K8sApiException("apply failed")
                 ]
-                expected = step.K8sApiException if failure_index == 2 else SystemExit
-                with self.assertRaises(expected):
+                with self.assertRaises(SystemExit) as raised:
                     step.prepare_argocd()
+                self.assertEqual(raised.exception.code, 1)
                 self.assertEqual(self.apply.call_count, failure_index + 1)
                 self.assertEqual(self.commands.call_count, (0, 2, 3)[failure_index])

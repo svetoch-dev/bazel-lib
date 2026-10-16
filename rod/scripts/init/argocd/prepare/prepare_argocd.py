@@ -114,6 +114,9 @@ def prepare_argocd():
     except CommandException as e:
         logger.error(f"helm environments init failed.{str(e)}")
         sys.exit(1)
+    except K8sApiException as e:
+        logger.error(f"Failed to apply helm environments.{str(e)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

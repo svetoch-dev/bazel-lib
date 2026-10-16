@@ -212,6 +212,8 @@ def get_folder_files(
         raise FileNotFoundError(f"Directory not found: {folder}")
 
     if extensions:
+        # Deduplicate list of extensions
+        extensions = set(extensions)
         files = []
         for e in extensions:
             files += list(folder.glob(f"*{e}"))

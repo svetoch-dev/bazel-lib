@@ -320,7 +320,7 @@ class TestK8sClientGet(unittest.TestCase):
                     api_client.configuration.host, "https://cluster.example.com"
                 )
                 self.assertEqual(
-                    api_client.configuration.api_key["authorization"],
+                    api_client.configuration.api_key["BearerToken"],
                     "Bearer test-token",
                 )
 

@@ -19,8 +19,9 @@ def configure_envs_yaml():
     address; product endpoints are discovered from their cloud providers.
     Product clusters that cannot be read are logged and skipped.
 
-    Raises:
-        SystemExit: The caller cannot read the internal NAT gateway addresses.
+    NAT gateway discovery failures, including permission errors and a missing
+    internal environment, are logged and fall back to the placeholder address
+    "0.0.0.0".
     """
     logger = CliLogger("rod.scripts.init.argocd.prepare.configure_envs_yaml")
     tfvars = formatted_tfvars()
@@ -34,11 +35,13 @@ def configure_envs_yaml():
 
     int_env = next((e for e in tfvars.envs.values() if e.type == "internal"), None)
 
+    int_nat_gw = "0.0.0.0"
     try:
         int_nat_gw = nat_gw_ips(int_env)[0]
     except CloudPermissionsDenied as e:
         logger.error(str(e))
-        sys.exit(1)
+    except AttributeError as ea:
+        logger.error(str(ea))
 
     for env_name, env_obj in tfvars.envs.items():
         if not env_obj.kubernetes.enabled:

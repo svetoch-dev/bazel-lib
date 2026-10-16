@@ -123,17 +123,21 @@ class TestConfigureEnvsYaml(unittest.TestCase):
             {"internal", "development"},
         )
 
-    def test_nat_permission_failure_exits_without_modifying_values(self):
+    def test_nat_discovery_failures_fall_back_to_placeholder(self):
         """
-        Verify failed NAT discovery leaves the file intact and exits nonzero.
+        Verify failed NAT discovery logs the error and uses the placeholder.
         """
-        original = self.file.read_text()
-        self.nat.side_effect = step.CloudPermissionsDenied("denied")
-        with self.assertRaises(SystemExit) as raised:
-            step.configure_envs_yaml()
-        self.assertEqual(raised.exception.code, 1)
-        self.assertEqual(self.file.read_text(), original)
-        self.factory.assert_not_called()
+        for error in (
+            step.CloudPermissionsDenied("denied"),
+            AttributeError("'NoneType' object has no attribute 'cloud'"),
+        ):
+            with self.subTest(error=error):
+                self.file.write_text("", encoding="utf-8")
+                self.nat.side_effect = error
+                step.configure_envs_yaml()
+                values = yaml.safe_load(self.file.read_text())
+                for env in values["global"]["envs"].values():
+                    self.assertEqual(env["cloud"]["network"]["int_nat_gw"], "0.0.0.0")
 
     def test_unavailable_product_cluster_is_skipped(self):
         """
