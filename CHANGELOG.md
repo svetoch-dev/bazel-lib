@@ -1,3 +1,35 @@
+# v0.29.0
+
+Braking Changes:
+* `bazel_settings` - now stores bazel target paths instead of folder paths. For common folder paths use `common_paths`a
+
+Features:
+* `common_paths` - now stores common full paths
+* `rod/scripts/init/argocd/prepare` - python scripts that
+  * automatically configure main argocd env file (`argocd/envs.yaml`)
+  * copy template argocd dirs to real dirs
+  * initialize submodules
+  * prepares argocd
+    * creates crds
+    * applies argocd manifests
+    * applies root and envs argocd Applications
+
+Enhancements:
+* new cloud bazel package with cloud abstract helpers/exceptions
+  * `nat_gw_ips` function to get ips of env
+* new git bazel package with git related helpers
+  * `init_submodules` helper that initializes submodules
+* helpers - `get_folder_files` function that returns files from a folder based on extension
+* `rod/scripts/init/tf/poststeps/update_kube_config.py`:
+  * do not process envs with kubernetes cluster not enabled
+  * change the current-context to one fetched
+* rod/libs/py/k8s
+  * missing doc strings added
+  * `K8sClient` now has sdk client imbedded 
+  * `apply_manifests` applies manifests from folder/files or dicts
+
+* helm version updated to 4.3.0
+
 # v0.28.0
 
 Features:
