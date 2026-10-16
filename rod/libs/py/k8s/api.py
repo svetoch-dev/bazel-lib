@@ -7,16 +7,24 @@ from rod.libs.py.k8s.client import k8s_client_get
 from rod.libs.py.tf.tfvars import Env
 
 
-def error_details(error: Exception) -> str:
+def get_error_details(error: Exception) -> str:
+    """Return an error message with Kubernetes status and response details.
+
+    Args:
+        error: Exception to describe.
+
+    Returns:
+        Message suitable for command line logs.
+    """
     if isinstance(error, ApiException):
         details = f"Kubernetes API returned {error.status}: {error.reason}"
-        if error.body:
-            details += f"\n{error.body}"
-        return details
+        return f"{details}\n{error.body}" if error.body else details
     return str(error)
 
 
 class PodCommandError(RuntimeError):
+    """A Pod command failed with a nonzero exit code."""
+
     def __init__(
         self,
         namespace: str,
@@ -26,6 +34,16 @@ class PodCommandError(RuntimeError):
         stdout: str,
         stderr: str,
     ):
+        """Describe a failed command and include its captured output.
+
+        Args:
+            namespace: Namespace containing the Pod.
+            pod: Pod where the command ran.
+            command: Executed command and its arguments.
+            return_code: Nonzero command exit code.
+            stdout: Captured standard output.
+            stderr: Captured standard error.
+        """
         self.namespace = namespace
         self.pod = pod
         self.command = command
@@ -47,12 +65,22 @@ class KubernetesApi:
     """Common Kubernetes operations used by command line tools."""
 
     def __init__(self, environment: Env):
+        """Create a Kubernetes client for the selected environment.
+
+        Args:
+            environment: Environment with cloud and Kubernetes settings.
+        """
         self.environment = environment
         self._client_created_at = time.monotonic()
         self._api = k8s_client_get(environment)
 
     @staticmethod
     def _close_client(api) -> None:
+        """Close the client's thread pools and release HTTP connections.
+
+        Args:
+            api: Client returned by k8s_client_get().
+        """
         for resource_api in (
             api.v1,
             api.custom,
@@ -73,6 +101,11 @@ class KubernetesApi:
 
     @property
     def api(self):
+        """Return the client, recreating it after 40 minutes.
+
+        Returns:
+            Kubernetes client for this environment.
+        """
         now = time.monotonic()
         if now - self._client_created_at >= 40 * 60:
             old_api = self._api
@@ -82,6 +115,19 @@ class KubernetesApi:
         return self._api
 
     def list_resources(self, kind: str, namespace: str, selector: str) -> list[dict]:
+        """List resources matching a label selector in one namespace.
+
+        Args:
+            kind: Resource type, such as pods or statefulsets.
+            namespace: Namespace to search.
+            selector: Kubernetes label selector.
+
+        Returns:
+            Resource dictionaries with their resource type in the kind field.
+
+        Raises:
+            KeyError: The resource type is unsupported.
+        """
         api = self.api
         list_methods = {
             "pods": api.list_namespaced_pod,
@@ -103,6 +149,20 @@ class KubernetesApi:
         return resources
 
     def exec_in_pod(self, namespace: str, pod: str, command: list[str]) -> str:
+        """Run a command in the Pod's postgres container.
+
+        Args:
+            namespace: Namespace containing the Pod.
+            pod: Pod name.
+            command: Command and arguments, without shell interpretation.
+
+        Returns:
+            Captured standard output.
+
+        Raises:
+            PodCommandError: The command exits with a nonzero code.
+            RuntimeError: The command does not return an exit code.
+        """
         response = stream.stream(
             self.api.v1.connect_get_namespaced_pod_exec,
             pod,

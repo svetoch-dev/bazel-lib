@@ -8,7 +8,7 @@ from datetime import datetime
 
 from kubernetes.client.exceptions import ApiException
 
-from rod.libs.py.k8s.api import KubernetesApi, error_details
+from rod.libs.py.k8s.api import KubernetesApi, get_error_details
 from rod.libs.py.k8s.postgres import KubernetesPostgresApi
 from rod.libs.py.tf.tfvars import Env, formatted_tfvars
 from rod.libs.py.utils.logger import CliLogger
@@ -34,6 +34,17 @@ ISO_TIMESTAMP_PATTERN = re.compile(
 
 
 def positive_seconds(value: str) -> int:
+    """Parse a positive integer for a polling interval.
+
+    Args:
+        value: Command line value in seconds.
+
+    Returns:
+        A whole number greater than zero.
+
+    Raises:
+        argparse.ArgumentTypeError: The value is not a positive integer.
+    """
     try:
         seconds = int(value)
     except ValueError:
@@ -46,7 +57,18 @@ def positive_seconds(value: str) -> int:
 
 
 def parse_timestamp(value: str) -> str:
-    """Normalize supported timestamps while preserving fractional seconds."""
+    """Normalize the recovery target while preserving fractional seconds.
+
+    Args:
+        value: Date and time with hyphens or dots in the date. Missing timezone
+            means UTC; explicit offsets and Z are accepted.
+
+    Returns:
+        Timestamp with a T separator and an explicit timezone offset.
+
+    Raises:
+        argparse.ArgumentTypeError: The format or date is invalid.
+    """
     timestamp = " ".join(value.split())
     match = ISO_TIMESTAMP_PATTERN.fullmatch(timestamp)
     if match is None:
@@ -68,6 +90,11 @@ def parse_timestamp(value: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
+    """Read and validate command line arguments.
+
+    Returns:
+        Parsed arguments with the environment object and normalized timestamp.
+    """
     parser = argparse.ArgumentParser(
         description=(
             "Restore a PostgreSQL cluster backup into a temporary cluster, "
@@ -132,6 +159,17 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_environment(environment_name: str) -> Env:
+    """Select an enabled Kubernetes environment from terraform.tfvars.json.
+
+    Args:
+        environment_name: Exact key in the tfvars envs mapping.
+
+    Returns:
+        Environment settings for connecting to Kubernetes.
+
+    Raises:
+        argparse.ArgumentTypeError: No enabled environment matches the key.
+    """
     environments = {
         name: env
         for name, env in formatted_tfvars().envs.items()
@@ -148,6 +186,15 @@ def parse_environment(environment_name: str) -> Env:
 
 
 def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
+    """Append a short clone suffix and shorten the source name if needed.
+
+    Args:
+        source_cluster: Source PostgreSQL resource, including metadata.name.
+        run_id: Full run ID; only its first four characters enter the name.
+
+    Returns:
+        Clone name with room for the operator's -repl Service suffix.
+    """
     source_name = source_cluster["metadata"]["name"]
     clone_suffix = f"-clone-{run_id[:4]}"
     # Kubernetes names are limited to 63 characters; reserve room for "-repl".
@@ -158,6 +205,17 @@ def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
 
 
 def build_clone(source_cluster: dict, name: str, timestamp: str, run_id: str) -> dict:
+    """Build a temporary PostgreSQL resource for point-in-time recovery.
+
+    Args:
+        source_cluster: Source PostgreSQL resource with its UID and settings.
+        name: Temporary clone name.
+        timestamp: Normalized recovery target with an explicit timezone.
+        run_id: Full run ID used to identify this run's resource during cleanup.
+
+    Returns:
+        Clone manifest with one instance and external load balancers disabled.
+    """
     source_spec = source_cluster["spec"]
     volume = source_spec["volume"].copy()
     volume.pop("selector", None)
@@ -196,12 +254,24 @@ def clone_belongs_to_run(
     cluster: str,
     run_id: str,
 ) -> bool | None:
+    """Check whether a PostgreSQL resource carries this run's ownership label.
+
+    Args:
+        k8s: PostgreSQL API wrapper.
+        namespace: Namespace containing the clone.
+        cluster: Temporary PostgreSQL resource name.
+        run_id: Full run ID expected in the ownership label.
+
+    Returns:
+        True if owned by this run, False if absent or owned by another run,
+        or None if ownership could not be checked.
+    """
     try:
         resource = k8s.get_postgresql(namespace, cluster)
     except ApiException as error:
         if error.status == 404:
             return False
-        logger.error(f"Could not confirm clone ownership: {error_details(error)}")
+        logger.error(f"Could not confirm clone ownership: {get_error_details(error)}")
         return None
     except (ValueError, OSError) as error:
         logger.error(f"Could not confirm clone ownership: {error}")
@@ -214,6 +284,19 @@ def find_source_cluster(
     selector: str,
     namespace: str | None,
 ) -> dict:
+    """Find exactly one PostgreSQL resource by name.
+
+    Args:
+        k8s: PostgreSQL API wrapper.
+        selector: Exact source resource name.
+        namespace: Namespace to search, or None to search all namespaces.
+
+    Returns:
+        Matching PostgreSQL resource.
+
+    Raises:
+        ValueError: No resource matches, or the name exists in several namespaces.
+    """
     clusters = k8s.list_postgresql_clusters(namespace)
     matches = [
         cluster
@@ -244,6 +327,17 @@ def wait_for_master(
     cluster: str,
     poll_interval_seconds: int,
 ) -> str:
+    """Wait until a master Pod has a Ready condition, without a timeout.
+
+    Args:
+        k8s: Kubernetes API wrapper.
+        namespace: Namespace containing the clone.
+        cluster: Temporary PostgreSQL resource name used in Pod labels.
+        poll_interval_seconds: Delay between readiness checks.
+
+    Returns:
+        Name of a Ready master Pod.
+    """
     selector = f"application=spilo,cluster-name={cluster},spilo-role=master"
     while True:
         for pod in k8s.list_resources("pods", namespace, selector):
@@ -262,6 +356,17 @@ def wait_for_recovery(
     pod: str,
     poll_interval_seconds: int,
 ) -> None:
+    """Wait for pg_is_in_recovery() to return false, without a timeout.
+
+    Args:
+        k8s: Kubernetes API wrapper.
+        namespace: Namespace containing the Pod.
+        pod: Ready master Pod name.
+        poll_interval_seconds: Delay between recovery checks.
+
+    Raises:
+        RuntimeError: The recovery probe returns neither t nor f.
+    """
     logger.info("Master is ready. Waiting for pg_is_in_recovery() = f...")
     while True:
         result = k8s.exec_in_pod(
@@ -296,6 +401,14 @@ def cleanup_clone_storage(
     cluster: str,
     poll_interval_seconds: int,
 ) -> None:
+    """Wait for StatefulSets to disappear, then delete retained PVCs.
+
+    Args:
+        k8s: PostgreSQL API wrapper.
+        namespace: Namespace containing the clone's storage.
+        cluster: Temporary cluster name used in resource labels.
+        poll_interval_seconds: Delay between storage checks.
+    """
     selector = f"cluster-name={cluster}"
     pvc_deletion_requested = False
     while True:
@@ -327,6 +440,14 @@ def wait_for_clone_cleanup(
     cluster: str,
     poll_interval_seconds: int,
 ) -> None:
+    """Wait for supported resources labelled with the clone name to disappear.
+
+    Args:
+        k8s: Kubernetes API wrapper.
+        namespace: Namespace containing the clone's resources.
+        cluster: Temporary cluster name used in resource labels.
+        poll_interval_seconds: Delay between resource checks.
+    """
     resource_types = (
         "pods",
         "statefulsets",
@@ -358,6 +479,18 @@ def wait_for_clone_cleanup(
 
 
 def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
+    """Restore a backup, run SQL, and clean up this run's temporary resources.
+
+    Args:
+        args: Validated arguments returned by parse_args().
+        k8s: PostgreSQL API wrapper for the selected environment.
+
+    Returns:
+        Zero after SQL and cleanup complete successfully.
+
+    Raises:
+        Exception: Source lookup, restoration, SQL, or cleanup fails.
+    """
     k8s_resource_poll_interval_seconds = args.k8s_resource_poll_interval_seconds
     recovery_poll_interval_seconds = args.postgres_recovery_poll_interval_seconds
     source = find_source_cluster(k8s, args.postgres, args.namespace)
@@ -447,7 +580,7 @@ def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
             except Exception as error:
                 logger.error(
                     f"Cleanup failed for {namespace}/{clone_name}: "
-                    f"{error_details(error)}"
+                    f"{get_error_details(error)}"
                 )
                 if not operation_failed:
                     raise
@@ -459,6 +592,12 @@ def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
 
 
 def main() -> int:
+    """Connect to Kubernetes and run the backup check.
+
+    Returns:
+        Zero on success, one on runtime failure, or 130 on interruption.
+        Argument errors exit through argparse before a return value is produced.
+    """
     try:
         args = parse_args()
         environment = args.environment
@@ -466,7 +605,7 @@ def main() -> int:
         k8s = KubernetesPostgresApi(environment)
         return run_check(args, k8s)
     except Exception as error:
-        logger.error(f"FAILED: backup restore check: {error_details(error)}")
+        logger.error(f"FAILED: backup restore check: {get_error_details(error)}")
         return 1
     except KeyboardInterrupt:
         logger.error(
