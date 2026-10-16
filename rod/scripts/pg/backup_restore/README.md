@@ -112,9 +112,11 @@ are not carried over to the clone.
 
 Temporary clone names use the source cluster name followed by `-clone-<run_id>`.
 For example, `example-postgres-cluster` becomes
-`example-postgres-cluster-clone-a1b2`. The source name is shortened to at most
-47 characters, with any trailing dash removed, so the clone name and the
-operator-generated `-repl` Service name fit within 63 characters.
+`example-postgres-cluster-clone-a1b2`. The source name is shortened as needed
+to keep the clone name within 52 characters. Kubernetes adds a hyphen and a
+10-character revision hash to the Pod's `controller-revision-hash` label, which
+must stay within the 63-character label value limit. Any trailing dash from the
+shortened source name is removed.
 The name uses the first four characters of the run ID; the full ID is kept in
 the ownership label used for cleanup.
 Before creating the clone, the command checks for existing PVCs with its

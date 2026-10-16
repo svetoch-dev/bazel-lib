@@ -225,12 +225,12 @@ def temporary_cluster_name(source_cluster: dict, run_id: str) -> str:
         run_id: Full run ID; only its first four characters enter the name.
 
     Returns:
-        Clone name with room for the operator's -repl Service suffix.
+        Clone name short enough for the StatefulSet revision label.
     """
     source_name = source_cluster["metadata"]["name"]
     clone_suffix = f"-clone-{run_id[:4]}"
-    # Kubernetes names are limited to 63 characters; reserve room for "-repl".
-    max_name_prefix_length = 63 - len("-repl") - len(clone_suffix)
+    # StatefulSet adds a hyphen and 10-character hash to a Pod label.
+    max_name_prefix_length = 52 - len(clone_suffix)
 
     name_prefix = source_name[:max_name_prefix_length].rstrip("-")
     return f"{name_prefix}{clone_suffix}"
