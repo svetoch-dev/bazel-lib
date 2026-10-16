@@ -23,6 +23,10 @@ from rod.libs.py.tf.tfvars import (
     env_network_settings,
     CloudTypeEnum,
     DnsTypeEnum,
+    EnvTypeEnum,
+    CiTypeEnum,
+    RepoTypeEnum,
+    RegistryTypeEnum,
     Network,
 )
 
@@ -96,7 +100,7 @@ class TestFormattedTfvars(unittest.TestCase):
         self.assertEqual(prd.dns.domain, "prd.rod.svetoch.dev")
         self.assertEqual(prd.dns.type, DnsTypeEnum.gcp)
         self.assertEqual(prd.type, "product")
-        self.assertEqual(prd.registry.type, "gar")
+        self.assertIs(prd.registry.type, RegistryTypeEnum.gar)
         self.assertEqual(
             prd.registry.url, "europe-west2-docker.pkg.dev/rod-production/containers"
         )
@@ -166,25 +170,75 @@ class TestFormattedTfvars(unittest.TestCase):
             AppAccessRoles,
         )
 
+    def test_formatted_tfvars_uses_ci_repo_and_registry_enum_values(self):
+        for ci_type, repo_type, registry_type in (
+            (CiTypeEnum.gha, RepoTypeEnum.github, RegistryTypeEnum.gar),
+            (CiTypeEnum.gl, RepoTypeEnum.gitlab, RegistryTypeEnum.ycr),
+        ):
+            with self.subTest(ci=ci_type, repo=repo_type, registry=registry_type):
+                env = self._env("internal")
+                env["registry"] = {
+                    "type": registry_type,
+                    "url": "{ci.type}.{repo.type}.{env.registry.type}.example.com",
+                }
+                source = self._tfvars({"internal": env})
+                source["ci"]["type"] = ci_type
+                source["repo"]["type"] = repo_type
+                source = TfVars.model_validate(source)
+
+                with patch("rod.libs.py.tf.tfvars.tfvars", return_value=source):
+                    result = formatted_tfvars()
+
+                registry = result.envs["internal"].registry
+                self.assertEqual(
+                    registry.url,
+                    f"{ci_type.value}.{repo_type.value}.{registry_type.value}.example.com",
+                )
+                self.assertIs(result.ci.type, ci_type)
+                self.assertIs(result.repo.type, repo_type)
+                self.assertIs(registry.type, registry_type)
+
     def test_ci_type_accepts_supported_values(self):
-        self.assertEqual(Ci(type="gl").type, "gl")
-        self.assertEqual(Ci(type="gha").type, "gha")
+        for ci_type in CiTypeEnum:
+            for value in (ci_type.value, ci_type):
+                with self.subTest(ci_type=ci_type, value=value):
+                    ci = Ci(type=value)
+                    self.assertIs(ci.type, ci_type)
+                    self.assertEqual(ci.model_dump(mode="json")["type"], ci_type.value)
+                    self.assertIs(
+                        Ci.model_validate_json(ci.model_dump_json()).type, ci_type
+                    )
 
     def test_ci_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
             Ci(type="gitlab")
 
     def test_repo_type_accepts_supported_values(self):
-        self.assertEqual(Repo(name="test", type="github", group="test").type, "github")
-        self.assertEqual(Repo(name="test", type="gitlab", group="test").type, "gitlab")
+        for repo_type in RepoTypeEnum:
+            for value in (repo_type.value, repo_type):
+                with self.subTest(repo_type=repo_type, value=value):
+                    repo = Repo(name="test", type=value, group="test")
+                    self.assertIs(repo.type, repo_type)
+                    self.assertEqual(
+                        repo.model_dump(mode="json")["type"], repo_type.value
+                    )
+                    self.assertIs(
+                        Repo.model_validate_json(repo.model_dump_json()).type, repo_type
+                    )
 
     def test_repo_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
             Repo(name="test", type="gha", group="test")
 
     def test_env_type_accepts_supported_values(self):
-        self.assertEqual(Env(**self._env("internal")).type, "internal")
-        self.assertEqual(Env(**self._env("product")).type, "product")
+        for env_type in EnvTypeEnum:
+            with self.subTest(env_type=env_type):
+                for value in (env_type.value, env_type):
+                    env = Env(**self._env(value))
+                    self.assertIs(env.type, env_type)
+                    self.assertEqual(
+                        env.model_dump(mode="json")["type"], env_type.value
+                    )
 
     def test_env_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):
@@ -315,8 +369,18 @@ class TestFormattedTfvars(unittest.TestCase):
             Dns(domain="example.com", type="none_existant_domain")
 
     def test_registry_type_accepts_supported_values(self):
-        self.assertEqual(Registry(type="ycr", url="registry.example.com").type, "ycr")
-        self.assertEqual(Registry(type="gar", url="registry.example.com").type, "gar")
+        for registry_type in RegistryTypeEnum:
+            for value in (registry_type.value, registry_type):
+                with self.subTest(registry_type=registry_type, value=value):
+                    registry = Registry(type=value, url="registry.example.com")
+                    self.assertIs(registry.type, registry_type)
+                    self.assertEqual(
+                        registry.model_dump(mode="json")["type"], registry_type.value
+                    )
+                    self.assertIs(
+                        Registry.model_validate_json(registry.model_dump_json()).type,
+                        registry_type,
+                    )
 
     def test_registry_type_rejects_unsupported_values(self):
         with self.assertRaises(ValidationError):

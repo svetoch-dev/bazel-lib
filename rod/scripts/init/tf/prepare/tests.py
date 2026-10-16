@@ -7,7 +7,13 @@ from rod.scripts.init.tf.prepare.prepare import prepare
 from rod.scripts.init.tf.prepare.copy import copy_template
 from rod.scripts.init.tf.prepare.yc import prepare_yc
 from rod.libs.py.bazel.rc import bazelrc_str_to_obj
-from rod.libs.py.tf.tfvars import Cloud, Env, CloudTypeEnum, DnsTypeEnum
+from rod.libs.py.tf.tfvars import (
+    RegistryTypeEnum,
+    Cloud,
+    Env,
+    CloudTypeEnum,
+    DnsTypeEnum,
+)
 
 cloud = Cloud(
     name=CloudTypeEnum.yc,
@@ -33,7 +39,7 @@ env = Env(
     users={},
     apps={},
     import_secrets={},
-    registry={"type": "ycr", "url": "registry"},
+    registry={"type": RegistryTypeEnum.ycr, "url": "registry"},
     dns={"domain": "example.com", "type": DnsTypeEnum.yc},
     tf_backend={"type": "s3", "configs": {"bucket": "some-tf-state"}},
     cloud=cloud,

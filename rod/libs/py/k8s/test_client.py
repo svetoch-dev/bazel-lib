@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 from rod.libs.py.k8s import client as k8s_client
 from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
-from rod.libs.py.tf.tfvars import CloudTypeEnum, Env
+from rod.libs.py.tf.tfvars import RegistryTypeEnum, CloudTypeEnum, Env
 
 
 class TestK8sClient(unittest.TestCase):
@@ -70,7 +70,7 @@ class TestKubeConfigFactory(unittest.TestCase):
             users={},
             apps={},
             import_secrets={},
-            registry={"type": "gar", "url": "registry.example.com"},
+            registry={"type": RegistryTypeEnum.gar, "url": "registry.example.com"},
             dns={"domain": "example.com", "type": provider.value},
             tf_backend={"type": "gcs", "configs": {"bucket": "test-state"}},
             cloud={

@@ -1,4 +1,3 @@
-from typing import Literal
 from enum import Enum
 from pathlib import Path
 
@@ -16,6 +15,26 @@ class CloudTypeEnum(str, Enum):
 class DnsTypeEnum(str, Enum):
     gcp = "gcp"
     yc = "yc"
+
+
+class EnvTypeEnum(str, Enum):
+    internal = "internal"
+    product = "product"
+
+
+class CiTypeEnum(str, Enum):
+    gl = "gl"
+    gha = "gha"
+
+
+class RepoTypeEnum(str, Enum):
+    github = "github"
+    gitlab = "gitlab"
+
+
+class RegistryTypeEnum(str, Enum):
+    ycr = "ycr"
+    gar = "gar"
 
 
 class BaseTfVarsModel(BaseModel):
@@ -53,7 +72,7 @@ class TfBackend(BaseTfVarsModel):
 
 
 class Registry(BaseTfVarsModel):
-    type: Literal["ycr", "gar"]
+    type: RegistryTypeEnum
     url: str
 
 
@@ -129,7 +148,7 @@ class Cloud(BaseTfVarsModel):
 class Env(BaseTfVarsModel):
     name: str
     short_name: str
-    type: Literal["internal", "product"]
+    type: EnvTypeEnum
     test: bool = False
     initial_start: bool = False
     users: dict[str, User]
@@ -149,12 +168,12 @@ class Company(BaseTfVarsModel):
 
 class Repo(BaseTfVarsModel):
     name: str
-    type: Literal["github", "gitlab"]
+    type: RepoTypeEnum
     group: str
 
 
 class Ci(BaseTfVarsModel):
-    type: Literal["gl", "gha"]
+    type: CiTypeEnum
     bazelisk_img_version: str = ""
 
 
@@ -169,7 +188,7 @@ class TfVars(BaseTfVarsModel):
         internal_envs = [
             env_name
             for env_name, env_obj in self.envs.items()
-            if env_obj.type == "internal"
+            if env_obj.type == EnvTypeEnum.internal
         ]
 
         if len(internal_envs) != 1:

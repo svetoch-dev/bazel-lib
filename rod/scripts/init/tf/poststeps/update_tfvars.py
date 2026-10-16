@@ -1,5 +1,9 @@
 from rod.libs.py.utils.logger import CliLogger
-from rod.libs.py.tf.tfvars import formatted_tfvars, update_tfvars as tfvars_update
+from rod.libs.py.tf.tfvars import (
+    RegistryTypeEnum,
+    formatted_tfvars,
+    update_tfvars as tfvars_update,
+)
 from rod.libs.py.yc.registry import YcRegistry
 
 
@@ -13,7 +17,7 @@ def update_tfvars() -> bool:
     tfvars = formatted_tfvars()
 
     for env_name, env_obj in tfvars.envs.items():
-        if env_obj.registry.type == "ycr":
+        if env_obj.registry.type == RegistryTypeEnum.ycr:
             logger.info(f"updating ycr registry url for {env_name}")
             registry = YcRegistry(
                 env_obj.cloud.folder_id, "containers", create_if_missing=False

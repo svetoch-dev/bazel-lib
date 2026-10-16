@@ -15,6 +15,7 @@ Features:
     * applies root and envs argocd Applications
 
 Enhancements:
+* use enums for ci.type repo.type and registry.type and env.type
 * new cloud bazel package with cloud abstract helpers/exceptions
   * `nat_gw_ips` function to get ips of env
 * new git bazel package with git related helpers
