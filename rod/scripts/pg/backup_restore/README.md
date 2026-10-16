@@ -116,6 +116,9 @@ For example, `example-postgres-cluster` becomes
 operator-generated `-repl` Service name fit within 63 characters.
 The name uses the first four characters of the run ID; the full ID is kept in
 the ownership label used for cleanup.
+Before creating the clone, the command checks for existing PVCs with its
+`cluster-name` label. If any exist, it stops without modifying them to avoid
+reusing data from an earlier restore.
 
 The command waits for a Ready master Pod, then polls `pg_is_in_recovery()` in
 the `postgres` database until it returns `false`. The intervals are controlled

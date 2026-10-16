@@ -85,6 +85,13 @@ def parse_timestamp(value: str) -> str:
     if not offset or offset.lower() == "z":
         offset = "+00:00"
 
+    hours, minutes = map(int, offset[1:].split(":"))
+    # PostgreSQL accepts timezone offsets below 16 hours.
+    if hours > 15 or minutes > 59:
+        raise argparse.ArgumentTypeError(
+            "timezone offset must have hours 00-15 and minutes 00-59"
+        )
+
     try:
         # Validate microseconds; return the full fractional part below.
         datetime.fromisoformat(f"{date}T{time}{fraction[:7]}{offset}")
@@ -524,6 +531,15 @@ def run_check(args: argparse.Namespace, k8s: KubernetesPostgresApi) -> int:
     clone_name = temporary_cluster_name(source, run_id)
     clone = build_clone(source, clone_name, args.timestamp, run_id)
     namespace = source["metadata"]["namespace"]
+
+    claims = k8s.list_resources(
+        "persistentvolumeclaims", namespace, f"cluster-name={clone_name}"
+    )
+    if claims:
+        raise RuntimeError(
+            f"Cannot create clone {namespace}/{clone_name}: PVCs already exist. "
+            "Retry with a new clone name or inspect the retained storage."
+        )
 
     logger.info(
         f"Restoring {args.postgres} at {args.timestamp} "
