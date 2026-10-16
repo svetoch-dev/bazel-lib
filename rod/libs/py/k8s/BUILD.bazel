@@ -36,6 +36,7 @@ py_test(
         ":exceptions",
         ":k8s",
         "@svetoch_bazel_lib//rod/libs/py/tf",
+        requirement("kubernetes"),
         requirement("pydantic"),
     ],
 )
