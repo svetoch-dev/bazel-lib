@@ -3,34 +3,9 @@ from rod.libs.py.utils.logger import CliLogger, BaseLogger
 from pathlib import Path
 from typing import Any
 import subprocess
-import glob
 import re
-import os
 import sys
 import json
-
-MASK_STR = "##MASKED##"
-UNMASK_STR = ""
-
-
-def unmask_tf(folder, mask_str=MASK_STR, unmask_str=UNMASK_STR):
-    """
-    Remove mask string from tf files of a bazel target
-
-    Args:
-        folder(str): folder with .tf files
-        mask_str(str): string that should be unmasked
-        unmask_str(str): unmasked str
-    """
-    tf_files = glob.glob(f"{folder}/*.tf")
-    for file in tf_files:
-        with open(file, "r") as f:
-            content = f.read()
-
-        content = re.sub(mask_str, unmask_str, content)
-
-        with open(file, "w") as f:
-            f.write(content)
 
 
 def run_command(
@@ -105,7 +80,6 @@ def dict_to_dot_notation(
     results = {}
 
     for key, value in dictionary.items():
-
         if initial_key:
             results_key = f"{initial_key}.{key}"
         else:
@@ -153,9 +127,7 @@ def replace_dotted_placeholders(
     return json.loads(json_str)
 
 
-def create_dir(
-    dir_name: str, logger: BaseLogger = CliLogger("helpers.create_dir")
-) -> bool:
+def create_dir(dir_name: str, logger: BaseLogger | None = None) -> bool:
     """
     Create a directory.
 
@@ -168,6 +140,7 @@ def create_dir(
     Returns:
         True if the directory was created, False otherwise.
     """
+    logger = logger or CliLogger("helpers.create_dir")
     try:
         Path(dir_name).mkdir(parents=True, exist_ok=True)
         logger.info(f"Directory '{dir_name}' created successfully.")
@@ -178,9 +151,7 @@ def create_dir(
     return False
 
 
-def create_file(
-    file_name: str, logger: BaseLogger = CliLogger("helpers.create_dir")
-) -> None:
+def create_file(file_name: str, logger: BaseLogger | None = None) -> bool:
     """
     Create an empty file if it does not already exist.
 
@@ -196,6 +167,7 @@ def create_file(
     Returns:
         True if the file was created, False otherwise.
     """
+    logger = logger or CliLogger("helpers.create_dir")
     path = Path(file_name)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -212,6 +184,41 @@ def create_file(
         logger.error("Permission denied: Unable to create the file.")
 
     return False
+
+
+def get_folder_files(
+    folder_path: str, extensions: list[str] | None = None
+) -> list[Path]:
+    """
+    List entries in a folder, optionally filtering by filename extension.
+
+    Searches only the folder itself. Without an extension filter, returns all
+    entries, including directories. Results are not sorted.
+
+    Args:
+        folder_path: Directory whose entries should be listed.
+        extensions: Filename suffixes to match, such as ".yaml" and ".yml".
+            If omitted or empty, all entries are returned.
+
+    Returns:
+        Paths to matching entries in the folder.
+
+    Raises:
+        FileNotFoundError: The supplied path does not identify a directory.
+    """
+    folder = Path(folder_path)
+
+    if not folder.is_dir():
+        raise FileNotFoundError(f"Directory not found: {folder}")
+
+    if extensions:
+        # Deduplicate list of extensions
+        files = []
+        for e in set(extensions):
+            files += list(folder.glob(f"*{e}"))
+        return files
+
+    return list(folder.iterdir())
 
 
 def switch_index(array: list[Any], element: Any, index: int) -> None:

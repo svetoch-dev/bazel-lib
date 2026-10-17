@@ -7,7 +7,13 @@ from rod.scripts.init.tf.prepare.prepare import prepare
 from rod.scripts.init.tf.prepare.copy import copy_template
 from rod.scripts.init.tf.prepare.yc import prepare_yc
 from rod.libs.py.bazel.rc import bazelrc_str_to_obj
-from rod.libs.py.tf.tfvars import Cloud, Env, CloudTypeEnum, DnsTypeEnum
+from rod.libs.py.tf.tfvars import (
+    RegistryTypeEnum,
+    Cloud,
+    Env,
+    CloudTypeEnum,
+    DnsTypeEnum,
+)
 
 cloud = Cloud(
     name=CloudTypeEnum.yc,
@@ -33,7 +39,7 @@ env = Env(
     users={},
     apps={},
     import_secrets={},
-    registry={"type": "ycr", "url": "registry"},
+    registry={"type": RegistryTypeEnum.ycr, "url": "registry"},
     dns={"domain": "example.com", "type": DnsTypeEnum.yc},
     tf_backend={"type": "s3", "configs": {"bucket": "some-tf-state"}},
     cloud=cloud,
@@ -46,15 +52,15 @@ class TestCopyTemplate(unittest.TestCase):
     @patch("rod.scripts.init.tf.prepare.copy.sys.exit")
     @patch("rod.scripts.init.tf.prepare.copy.Path.exists")
     @patch("rod.scripts.init.tf.prepare.copy.formatted_tfvars")
-    @patch("rod.scripts.init.tf.prepare.copy.bazel_settings")
+    @patch("rod.scripts.init.tf.prepare.copy.common_paths")
     def test_copy_template_exits_when_template_dir_missing(
         self,
-        mock_bazel_settings,
+        mock_common_paths,
         mock_formatted_tfvars,
         mock_exists,
         mock_sys_exit,
     ):
-        mock_bazel_settings.tf_env_dir = "/tmp/tf/env"
+        mock_common_paths.tf_env_dir = "/tmp/tf/env"
         mock_exists.return_value = False
 
         env_prd = env.model_copy(deep=True)
@@ -77,15 +83,15 @@ class TestCopyTemplate(unittest.TestCase):
     @patch("rod.scripts.init.tf.prepare.copy.copytree")
     @patch("rod.scripts.init.tf.prepare.copy.Path.exists")
     @patch("rod.scripts.init.tf.prepare.copy.formatted_tfvars")
-    @patch("rod.scripts.init.tf.prepare.copy.bazel_settings")
+    @patch("rod.scripts.init.tf.prepare.copy.common_paths")
     def test_copy_template_copies_template_to_each_env(
         self,
-        mock_bazel_settings,
+        mock_common_paths,
         mock_formatted_tfvars,
         mock_exists,
         mock_copytree,
     ):
-        mock_bazel_settings.tf_env_dir = "/tmp/tf/env"
+        mock_common_paths.tf_env_dir = "/tmp/tf/env"
         mock_exists.side_effect = [True, False, False]
         env_dev = env.model_copy(deep=True)
         env_dev.name = "development"
@@ -117,15 +123,15 @@ class TestCopyTemplate(unittest.TestCase):
     @patch("rod.scripts.init.tf.prepare.copy.copytree")
     @patch("rod.scripts.init.tf.prepare.copy.Path.exists")
     @patch("rod.scripts.init.tf.prepare.copy.formatted_tfvars")
-    @patch("rod.scripts.init.tf.prepare.copy.bazel_settings")
+    @patch("rod.scripts.init.tf.prepare.copy.common_paths")
     def test_copy_template_does_not_copy_template_to_int(
         self,
-        mock_bazel_settings,
+        mock_common_paths,
         mock_formatted_tfvars,
         mock_exists,
         mock_copytree,
     ):
-        mock_bazel_settings.tf_env_dir = "/tmp/tf/env"
+        mock_common_paths.tf_env_dir = "/tmp/tf/env"
         mock_exists.return_value = True
 
         env_int = env.model_copy(deep=True)
@@ -308,16 +314,16 @@ class TestPrepareYc(unittest.TestCase):
     @patch("rod.scripts.init.tf.prepare.yc.bazelrc_parse")
     @patch("rod.scripts.init.tf.prepare.yc.YcServiceAccount")
     @patch("rod.scripts.init.tf.prepare.yc.Path.exists")
-    @patch("rod.scripts.init.tf.prepare.yc.bazel_settings")
+    @patch("rod.scripts.init.tf.prepare.yc.common_paths")
     def test_prepare_yc_exits_when_cloud_rc_exists(
         self,
-        mock_bazel_settings,
+        mock_common_paths,
         mock_exists,
         mock_service_account_cls,
         mock_bazelrc_parse,
         mock_bazelrc_create,
     ):
-        mock_bazel_settings.rc_cloud = "/tmp/.bazelrc.cloud"
+        mock_common_paths.rc_cloud = "/tmp/.bazelrc.cloud"
         mock_exists.return_value = True
 
         prepare_yc("folder-123")
@@ -332,10 +338,10 @@ class TestPrepareYc(unittest.TestCase):
     @patch("rod.scripts.init.tf.prepare.yc.YcSettings")
     @patch("rod.scripts.init.tf.prepare.yc.datetime")
     @patch("rod.scripts.init.tf.prepare.yc.Path.exists")
-    @patch("rod.scripts.init.tf.prepare.yc.bazel_settings")
+    @patch("rod.scripts.init.tf.prepare.yc.common_paths")
     def test_prepare_yc_creates_access_key_and_writes_cloud_rc(
         self,
-        mock_bazel_settings,
+        mock_common_paths,
         mock_exists,
         mock_datetime,
         mock_yc_settings,
@@ -343,8 +349,8 @@ class TestPrepareYc(unittest.TestCase):
         mock_bazelrc_parse,
         mock_bazelrc_create,
     ):
-        mock_bazel_settings.rc_cloud = "/tmp/.bazelrc.cloud"
-        mock_bazel_settings.rc_cloud_yc = "/tmp/.bazelrc.cloud.yc"
+        mock_common_paths.rc_cloud = "/tmp/.bazelrc.cloud"
+        mock_common_paths.rc_cloud_yc = "/tmp/.bazelrc.cloud.yc"
         mock_exists.return_value = False
 
         mock_yc_settings.return_value = SimpleNamespace(

@@ -1,8 +1,7 @@
-from typing import Literal
 from enum import Enum
 from pathlib import Path
 
-from rod.libs.py.settings import bazel_settings
+from rod.libs.py.settings import common_paths
 from pydantic import BaseModel, ConfigDict, model_validator
 from rod.libs.py.helpers import dict_to_dot_notation, replace_dotted_placeholders
 import ipaddress
@@ -16,6 +15,26 @@ class CloudTypeEnum(str, Enum):
 class DnsTypeEnum(str, Enum):
     gcp = "gcp"
     yc = "yc"
+
+
+class EnvTypeEnum(str, Enum):
+    internal = "internal"
+    product = "product"
+
+
+class CiTypeEnum(str, Enum):
+    gl = "gl"
+    gha = "gha"
+
+
+class RepoTypeEnum(str, Enum):
+    github = "github"
+    gitlab = "gitlab"
+
+
+class RegistryTypeEnum(str, Enum):
+    ycr = "ycr"
+    gar = "gar"
 
 
 class BaseTfVarsModel(BaseModel):
@@ -53,7 +72,7 @@ class TfBackend(BaseTfVarsModel):
 
 
 class Registry(BaseTfVarsModel):
-    type: Literal["ycr", "gar"]
+    type: RegistryTypeEnum
     url: str
 
 
@@ -129,7 +148,7 @@ class Cloud(BaseTfVarsModel):
 class Env(BaseTfVarsModel):
     name: str
     short_name: str
-    type: Literal["internal", "product"]
+    type: EnvTypeEnum
     test: bool = False
     initial_start: bool = False
     users: dict[str, User]
@@ -149,12 +168,12 @@ class Company(BaseTfVarsModel):
 
 class Repo(BaseTfVarsModel):
     name: str
-    type: Literal["github", "gitlab"]
+    type: RepoTypeEnum
     group: str
 
 
 class Ci(BaseTfVarsModel):
-    type: Literal["gl", "gha"]
+    type: CiTypeEnum
     bazelisk_img_version: str = ""
 
 
@@ -169,7 +188,7 @@ class TfVars(BaseTfVarsModel):
         internal_envs = [
             env_name
             for env_name, env_obj in self.envs.items()
-            if env_obj.type == "internal"
+            if env_obj.type == EnvTypeEnum.internal
         ]
 
         if len(internal_envs) != 1:
@@ -179,7 +198,7 @@ class TfVars(BaseTfVarsModel):
 
 
 def tfvars():
-    with open(bazel_settings.tfvars_file, "r") as f:
+    with open(common_paths.tfvars_file, "r") as f:
         content = f.read()
 
     return TfVars.model_validate_json(content)
@@ -219,7 +238,7 @@ def formatted_tfvars():
 
 
 def update_tfvars(tf_vars: TfVars) -> None:
-    Path(bazel_settings.tfvars_file).write_text(
+    Path(common_paths.tfvars_file).write_text(
         tf_vars.model_dump_json(indent=2),
         encoding="utf-8",
     )

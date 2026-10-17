@@ -1,3 +1,86 @@
+# v0.29.0
+
+## Python tfvars Enum Migration for AI Agents
+
+The Python tfvars models now expose `Env.type`, `Ci.type`, `Repo.type`, and
+`Registry.type` as string-backed enum members, following the existing
+`CloudTypeEnum` and `DnsTypeEnum` pattern. Apply the following migration to
+downstream Python consumers, including scripts, tests, mocks, and fixtures.
+
+### Field and Value Mapping
+
+Import these enums from `rod.libs.py.tf.tfvars`:
+
+| Python field | Enum | Members and serialized values |
+| --- | --- | --- |
+| `Env.type` | `EnvTypeEnum` | `internal = "internal"`, `product = "product"` |
+| `Ci.type` | `CiTypeEnum` | `gl = "gl"`, `gha = "gha"` |
+| `Repo.type` | `RepoTypeEnum` | `github = "github"`, `gitlab = "gitlab"` |
+| `Registry.type` | `RegistryTypeEnum` | `ycr = "ycr"`, `gar = "gar"` |
+
+### Agent Upgrade Checklist
+
+1. Update the downstream `svetoch_bazel_lib` dependency pin in `MODULE.bazel`
+   to the commit referenced by the target release tag.
+2. Search Python consumers before editing. Start with:
+
+   ```bash
+   rg -n --glob '*.py' 'Env\(|Ci\(|Repo\(|Registry\(|\.type\b|model_dump\(|model_dump_json\(' .
+   ```
+
+   Inspect aliases, dictionary fixtures, assignments, and `SimpleNamespace` or
+   mock objects as well as direct model construction. Classify each match by
+   the model it represents; `.type` alone is not enough to choose an enum.
+3. Add imports for the relevant enum classes and replace Python literals in
+   comparisons, assignments, constructors, and typed test fixtures with the
+   matching members from the table. For example:
+
+   ```python
+   from rod.libs.py.tf.tfvars import (
+       Ci,
+       CiTypeEnum,
+       EnvTypeEnum,
+       Registry,
+       RegistryTypeEnum,
+       Repo,
+       RepoTypeEnum,
+   )
+
+   ci = Ci(type=CiTypeEnum.gha)
+   repo = Repo(name="app", group="team", type=RepoTypeEnum.github)
+   registry = Registry(type=RegistryTypeEnum.gar, url="registry.example.com")
+
+   if env.type == EnvTypeEnum.internal:
+       prepare_internal(env)
+   if env.registry.type == RegistryTypeEnum.ycr:
+       refresh_registry(env)
+   ```
+
+4. Preserve strings at data boundaries. Existing valid strings are still
+   accepted by Pydantic and converted into enum members. Keep string-input
+   parsing tests and invalid-value validation tests. `terraform.tfvars.json`,
+   Terraform templates, and Starlark code reading JSON continue to use the
+   strings in the table; their values and placeholder paths do not change.
+5. Audit serialization and interpolation. Plain `model_dump()` retains enum
+   members. Use `model_dump(mode="json")` when producing a dictionary for
+   placeholder replacement or external data, and `model_dump_json()` when
+   producing JSON text. Use `.value` when interpolating an individual enum
+   into a string; `str(member)` and f-strings can produce names such as
+   `RegistryTypeEnum.gar` instead of `gar`. Existing `formatted_tfvars()` and
+   `update_tfvars()` already handle enum serialization.
+6. Update tests to assert enum identity after validation, for example
+   `assert ci.type is CiTypeEnum.gha`. Verify each supported string and enum
+   input, invalid-value rejection, JSON round trips, and any downstream
+   placeholder rendering involving these fields.
+7. Repeat the search and review remaining literals by context. Do not replace
+   unrelated `.type` fields such as `TfBackend.type`, or provider values used
+   by other APIs. Do not interchange `RepoTypeEnum.gitlab` and `CiTypeEnum.gl`,
+   or `CloudTypeEnum.yc` and `RegistryTypeEnum.ycr`.
+8. Run `bazel test //...` from the downstream repository root. Report the
+   command and outcome, distinguishing migration failures from unrelated
+   failures. If the full suite cannot run, report that limitation and run
+   the affected Python tests and lint targets available in the project.
+
 # v0.18.0
 
 This release adds an explicit environment classification to
