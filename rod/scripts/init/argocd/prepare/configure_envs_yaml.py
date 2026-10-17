@@ -59,9 +59,9 @@ def configure_envs_yaml():
             cloud_short_name = f"{env_obj.cloud.name.value}-{env_obj.short_name}"
             k8s_server = next(
                 (
-                    c.cluster.server
-                    for c in config.clusters
-                    if c.name == cloud_short_name
+                    cluster.cluster.server
+                    for cluster in config.clusters
+                    if cluster.name == cloud_short_name
                 ),
                 None,
             )

@@ -327,7 +327,7 @@ class BazelSettings(BaseSettings):
     def tf_dir(self) -> str:
         if self.tf_dir_override:
             return self.tf_dir_override
-        return f"terraform"
+        return "terraform"
 
     @computed_field
     @property

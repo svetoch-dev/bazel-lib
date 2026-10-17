@@ -213,9 +213,8 @@ def get_folder_files(
 
     if extensions:
         # Deduplicate list of extensions
-        extensions = set(extensions)
         files = []
-        for e in extensions:
+        for e in set(extensions):
             files += list(folder.glob(f"*{e}"))
         return files
 
