@@ -1,3 +1,8 @@
+# v0.29.1
+
+Fixes:
+* `rod/scripts/init/argocd` add env and helm executable to init argocd script
+
 # v0.29.0
 
 Braking Changes:
