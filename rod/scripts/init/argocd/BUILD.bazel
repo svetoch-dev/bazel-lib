@@ -1,0 +1,32 @@
+load("@rules_multirun//:defs.bzl", "command", "multirun")
+
+command(
+    name = "prepare",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:prepare_argocd",
+)
+
+command(
+    name = "copy_from_template",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:copy",
+)
+
+command(
+    name = "configure_envs_yaml",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:configure_envs_yaml",
+)
+
+command(
+    name = "git_submodules_init",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:git_submodules_init",
+)
+
+multirun(
+    name = "init",
+    commands = [
+        "git_submodules_init",
+        "copy_from_template",
+        "configure_envs_yaml",
+        "prepare",
+    ],
+    visibility = ["//visibility:public"],
+)

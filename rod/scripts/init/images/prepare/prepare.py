@@ -2,7 +2,7 @@ import os
 import json
 
 from rod.libs.py.helpers import create_file
-from rod.libs.py.tf.tfvars import formatted_tfvars
+from rod.libs.py.tf.tfvars import RegistryTypeEnum, formatted_tfvars
 
 HOME_DIR = os.getenv("HOME")
 DOCKER_CONFIG_DIR = f"{HOME_DIR}/.docker"
@@ -25,9 +25,9 @@ def create_cred_helpers():
 
     for env_obj in tfvars.envs.values():
 
-        if env_obj.registry.type == "gar":
+        if env_obj.registry.type == RegistryTypeEnum.gar:
             creds_helper = "gcloud"
-        elif env_obj.registry.type == "ycr":
+        elif env_obj.registry.type == RegistryTypeEnum.ycr:
             creds_helper = "yc"
         else:
             raise CredsHelperNotImplemented(

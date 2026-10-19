@@ -3,7 +3,16 @@ import unittest
 from unittest.mock import MagicMock, call, patch
 
 from rod.scripts.init.tf.apply.apply import apply
-from rod.libs.py.tf.tfvars import Cloud, CloudTypeEnum, DnsTypeEnum, Env, TfVars
+from rod.libs.py.tf.tfvars import (
+    RegistryTypeEnum,
+    CiTypeEnum,
+    RepoTypeEnum,
+    Cloud,
+    CloudTypeEnum,
+    DnsTypeEnum,
+    Env,
+    TfVars,
+)
 
 cloud = Cloud(
     name=CloudTypeEnum.yc,
@@ -30,7 +39,7 @@ env = Env(
     apps={},
     initial_start=True,
     import_secrets={},
-    registry={"type": "ycr", "url": "registry"},
+    registry={"type": RegistryTypeEnum.ycr, "url": "registry"},
     dns={"domain": "example.com", "type": DnsTypeEnum.yc},
     tf_backend={"type": "s3", "configs": {"bucket": "some-tf-state"}},
     cloud=cloud,
@@ -39,9 +48,9 @@ env = Env(
 
 tfvars = TfVars(
     company={"name": "test", "domain": "test.com"},
-    repo={"type": "github", "group": "test", "name": "test"},
+    repo={"type": RepoTypeEnum.github, "group": "test", "name": "test"},
     ci={
-        "type": "gha",
+        "type": CiTypeEnum.gha,
     },
     envs={"int": env},
 )
@@ -64,7 +73,6 @@ class TestApply(unittest.TestCase):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
 
-        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
         env_int.short_name = "int"
@@ -125,7 +133,6 @@ class TestApply(unittest.TestCase):
     ):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
-        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
 
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
@@ -180,7 +187,6 @@ class TestApply(unittest.TestCase):
     ):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
-        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
 
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"
@@ -241,7 +247,6 @@ class TestApply(unittest.TestCase):
     ):
         mock_bazel_settings.workspace = "/tmp/workspace"
         mock_bazel_settings.tf_env_dir = "terraform/environments"
-        mock_bazel_settings.tfvars_file = "/tmp/workspace/terraform.tfvars.json"
 
         env_int = env.model_copy(deep=True)
         env_int.name = "internal"

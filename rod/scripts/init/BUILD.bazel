@@ -33,11 +33,17 @@ command(
     command = "@svetoch_bazel_lib//rod/scripts/init/images:init",
 )
 
+command(
+    name = "argocd_init",
+    command = "@svetoch_bazel_lib//rod/scripts/init/argocd:init",
+)
+
 multirun(
     name = "init",
     commands = [
         "tf_init",
         "images_init",
+        "argocd_init",
         "poststeps",
     ],
     visibility = ["//visibility:public"],

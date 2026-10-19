@@ -4,13 +4,13 @@ from unittest.mock import Mock, patch
 
 from rod.libs.py.k8s import client as k8s_client
 from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
-from rod.libs.py.tf.tfvars import CloudTypeEnum, Env
+from rod.libs.py.tf.tfvars import RegistryTypeEnum, CloudTypeEnum, Env
 
 
 class TestK8sClient(unittest.TestCase):
     def test_close_releases_separate_and_shared_clients_once(self):
-        for shared in (False, True):
-            with self.subTest(shared=shared):
+        for shared, raw_shared in ((False, False), (True, False), (True, True)):
+            with self.subTest(shared=shared, raw_shared=raw_shared):
                 shared_client = Mock()
                 resource_apis = {
                     name: SimpleNamespace(
@@ -31,10 +31,13 @@ class TestK8sClient(unittest.TestCase):
                         "discovery",
                     )
                 }
-                api = k8s_client.K8sClient(**resource_apis)
+                raw_client = shared_client if raw_shared else Mock()
+                api = k8s_client.K8sClient(client=raw_client, **resource_apis)
                 api.close()
-                for resource_api in resource_apis.values():
-                    api_client = resource_api.api_client
+                api_clients = {raw_client} | {
+                    resource_api.api_client for resource_api in resource_apis.values()
+                }
+                for api_client in api_clients:
                     api_client.close.assert_called_once_with()
                     api_client.rest_client.pool_manager.clear.assert_called_once_with()
 
@@ -70,7 +73,7 @@ class TestKubeConfigFactory(unittest.TestCase):
             users={},
             apps={},
             import_secrets={},
-            registry={"type": "gar", "url": "registry.example.com"},
+            registry={"type": RegistryTypeEnum.gar, "url": "registry.example.com"},
             dns={"domain": "example.com", "type": provider.value},
             tf_backend={"type": "gcs", "configs": {"bucket": "test-state"}},
             cloud={
@@ -264,6 +267,65 @@ class TestKubeConfigFactory(unittest.TestCase):
                 self.assertIs(raised.exception, error)
                 self.get_creds.assert_not_called()
                 self.yc_settings.assert_not_called()
+
+
+class TestK8sClientGet(unittest.TestCase):
+    """
+    Verify raw and generated Kubernetes clients use the selected cluster.
+    """
+
+    def test_clients_use_loaded_endpoint_and_credentials(self):
+        """
+        Verify the new raw client receives the same configuration as API wrappers.
+        """
+        config = {
+            "apiVersion": "v1",
+            "kind": "Config",
+            "clusters": [
+                {"name": "test", "cluster": {"server": "https://cluster.example.com"}}
+            ],
+            "users": [{"name": "test", "user": {"token": "test-token"}}],
+            "contexts": [
+                {"name": "test", "context": {"cluster": "test", "user": "test"}}
+            ],
+            "current-context": "test",
+        }
+        env = Mock()
+        with patch.object(
+            k8s_client.client.Configuration, "_default", None
+        ), patch.object(
+            k8s_client,
+            "kube_config_factory",
+            return_value=SimpleNamespace(model_dump=Mock(return_value=config)),
+        ) as factory:
+            result = k8s_client.k8s_client_get(env)
+            factory.assert_called_once_with(env, use_exec=False)
+            clients = [result.client] + [
+                getattr(result, attribute).api_client
+                for attribute in (
+                    "v1",
+                    "custom",
+                    "apps",
+                    "batch",
+                    "networking",
+                    "rbac",
+                    "storage",
+                    "autoscaling",
+                    "policy",
+                    "scheduling",
+                    "coordination",
+                    "discovery",
+                )
+            ]
+            for api_client in clients:
+                self.addCleanup(api_client.close)
+                self.assertEqual(
+                    api_client.configuration.host, "https://cluster.example.com"
+                )
+                self.assertEqual(
+                    api_client.configuration.api_key["BearerToken"],
+                    "Bearer test-token",
+                )
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 from rod.libs.py.tf.tfvars import (
+    RegistryTypeEnum,
     tfvars,
     TfVars,
     CloudTypeEnum,
@@ -31,7 +32,7 @@ def prepare_tfvars_gcp(tfvars: TfVars):
         },
     }
     registry = {
-        "type": "gar",
+        "type": RegistryTypeEnum.gar,
         "url": "{env.cloud.location.region}-docker.pkg.dev/{env.cloud.id}/containers",
     }
     dns = {"domain": "{env.short_name}.{company.domain}.", "type": DnsTypeEnum.gcp}
@@ -66,7 +67,7 @@ def prepare_tfvars_yc(tfvars: TfVars):
             "skip_s3_checksum": "true",
         },
     }
-    registry = {"type": "ycr", "url": ""}
+    registry = {"type": RegistryTypeEnum.ycr, "url": ""}
     dns = {"domain": "{env.short_name}.{company.domain}.", "type": DnsTypeEnum.yc}
     # We set locations for yc because there
     # is only one ru region and prefered location

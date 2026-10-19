@@ -1,14 +1,16 @@
 import yaml
 
+from pathlib import Path
+
 from rod.libs.py.k8s.client import kube_config_factory, KubeConfig, k8s_client_get
 from rod.libs.py.k8s.exceptions import K8sClusterNotFound, K8sClusterPermissionsDenied
 from rod.libs.py.tf.tfvars import formatted_tfvars
 from rod.libs.py.utils.logger import CliLogger
-from pathlib import Path
+from rod.libs.py.helpers import create_dir
 
 
 def update_kube_config():
-    logger = CliLogger("rod.libs.py.tf.poststeps.update_kube_config")
+    logger = CliLogger("rod.scripts.init.tf.poststeps.update_kube_config")
     tfvars = formatted_tfvars()
 
     kube_folder = Path("~/.kube").expanduser()
@@ -21,10 +23,13 @@ def update_kube_config():
 
         kube_config = KubeConfig(**data)
     else:
-        kube_folder.mkdir(parents=True, exist_ok=True)
+        create_dir(str(kube_folder))
 
     logger.info(f"Adding kuberenetes clusters to {str(kube_config_path)}")
     for env_obj in tfvars.envs.values():
+        if not env_obj.kubernetes.enabled:
+            continue
+
         try:
             env_config = kube_config_factory(
                 env_obj, company_name=tfvars.company.name, use_exec=True
@@ -44,6 +49,7 @@ def update_kube_config():
         for cluster in env_config.clusters:
             if cluster not in kube_config.clusters:
                 kube_config.clusters.append(cluster)
+        kube_config.current_context = env_config.current_context
 
         logger.info(f"Done for {env_obj.short_name}")
 
