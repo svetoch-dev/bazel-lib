@@ -3,6 +3,10 @@ load("@rules_multirun//:defs.bzl", "command", "multirun")
 command(
     name = "prepare",
     command = "@svetoch_bazel_lib//rod/scripts/init/argocd/prepare:prepare_argocd",
+    data = ["@helm_exec//:executable"],
+    environment = {
+        "HELM_EXECUTABLE": "$(rootpath @helm_exec//:executable)",
+    },
 )
 
 command(
