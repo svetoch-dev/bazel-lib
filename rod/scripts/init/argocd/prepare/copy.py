@@ -5,8 +5,8 @@ from rod.libs.py.settings import common_paths
 from rod.libs.py.utils.logger import CliLogger
 import sys
 
-PRODUCT_DIR = Path(common_paths.argocd_environments_dir + "/product")
-INTERNAL_DIR = Path(common_paths.argocd_environments_dir + "/int")
+PRODUCT_DIR = Path(common_paths.argocd_product_template_dir)
+INTERNAL_DIR = Path(common_paths.argocd_internal_template_dir)
 
 
 def copy_template() -> None:

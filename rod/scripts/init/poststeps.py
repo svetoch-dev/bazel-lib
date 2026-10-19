@@ -9,6 +9,8 @@ def clean() -> None:
     os.chdir(common_paths.workspace)
     shutil.rmtree("tests/e2e")
     shutil.rmtree(common_paths.tf_product_dir)
+    shutil.rmtree(common_paths.argocd_internal_template_dir)
+    shutil.rmtree(common_paths.argocd_product_template_dir)
 
     gitpath = Path(".git")
     if gitpath.exists() and gitpath.is_dir():

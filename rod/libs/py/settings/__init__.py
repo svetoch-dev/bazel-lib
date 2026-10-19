@@ -61,6 +61,10 @@ class CommonPaths(BaseSettings):
         rc_cloud_override: Active cloud Bazel rc path relative to the workspace.
         argocd_dir_override: Argo CD directory relative to the workspace.
         argocd_environments_dir_override: Environment templates relative to Argo CD.
+        argocd_internal_template_dir_override: Internal template directory relative
+            to the Argo CD environments directory.
+        argocd_product_template_dir_override: Product template directory relative
+            to the Argo CD environments directory.
         argocd_chart_dir_override: Infrastructure charts relative to Argo CD.
         argocd_app_chart_dir_override: Application chart relative to Argo CD.
         argocd_crds_dir_override: CRD manifests relative to Argo CD.
@@ -83,6 +87,8 @@ class CommonPaths(BaseSettings):
 
     argocd_dir_override: str | None = None
     argocd_environments_dir_override: str | None = None
+    argocd_internal_template_dir_override: str | None = None
+    argocd_product_template_dir_override: str | None = None
     argocd_chart_dir_override: str | None = None
     argocd_app_chart_dir_override: str | None = None
     argocd_crds_dir_override: str | None = None
@@ -153,6 +159,38 @@ class CommonPaths(BaseSettings):
         if self.argocd_environments_dir_override:
             return f"{self.argocd_dir}/{self.argocd_environments_dir_override}"
         return f"{self.argocd_dir}/environments"
+
+    @computed_field
+    @property
+    def argocd_internal_template_dir(self) -> str:
+        """
+        Resolve the Argo CD internal environment template directory path.
+
+        Defaults to "int" under the Argo CD environments directory. An override is
+        resolved relative to the Argo CD environments directory.
+
+        Returns:
+            Filesystem path to the Argo CD internal template directory.
+        """
+        if self.argocd_internal_template_dir_override:
+            return f"{self.argocd_environments_dir}/{self.argocd_internal_template_dir_override}"
+        return f"{self.argocd_environments_dir}/int"
+
+    @computed_field
+    @property
+    def argocd_product_template_dir(self) -> str:
+        """
+        Resolve the Argo CD product environment template directory path.
+
+        Defaults to "product" under the Argo CD environments directory. An override is
+        resolved relative to the Argo CD environments directory.
+
+        Returns:
+            Filesystem path to the Argo CD product template directory.
+        """
+        if self.argocd_product_template_dir_override:
+            return f"{self.argocd_environments_dir}/{self.argocd_product_template_dir_override}"
+        return f"{self.argocd_environments_dir}/product"
 
     @computed_field
     @property
