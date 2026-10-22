@@ -124,7 +124,7 @@ http_archive(
     build_file_content = "exports_files([\"data.tar.xz\"])",
     sha256 = "14a35850411e3a26ac4802638ccafe437dae4c79a1d10b3a264d1a404a286305",
     type = ".deb",
-    urls = ["https://snapshot.debian.org/archive/debian-ports/20261021T003118Z/pool/main/c/ca-certificates/ca-certificates_20260816%2Bnmu1_all.deb"],
+    urls = ["https://snapshot.debian.org/archive/debian/20261020T202723Z/pool/main/c/ca-certificates/ca-certificates_20260816%2Bnmu1_all.deb"],
 )
 
 http_file(
