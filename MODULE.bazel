@@ -122,9 +122,9 @@ use_repo(apt, "svetoch_bazel_lib_trixie")
 http_archive(
     name = "svetoch_bazel_lib_ca_certificates",
     build_file_content = "exports_files([\"data.tar.xz\"])",
-    sha256 = "3269df8178f5402093a57c754810f8ce59e1a0cf9361aa72252bf3186cfc32d7",
+    sha256 = "14a35850411e3a26ac4802638ccafe437dae4c79a1d10b3a264d1a404a286305",
     type = ".deb",
-    urls = ["https://snapshot.debian.org/archive/debian/20260706T142243Z/pool/main/c/ca-certificates/ca-certificates_20260601_all.deb"],
+    urls = ["https://snapshot.debian.org/archive/debian-ports/20261021T003118Z/pool/main/c/ca-certificates/ca-certificates_20260816%2Bnmu1_all.deb"],
 )
 
 http_file(
