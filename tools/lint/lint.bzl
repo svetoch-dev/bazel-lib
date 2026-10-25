@@ -10,7 +10,7 @@ def all_lint_fix():
 
     py_binary(
         name = "lint_fix_all",
-        main = "fix_all.py",
+        main = "@svetoch_bazel_lib//tools/lint:fix_all.py",
         srcs = [
             "@svetoch_bazel_lib//tools/lint:fix_all",
         ],

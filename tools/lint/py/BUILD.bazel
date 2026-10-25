@@ -1,3 +1,5 @@
+exports_files(["black.py"])
+
 filegroup(
     name = "black",
     srcs = ["black.py"],
