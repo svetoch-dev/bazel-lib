@@ -1,3 +1,165 @@
+# v0.30.0
+
+## Bazel 9 and Python Rules Migration for AI Agents
+
+Use these instructions to upgrade a downstream repository that depends on
+`svetoch_bazel_lib`. Read that repository's `AGENTS.md`, inspect its current
+configuration, and preserve existing user changes before editing. Apply only
+steps relevant to the consumer. Keep all earlier versioned guides below for
+projects upgrading across multiple releases.
+
+### Upgrade Scope and Discovery
+
+1. Inspect `git status --short`, the dependency pin for `svetoch_bazel_lib`,
+   Bazelisk configuration, `.bazelrc`, Python rules, and any direct apt usage.
+   Start with:
+
+   ```bash
+   rg -n --hidden --glob '!.git/**' --glob '!MODULE.bazel.lock' \
+     'svetoch_bazel_lib|USE_BAZEL_VERSION|rules_python|aspect_rules_py|legacy_create_init|apt\.install|apt\.sources_list|trixie\.yaml' .
+   ```
+
+2. Resolve the requested library release tag to its commit and update the
+   downstream `git_override` to that full SHA. Do not substitute a moving branch
+   for an immutable pin. Inspect the target release's `MODULE.bazel` and
+   `.bazeliskrc`; do not assume versions from model memory are current.
+3. This release uses Bazel 9.3.1, `rules_python` 2.4.5, and
+   `aspect_rules_py` 2.0.0-alpha.10. The Aspect prerelease is intentional in this
+   release; do not silently replace it with an older stable version. Reconcile
+   downstream direct dependencies with the selected library release and their
+   compatibility requirements.
+4. If the user instead requests the latest versions, verify official releases
+   and Bazel Central Registry metadata at task time. Exclude yanked versions
+   and do not introduce prereleases merely because they sort above stable
+   releases. Keep unrelated tool, image, Debian snapshot, and Python package
+   updates outside the requested migration.
+
+### Bazel Configuration
+
+1. Update the consumer's existing Bazel pin. This library uses `.bazeliskrc`:
+
+   ```text
+   USE_BAZEL_VERSION=9.3.1
+   ```
+
+   Consumers using `.bazelversion` should update that file instead. Avoid
+   conflicting pins. Run `bazel --version` and investigate environment overrides
+   if the selected version differs. Ensure CI launches through Bazelisk as well.
+2. Bazel 9 removes `WORKSPACE` dependency evaluation. Migrate remaining
+   dependencies to Bzlmod and load language rules explicitly from their
+   rulesets. Inspect custom `.bzl` files and third-party dependencies as well as
+   `BUILD.bazel` files. Read the official Bazel migration notes before replacing
+   removed APIs or flags.
+3. Repository rules no longer inherit `--action_env` settings in Bazel 9.
+   Inspect download/proxy configuration and use `--repo_env` where repository
+   evaluation needs an explicit value. Preserve existing proxy and cache setup.
+4. If the consumer combines Aspect Python targets with tools that require
+   `rules_python` providers, preserve the compatibility setting used here:
+
+   ```text
+   common --@aspect_rules_py//py:emit_rules_python_providers
+   ```
+
+   Check that the selected Aspect version supports the flag before adding it.
+   Do not remove it solely to silence an error without checking provider
+   compatibility in the affected targets.
+
+### Python Targets
+
+1. Keep the intended runtime version explicit and aligned across
+   `python.defaults`, `python.toolchain`, `pip.parse`, versioned rule loads, and
+   requirements files. This release retains Python 3.11; a Bazel or ruleset
+   upgrade must not silently upgrade the application's Python runtime.
+2. For targets in the downstream module, opt out of implicit `__init__.py`
+   generation in its own `MODULE.bazel`:
+
+   ```starlark
+   rules_python_config = use_extension("@rules_python//python/extensions:config.bzl", "config")
+   rules_python_config.explicit_init_py(default = True)
+   ```
+
+   Reuse an existing extension binding if present. Include real `__init__.py`
+   files in `srcs` or dependencies when regular packages require them. Namespace
+   packages do not need empty files just to suppress warnings. A dependency's
+   module setting does not configure the consumer's module.
+3. Inspect Python entrypoints shared across Bazel packages. Use an explicit
+   `main` label for such files and expose them with appropriate source-file
+   visibility. The library's lint macros already do this; migrate downstream
+   equivalents if analysis reports missing or invisible entrypoints.
+4. Classify remaining warnings by their owning module. A warning from
+   `@rules_multirun` is separate from a warning in the application's targets.
+   Do not disable checks globally to hide a dependency warning.
+5. If Python requirements themselves change, regenerate their lockfile using
+   the consumer's Bazel update target. In this library the command is:
+
+   ```bash
+   bazel run //deps/py:requirements_3_11.update
+   ```
+
+   Include source manifests and generated locks together. Do not refresh Python
+   packages solely because the Bazel version changed.
+
+### Direct Debian/Apt Consumers
+
+Apply this section only if the downstream project declares apt dependencies
+itself. Consumers that only reference the library's image targets do not need to
+copy its apt setup.
+
+- Replace old `apt.install(name = ..., manifest = ..., lock = ...)` declarations
+  with `apt.sources_list(...)` and
+  `apt.install(dependency_set = ..., packages = [...])` using the selected
+  `rules_distroless` API. Preserve the repository name through `dependency_set`
+  and the corresponding `use_repo` declaration where supported.
+- Transfer source URLs, suites, components, architectures, package lists, and
+  every package explanation from the YAML manifest. Preserve base-image and
+  tooling groups. Use `# buildifier: disable=unsorted-list` inside a package list
+  when needed to preserve its documented order.
+- Keep Debian snapshot dates unchanged during the API migration. Updating the
+  snapshot also upgrades OS packages and needs separate review and validation.
+- Under this Bazel 9 setup, snapshot index facts are stored in
+  `MODULE.bazel.lock`. Retire obsolete YAML manifests and version 1 apt locks
+  only after removing their consumers. Do not retain obsolete
+  `bazel run @<apt_repository>//:lock` instructions.
+
+### Lockfiles, Validation, and Completion
+
+1. Let Bazel regenerate `MODULE.bazel.lock` and include it with dependency
+   changes. Do not hand-edit hashes or delete the lockfile to conceal a
+   resolution failure. Inspect generated metadata for sensitive provisioning
+   inputs; do not expose `terraform.tfvars.json` contents in logs or docs.
+2. Preserve entries for other host systems. One lockfile can contain Linux and
+   macOS ARM extension results. Adding a platform should not normally replace
+   another platform's entries. Investigate repeated churn for differing Bazel
+   versions, environment inputs, or extension behavior. Report only platforms
+   actually tested.
+3. Use the consumer's formatter and full Bazel test suite. In this library:
+
+   ```bash
+   bazel run //:lint_fix_bzl
+   bazel test //...
+   git diff --check
+   ```
+
+   Review formatter changes for scope. Run focused tests while diagnosing
+   failures, then rerun the full suite after final code/configuration changes.
+   Use `bazel build //...` additionally if changed output groups or target
+   coverage require it. Do not run Terraform apply, deployment, or image
+   publishing as migration validation.
+4. If Gentoo host detection fails, inspect `ldd --version` and the selected
+   ruleset's parser. Older Aspect versions failed on Gentoo's banner and nested
+   parentheses. Verify whether an upstream fix applies before adding a patch;
+   do not reintroduce a historical workaround automatically.
+5. Summarize changed pins, compatibility fixes, actual test results, remaining
+   warnings, and untested platforms or runtime behavior. Building images does
+   not prove their tools run correctly. Distinguish cached test passes from
+   tests executed during the migration.
+
+References for agents to verify against the selected versions:
+
+- [Bazel 9 migration notes](https://github.com/bazelbuild/bazel/releases/tag/9.0.0)
+- [Bazel Central Registry](https://registry.bazel.build/)
+- [Bazel lockfile behavior](https://bazel.build/external/lockfile)
+
 # v0.29.0
 
 ## Python tfvars Enum Migration for AI Agents
