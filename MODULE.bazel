@@ -175,22 +175,22 @@ http_archive(
 http_file(
     name = "svetoch_bazel_lib_bazelisk",
     downloaded_file_path = "bazelisk",
-    sha256 = "22e7d3a188699982f661cf4687137ee52d1f24fec1ec893d91a6c4d791a75de8",
-    url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.28.1/bazelisk-linux-amd64",
+    sha256 = "a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8",
+    url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.30.0/bazelisk-linux-amd64",
 )
 
 http_file(
     name = "svetoch_bazel_lib_yc_cli",
     downloaded_file_path = "yc",
-    sha256 = "f6a00b875df2cb3911bbb953a51cd56c50e81287acf7d277bb139fe39986936c",
-    url = "https://storage.yandexcloud.net/yandexcloud-yc/release/1.38.0/linux/amd64/yc",
+    sha256 = "19202356b0ad3b6d9199202936619605d6069e84df2fb86c56030bccd4c981b5",
+    url = "https://storage.yandexcloud.net/yandexcloud-yc/release/1.42.0/linux/amd64/yc",
 )
 
 http_archive(
     name = "svetoch_bazel_lib_docker_credential_gcr",
     build_file_content = "exports_files([\"docker-credential-gcr\"])",
-    sha256 = "fc8927596b8b2ac939a48b020bd1105dff8c367f584a2b3b54c08915127c9ebb",
-    urls = ["https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v2.1.32/docker-credential-gcr_linux_amd64-2.1.32.tar.gz"],
+    sha256 = "54733a03c18f230059d89e8976518de9af16cebb74b86ccab5c95c9da66f5912",
+    urls = ["https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v2.2.1/docker-credential-gcr_linux_amd64-2.2.1.tar.gz"],
 )
 
 ##################
