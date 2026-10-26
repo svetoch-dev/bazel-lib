@@ -4,6 +4,9 @@ BrakingChanges:
 * upgrade Bazel to 9.3.1 and direct Bazel dependencies to their latest stable releases
 * migrate Debian package declarations to the new rules_distroless apt API and track MODULE.bazel.lock
 
+Enhancements:
+* update trixie, trixie-updates, and trixie-security apt sources to the latest available October 26, 2026 snapshots
+
 Fixes:
 * patch the eMudhra cert issue
 * use explicit Python entrypoint labels in lint macros

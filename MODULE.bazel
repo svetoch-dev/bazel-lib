@@ -119,8 +119,8 @@ apt.sources_list(
     ],
     types = ["deb"],
     uris = [
-        "https://snapshot.debian.org/archive/debian/20260706T142243Z",
-        "https://snapshot-cloudflare.debian.org/archive/debian/20260706T142243Z",
+        "https://snapshot.debian.org/archive/debian/20261026T022331Z",
+        "https://snapshot-cloudflare.debian.org/archive/debian/20261026T022331Z",
     ],
 )
 apt.sources_list(
@@ -129,8 +129,8 @@ apt.sources_list(
     suites = ["trixie-security"],
     types = ["deb"],
     uris = [
-        "https://snapshot.debian.org/archive/debian-security/20260706T142243Z",
-        "https://snapshot-cloudflare.debian.org/archive/debian-security/20260706T142243Z",
+        "https://snapshot.debian.org/archive/debian-security/20261026T044319Z",
+        "https://snapshot-cloudflare.debian.org/archive/debian-security/20261026T044319Z",
     ],
 )
 apt.install(
