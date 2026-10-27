@@ -40,6 +40,15 @@ def py_layers(
     """
     if aspect_rules_py:
         name = name + "_layer"
+
+        tar(
+            name = name + "_workdir",
+            mtree = [
+                "./{} type=dir uid=1000 gid=1000 mode=0755".format(native.package_name())
+,
+            ],
+        )
+
         py_layer_tier(
             name = name + "_tier",
             owner = "1000",
@@ -52,7 +61,7 @@ def py_layers(
             layer_tier = name + "_tier",
         )
 
-        return [name]
+        return [name + "_workdir", name]
 
     # Produce the manifest for a tar file of our py_binary, but don't tar it up yet, so we can split
     # into fine-grained layers for better docker performance.
