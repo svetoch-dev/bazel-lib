@@ -3,6 +3,7 @@ Build layers for py container images
 """
 
 load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@aspect_rules_py//py:defs.bzl", "py_image_layer", "py_layer_tier")
 
 # match *only* external repositories that have the string "python"
 # e.g. this will match
@@ -17,7 +18,13 @@ SITE_PACKAGES_REGEX = "\\.runfiles/.*/site-packages"
 # Default py layers. Produce layers in this order, as the app changes most often
 PY_LAYERS = ["interpreter", "packages", "app"]
 
-def py_layers(name, binary, layers = PY_LAYERS, mutate_mtree = None):
+def py_layers(
+    name,
+    binary,
+    layers = PY_LAYERS,
+    mutate_mtree = None,
+    aspect_rules_py = False
+):
     """Create three layers for a py_binary target: interpreter, third-party dependencies, and application code.
 
     This allows a container image to have smaller uploads, since the application layer usually changes more
@@ -28,9 +35,26 @@ def py_layers(name, binary, layers = PY_LAYERS, mutate_mtree = None):
         binary: a py_binary target
         layers: what py layers should be created
         mutate_mtree: name of the mtree_mutate rule that needs to be applied to mtree_spec
+        aspect_rules_py: identifies if py_binary implementation comes from aspect_rules_py
     Returns:
         a list of labels for the layers, which are tar files
     """
+    if aspect_rules_py:
+        name = name + "_layer"
+        py_layer_tier(
+            name  = name + "_tier", 
+            owner = "1000",
+            group = "1000",
+        )
+
+        py_image_layer(
+            name = name,
+            binary = binary,
+            layer_tier = name + "_tier", 
+        )
+ 
+        return [name]
+
 
     # Produce the manifest for a tar file of our py_binary, but don't tar it up yet, so we can split
     # into fine-grained layers for better docker performance.
@@ -44,6 +68,8 @@ def py_layers(name, binary, layers = PY_LAYERS, mutate_mtree = None):
         mtree_mutate(
             name = mutate_mtree,
             mtree = name + ".mf",
+            srcs = [binary],
+            preserve_symlinks = True,
             owner = "1000",
         )
 
@@ -76,7 +102,6 @@ def py_layers(name, binary, layers = PY_LAYERS, mutate_mtree = None):
         tar(
             name = layer_target,
             srcs = [binary],
-            preserve_symlinks = True,
             mtree = "{}.{}_tar_manifest".format(name, layer),
             visibility = ["//visibility:public"],
         )
