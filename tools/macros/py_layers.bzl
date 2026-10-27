@@ -44,8 +44,7 @@ def py_layers(
         tar(
             name = name + "_workdir",
             mtree = [
-                "./{} type=dir uid=1000 gid=1000 mode=0755".format(native.package_name())
-,
+                "./{} type=dir uid=1000 gid=1000 mode=0755".format(native.package_name()),
             ],
         )
 
