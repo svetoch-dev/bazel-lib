@@ -19,12 +19,11 @@ SITE_PACKAGES_REGEX = "\\.runfiles/.*/site-packages"
 PY_LAYERS = ["interpreter", "packages", "app"]
 
 def py_layers(
-    name,
-    binary,
-    layers = PY_LAYERS,
-    mutate_mtree = None,
-    aspect_rules_py = False
-):
+        name,
+        binary,
+        layers = PY_LAYERS,
+        mutate_mtree = None,
+        aspect_rules_py = False):
     """Create three layers for a py_binary target: interpreter, third-party dependencies, and application code.
 
     This allows a container image to have smaller uploads, since the application layer usually changes more
@@ -42,7 +41,7 @@ def py_layers(
     if aspect_rules_py:
         name = name + "_layer"
         py_layer_tier(
-            name  = name + "_tier", 
+            name = name + "_tier",
             owner = "1000",
             group = "1000",
         )
@@ -50,11 +49,10 @@ def py_layers(
         py_image_layer(
             name = name,
             binary = binary,
-            layer_tier = name + "_tier", 
+            layer_tier = name + "_tier",
         )
- 
-        return [name]
 
+        return [name]
 
     # Produce the manifest for a tar file of our py_binary, but don't tar it up yet, so we can split
     # into fine-grained layers for better docker performance.
