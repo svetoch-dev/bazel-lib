@@ -1,6 +1,6 @@
 import os
 from rod.libs.py.helpers import run_command
-from rod.libs.py.settings import bazel_settings, common_paths
+from rod.libs.py.settings import bazel_settings
 
 
 def build_images() -> None:
@@ -15,7 +15,7 @@ def build_images() -> None:
     query = [
         "bazel",
         "query",
-        f'attr(name, "^push_.*$", "//{common_paths.deps_images_dir}/...")',
+        f'attr(name, "^push_.*$", "//{bazel_settings.deps_images_dir}/...")',
     ]
     return_code, stderr, stdout = run_command(
         query, print_stdout=True, print_stderr=True
