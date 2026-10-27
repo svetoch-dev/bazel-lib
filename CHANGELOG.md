@@ -1,3 +1,17 @@
+# v0.30.0
+
+BrakingChanges:
+* upgrade Bazel to 9.3.1 and direct Bazel dependencies to their latest stable releases
+* migrate Debian package declarations to the new rules_distroless apt API and track MODULE.bazel.lock
+
+Enhancements:
+* update trixie, trixie-updates, and trixie-security apt sources to the latest available October 26, 2026 snapshots
+* update bundled Bazelisk to 1.30.0, docker-credential-gcr to 2.2.1, and Yandex Cloud CLI to 1.42.0
+
+Fixes:
+* patch the eMudhra cert issue
+* use explicit Python entrypoint labels in lint macros
+
 # v0.29.1
 
 Fixes:

@@ -36,7 +36,7 @@ def py_lint_fix():
     py_binary(
         name = "lint_fix_py",
         srcs = ["@svetoch_bazel_lib//tools/lint/py:black"],
-        main = "black.py",
+        main = "@svetoch_bazel_lib//tools/lint/py:black.py",
         args = [
             #Fix all *.py files in WORKSPACE
             ".",

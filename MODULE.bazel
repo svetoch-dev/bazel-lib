@@ -7,13 +7,13 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
-bazel_dep(name = "buildifier_prebuilt", version = "8.5.1")
+bazel_dep(name = "buildifier_prebuilt", version = "10.1.0")
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 
 bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
 use_repo(bazel_lib_toolchains, "zstd_toolchains")
 
-bazel_dep(name = "rules_multirun", version = "0.10.0")
+bazel_dep(name = "rules_multirun", version = "0.14.0")
 
 ######################
 # Binary tools support
@@ -67,13 +67,13 @@ use_repo(load_file, "svetoch_bazel_lib_tfvars")
 ###################
 
 bazel_dep(name = "rules_oci", version = "2.3.0")
-bazel_dep(name = "rules_distroless", version = "0.8.0")
+bazel_dep(name = "rules_distroless", version = "0.9.4")
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
     name = "svetoch_bazel_lib_argocd",
-    #v3.5.3
-    digest = "sha256:dd3f47d5a5e4da563a7a398506e892481b358a7cec50abdf320c71aa55904bfa",
+    #v3.5.6
+    digest = "sha256:c5d9da82a891a0ca5998a8665ced65c14f2523ddfabe62ce44e508d0cb661d4e",
     image = "quay.io/argoproj/argocd",
     platforms = [
         "linux/amd64",
@@ -110,51 +110,100 @@ use_repo(
 )
 
 apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
-
-#bazel run @svetoch_bazel_lib_trixie//:lock
+apt.sources_list(
+    architectures = ["amd64"],
+    components = ["main"],
+    suites = [
+        "trixie",
+        "trixie-updates",
+    ],
+    types = ["deb"],
+    uris = [
+        "https://snapshot.debian.org/archive/debian/20261026T022331Z",
+        "https://snapshot-cloudflare.debian.org/archive/debian/20261026T022331Z",
+    ],
+)
+apt.sources_list(
+    architectures = ["amd64"],
+    components = ["main"],
+    suites = ["trixie-security"],
+    types = ["deb"],
+    uris = [
+        "https://snapshot.debian.org/archive/debian-security/20261026T044319Z",
+        "https://snapshot-cloudflare.debian.org/archive/debian-security/20261026T044319Z",
+    ],
+)
 apt.install(
-    name = "svetoch_bazel_lib_trixie",
-    lock = "@svetoch_bazel_lib//deps/deb:trixie.lock.json",
-    manifest = "@svetoch_bazel_lib//deps/deb:trixie.yaml",
+    dependency_set = "svetoch_bazel_lib_trixie",
+    packages = [
+        # buildifier: disable=unsorted-list
+        # base image
+        "ncurses-base",
+        "libncurses6",
+        "tzdata",
+        "bash",
+        "coreutils",  # for commands like `ls`
+        "grep",
+        # for apt list --installed
+        "dpkg",
+        "apt",
+        "perl",
+        "sed",  # needed by py_binary rules
+        "mawk",  # needed by py_binary rules + mtree_mutate + rules_distroless.flatten
+        # bazelisk deps
+        "git",  # used in scripts/ci/ci.sh
+        "curl",  # used in scripts/ci/ci.sh
+        "gzip",  # used in scripts/ci/ci.sh
+        "libc6-dev",  # assert.h, stdlib.h etc used by dpkg_status to compile packages
+        "g++",  # used by dpkg_status to compile packages
+        "libc-bin",  # contains getent CLI needed by rules_tf to look up HOME if it is not set
+        "gcc",  # needed by bazel
+        "findutils",  # needed for requirements.txt.lock tests
+        "python3",  # needed for requirements.txt.lock tests
+    ],
 )
 use_repo(apt, "svetoch_bazel_lib_trixie")
 
 http_archive(
     name = "svetoch_bazel_lib_ca_certificates",
     build_file_content = "exports_files([\"data.tar.xz\"])",
-    sha256 = "3269df8178f5402093a57c754810f8ce59e1a0cf9361aa72252bf3186cfc32d7",
+    sha256 = "14a35850411e3a26ac4802638ccafe437dae4c79a1d10b3a264d1a404a286305",
     type = ".deb",
-    urls = ["https://snapshot.debian.org/archive/debian/20260706T142243Z/pool/main/c/ca-certificates/ca-certificates_20260601_all.deb"],
+    urls = ["https://snapshot.debian.org/archive/debian/20261020T202723Z/pool/main/c/ca-certificates/ca-certificates_20260816%2Bnmu1_all.deb"],
 )
 
 http_file(
     name = "svetoch_bazel_lib_bazelisk",
     downloaded_file_path = "bazelisk",
-    sha256 = "22e7d3a188699982f661cf4687137ee52d1f24fec1ec893d91a6c4d791a75de8",
-    url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.28.1/bazelisk-linux-amd64",
+    sha256 = "a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8",
+    url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.30.0/bazelisk-linux-amd64",
 )
 
 http_file(
     name = "svetoch_bazel_lib_yc_cli",
     downloaded_file_path = "yc",
-    sha256 = "f6a00b875df2cb3911bbb953a51cd56c50e81287acf7d277bb139fe39986936c",
-    url = "https://storage.yandexcloud.net/yandexcloud-yc/release/1.38.0/linux/amd64/yc",
+    sha256 = "19202356b0ad3b6d9199202936619605d6069e84df2fb86c56030bccd4c981b5",
+    url = "https://storage.yandexcloud.net/yandexcloud-yc/release/1.42.0/linux/amd64/yc",
 )
 
 http_archive(
     name = "svetoch_bazel_lib_docker_credential_gcr",
     build_file_content = "exports_files([\"docker-credential-gcr\"])",
-    sha256 = "fc8927596b8b2ac939a48b020bd1105dff8c367f584a2b3b54c08915127c9ebb",
-    urls = ["https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v2.1.32/docker-credential-gcr_linux_amd64-2.1.32.tar.gz"],
+    sha256 = "54733a03c18f230059d89e8976518de9af16cebb74b86ccab5c95c9da66f5912",
+    urls = ["https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v2.2.1/docker-credential-gcr_linux_amd64-2.2.1.tar.gz"],
 )
 
 ##################
 # Python support
 ##################
-bazel_dep(name = "aspect_rules_py", version = "1.3.2")
-bazel_dep(name = "rules_python", version = "1.2.0")
+bazel_dep(name = "aspect_rules_py", version = "2.0.0-alpha.10")
+bazel_dep(name = "rules_python", version = "2.4.5")
+
+rules_python_config = use_extension("@rules_python//python/extensions:config.bzl", "config")
+rules_python_config.explicit_init_py(default = True)
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = "3.11")
 python.toolchain(
     python_version = "3.11",
 )

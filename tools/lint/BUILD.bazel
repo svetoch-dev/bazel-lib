@@ -1,5 +1,7 @@
 load("@svetoch_bazel_lib//tools/lint/py:black.bzl", "py_lint")
 
+exports_files(["fix_all.py"])
+
 filegroup(
     name = "fix_all",
     srcs = ["fix_all.py"],

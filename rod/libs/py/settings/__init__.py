@@ -358,6 +358,8 @@ class BazelSettings(BaseSettings):
 
     tf_dir_override: str | None = None
     tf_env_dir_override: str | None = None
+    deps_dir_override: str | None = None
+    deps_images_dir_override: str | None = None
 
     @computed_field
     @property
@@ -373,6 +375,38 @@ class BazelSettings(BaseSettings):
         if self.tf_env_dir_override:
             return f"{self.tf_dir}/{self.tf_env_dir_override}"
         return f"{self.tf_dir}/environments"
+
+    @computed_field
+    @property
+    def deps_dir(self) -> str:
+        """
+        Resolve the dependency directory path.
+
+        Defaults to "deps". An override is
+        resolved relative to the workspace.
+
+        Returns:
+            bazel path to the dependency directory.
+        """
+        if self.deps_dir_override:
+            return self.deps_dir_override
+        return "deps"
+
+    @computed_field
+    @property
+    def deps_images_dir(self) -> str:
+        """
+        Resolve the image dependency directory path.
+
+        Defaults to "images" under the dependency directory. An override is
+        resolved relative to the dependency directory.
+
+        Returns:
+            bazel path to the image dependency directory.
+        """
+        if self.deps_images_dir_override:
+            return f"{self.deps_dir}/{self.deps_images_dir_override}"
+        return f"{self.deps_dir}/images"
 
 
 common_paths = CommonPaths()
