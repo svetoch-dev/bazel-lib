@@ -76,6 +76,7 @@ def py_layers(name, binary, layers = PY_LAYERS, mutate_mtree = None):
         tar(
             name = layer_target,
             srcs = [binary],
+            preserve_symlinks = True,
             mtree = "{}.{}_tar_manifest".format(name, layer),
             visibility = ["//visibility:public"],
         )
