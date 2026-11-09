@@ -1,3 +1,8 @@
+# v0.30.1
+
+Enhancements:
+* `argocd` update image to v3.6.1
+
 # v0.30.0
 
 BrakingChanges:
