@@ -34,6 +34,6 @@ oci_image(
         _packages_tar,
         ":yq",
     ],
-    user = "1000:1000",
+    user = "1001:1001",
     visibility = ["//visibility:public"],
 )
