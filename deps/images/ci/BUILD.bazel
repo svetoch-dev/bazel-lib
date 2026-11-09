@@ -5,7 +5,6 @@ load("@svetoch_bazel_lib//tools/macros:deb_packages.bzl", "deb_packages")
 PACKAGES = [
     "@svetoch_bazel_lib_trixie//git",
     "@svetoch_bazel_lib_trixie//openssh-client",
-    "@svetoch_bazel_lib_trixie//curl",
 ]
 
 _packages_tar = deb_packages(PACKAGES)
