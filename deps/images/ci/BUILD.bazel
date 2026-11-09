@@ -1,0 +1,39 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@svetoch_bazel_lib//tools/macros:deb_packages.bzl", "deb_packages")
+
+PACKAGES = [
+    "@svetoch_bazel_lib_trixie//git",
+    "@svetoch_bazel_lib_trixie//openssh-client",
+    "@svetoch_bazel_lib_trixie//curl",
+]
+
+_packages_tar = deb_packages(PACKAGES)
+
+mtree_spec(
+    name = "mtree_yq",
+    srcs = ["@svetoch_bazel_lib_yq//file"],
+)
+
+mtree_mutate(
+    name = "install_yq",
+    mtree = ":mtree_yq",
+    package_dir = "usr/local/bin",
+)
+
+tar(
+    name = "yq",
+    srcs = ["@svetoch_bazel_lib_yq//file"],
+    mtree = ":install_yq",
+)
+
+oci_image(
+    name = "ci_deploy_img",
+    base = "//deps/images/base:debian_trixie",
+    tars = [
+        _packages_tar,
+        ":yq",
+    ],
+    user = "1000:1000",
+    visibility = ["//visibility:public"],
+)
