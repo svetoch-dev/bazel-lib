@@ -1,4 +1,4 @@
-# v0.30.1
+# v0.30.2
 
 Features:
 * add new image `ci-deploy` for ci
