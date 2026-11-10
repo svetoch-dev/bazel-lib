@@ -19,8 +19,8 @@ mtree_spec(
 mtree_mutate(
     name = "install_yq",
     mtree = ":mtree_yq",
-    strip_prefix = "file",
     package_dir = "usr/local/bin",
+    strip_prefix = "file",
 )
 
 tar(
