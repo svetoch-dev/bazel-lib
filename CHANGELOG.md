@@ -6,6 +6,11 @@ Features:
 Enhancements:
 * update trixie, trixie-updates, and trixie-security apt sources to the November 9, 2026 snapshots and regenerate the APT dependency lock
 
+# v0.30.1
+
+Enhancements:
+* `argocd` update image to v3.6.1
+
 # v0.30.0
 
 BrakingChanges:
