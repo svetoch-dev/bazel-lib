@@ -1,4 +1,5 @@
 load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@rules_distroless//distroless:defs.bzl", "group", "passwd")
 load("@rules_oci//oci:defs.bzl", "oci_image")
 load("@svetoch_bazel_lib//tools/macros:deb_packages.bzl", "deb_packages")
 
@@ -27,13 +28,46 @@ tar(
     mtree = ":install_yq",
 )
 
+passwd(
+    name = "passwd",
+    entries = [
+        {
+            "uid": 1001,
+            "gid": 1001,
+            "home": "/home/runner",
+            "shell": "/bin/bash",
+            "username": "runner",
+        },
+    ],
+)
+
+group(
+    name = "group",
+    entries = [
+        {
+            "name": "runner",
+            "gid": 1001,
+        },
+    ],
+)
+
+tar(
+    name = "runner_home",
+    mtree = [
+        "./home/runner/ uid=1001 gid=1001 mode=0755 type=dir",
+    ],
+)
+
 oci_image(
     name = "ci_deploy_img",
     base = "//deps/images/base:debian_trixie",
     tars = [
         _packages_tar,
         ":yq",
+        ":passwd",
+        ":group",
+        ":runner_home",
     ],
-    user = "1000:1001",
+    user = "1001:1001",
     visibility = ["//visibility:public"],
 )
