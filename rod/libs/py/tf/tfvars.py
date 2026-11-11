@@ -175,6 +175,7 @@ class Repo(BaseTfVarsModel):
 class Ci(BaseTfVarsModel):
     type: CiTypeEnum
     bazelisk_img_version: str = ""
+    ci_deploy_img_version: str = ""
 
 
 class TfVars(BaseTfVarsModel):

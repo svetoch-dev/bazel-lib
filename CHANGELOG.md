@@ -1,7 +1,7 @@
-# v0.30.2
+# v0.31.0
 
 Features:
-* add new image `ci-deploy` for ci
+* add new image `ci-deploy` and `ci.ci_deploy_img_version` var
 
 Enhancements:
 * update trixie, trixie-updates, and trixie-security apt sources to the November 9, 2026 snapshots and regenerate the APT dependency lock
