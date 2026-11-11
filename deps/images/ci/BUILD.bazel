@@ -67,8 +67,8 @@ mtree_spec(
 mtree_mutate(
     name = "install_update_image_tag",
     mtree = ":mtree_update_image_tag",
-    strip_prefix = package_name(),
     package_dir = "usr/local/bin",
+    strip_prefix = package_name(),
 )
 
 tar(
