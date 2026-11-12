@@ -119,8 +119,8 @@ apt.sources_list(
     ],
     types = ["deb"],
     uris = [
-        "https://snapshot.debian.org/archive/debian/20261026T022331Z",
-        "https://snapshot-cloudflare.debian.org/archive/debian/20261026T022331Z",
+        "https://snapshot.debian.org/archive/debian/20261109T083251Z",
+        "https://snapshot-cloudflare.debian.org/archive/debian/20261109T083251Z",
     ],
 )
 apt.sources_list(
@@ -129,8 +129,8 @@ apt.sources_list(
     suites = ["trixie-security"],
     types = ["deb"],
     uris = [
-        "https://snapshot.debian.org/archive/debian-security/20261026T044319Z",
-        "https://snapshot-cloudflare.debian.org/archive/debian-security/20261026T044319Z",
+        "https://snapshot.debian.org/archive/debian-security/20261109T104312Z",
+        "https://snapshot-cloudflare.debian.org/archive/debian-security/20261109T104312Z",
     ],
 )
 apt.install(
@@ -150,6 +150,8 @@ apt.install(
         "perl",
         "sed",  # needed by py_binary rules
         "mawk",  # needed by py_binary rules + mtree_mutate + rules_distroless.flatten
+        # CI helper image tools
+        "openssh-client",
         # bazelisk deps
         "git",  # used in scripts/ci/ci.sh
         "curl",  # used in scripts/ci/ci.sh
@@ -177,6 +179,13 @@ http_file(
     downloaded_file_path = "bazelisk",
     sha256 = "a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8",
     url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.30.0/bazelisk-linux-amd64",
+)
+
+http_file(
+    name = "svetoch_bazel_lib_yq",
+    downloaded_file_path = "yq",
+    sha256 = "44c7759059b4910827a0059a2757b22001e59360cdecdb2ef8dedc4b6c7e9f32",
+    url = "https://github.com/mikefarah/yq/releases/download/v4.54.2/yq_linux_amd64",
 )
 
 http_file(

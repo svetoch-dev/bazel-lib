@@ -1,0 +1,93 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@rules_distroless//distroless:defs.bzl", "group", "passwd")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@svetoch_bazel_lib//tools/macros:deb_packages.bzl", "deb_packages")
+
+PACKAGES = [
+    "@svetoch_bazel_lib_trixie//git",
+    "@svetoch_bazel_lib_trixie//openssh-client",
+    "@svetoch_bazel_lib_trixie//findutils",
+]
+
+_packages_tar = deb_packages(PACKAGES)
+
+mtree_spec(
+    name = "mtree_yq",
+    srcs = ["@svetoch_bazel_lib_yq//file"],
+)
+
+mtree_mutate(
+    name = "install_yq",
+    mtree = ":mtree_yq",
+    package_dir = "usr/local/bin",
+    strip_prefix = "file",
+)
+
+tar(
+    name = "yq",
+    srcs = ["@svetoch_bazel_lib_yq//file"],
+    mtree = ":install_yq",
+)
+
+passwd(
+    name = "passwd",
+    entries = [
+        {
+            "uid": 1001,
+            "gid": 1001,
+            "home": "/home/runner",
+            "shell": "/bin/bash",
+            "username": "runner",
+        },
+    ],
+)
+
+group(
+    name = "group",
+    entries = [
+        {
+            "name": "runner",
+            "gid": 1001,
+        },
+    ],
+)
+
+tar(
+    name = "runner_home",
+    mtree = [
+        "./home/runner/ uid=1001 gid=1001 mode=0755 type=dir",
+    ],
+)
+
+mtree_spec(
+    name = "mtree_update_image_tag",
+    srcs = ["ci-update-image-tag.sh"],
+)
+
+mtree_mutate(
+    name = "install_update_image_tag",
+    mtree = ":mtree_update_image_tag",
+    package_dir = "usr/local/bin",
+    strip_prefix = package_name(),
+)
+
+tar(
+    name = "update_image_tag",
+    srcs = ["ci-update-image-tag.sh"],
+    mtree = ":install_update_image_tag",
+)
+
+oci_image(
+    name = "ci_deploy_img",
+    base = "//deps/images/base:debian_trixie",
+    tars = [
+        _packages_tar,
+        ":yq",
+        ":passwd",
+        ":group",
+        ":runner_home",
+        ":update_image_tag",
+    ],
+    user = "1001:1001",
+    visibility = ["//visibility:public"],
+)
