@@ -2,9 +2,6 @@
 
 
 yc_create_token() {
-    export HOME=/tmp/yc
-    mkdir -p $HOME
-    chmod 700 $HOME
     yc config set instance-service-account true > /dev/null
     yc config set endpoint api.cloud.yandex.net:443
     exec yc k8s create-token --format json
