@@ -1,3 +1,10 @@
+# v0.31.1
+
+Fixes:
+* `rod/scripts/init/tf/poststeps/update_kube_config`
+  * add script to poststeps 
+  * replace old cluster config with new one if it already exists in .kube/config
+
 # v0.31.0
 
 Features:
