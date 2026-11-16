@@ -46,9 +46,13 @@ def update_kube_config():
             if user not in kube_config.users:
                 kube_config.users.append(user)
 
-        for cluster in env_config.clusters:
-            if cluster not in kube_config.clusters:
-                kube_config.clusters.append(cluster)
+        clusters = env_config.clusters.copy()
+
+        for kube_config_cluster in kube_config.clusters:
+            if kube_config_cluster.name in [c.name for c in clusters]:
+                continue
+            clusters.append(kube_config_cluster)
+        kube_config.clusters = clusters
         kube_config.current_context = env_config.current_context
 
         logger.info(f"Done for {env_obj.short_name}")
