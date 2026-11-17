@@ -11,10 +11,14 @@ gcp_create_token() {
     exec argocd-k8s-auth gcp
 }
 
-if [[ "${CLOUD:-}" == "yc" ]]; then
-    yc_create_token
-fi
-
-if [[ "${CLOUD:-}" == "gcp" ]]; then
-    gcp_create_token
-fi
+case "${CLOUD:-}" in
+    yc)
+        yc_create_token
+        ;;
+    gcp)
+        gcp_create_token
+        ;;
+    *)
+        exit 1
+        ;;
+esac
