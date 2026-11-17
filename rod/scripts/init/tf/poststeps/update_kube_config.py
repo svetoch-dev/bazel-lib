@@ -38,13 +38,22 @@ def update_kube_config():
             logger.error(str(e))
             continue
 
-        for ctx in env_config.contexts:
-            if ctx not in kube_config.contexts:
-                kube_config.contexts.append(ctx)
+        contexts = env_config.contexts.copy()
+        for kube_config_ctx in kube_config.contexts:
+            if kube_config_ctx.name in [c.name for c in contexts]:
+                continue
+            contexts.append(kube_config_ctx)
 
-        for user in env_config.users:
-            if user not in kube_config.users:
-                kube_config.users.append(user)
+        kube_config.contexts = contexts
+
+        users = env_config.users.copy()
+
+        for kube_config_user in kube_config.users:
+            if kube_config_user.name in [u.name for u in users]:
+                continue
+            users.append(kube_config_user)
+
+        kube_config.users = users
 
         clusters = env_config.clusters.copy()
 
