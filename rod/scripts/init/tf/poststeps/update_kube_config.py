@@ -38,30 +38,10 @@ def update_kube_config():
             logger.error(str(e))
             continue
 
-        contexts = env_config.contexts.copy()
-        for kube_config_ctx in kube_config.contexts:
-            if kube_config_ctx.name in [c.name for c in contexts]:
-                continue
-            contexts.append(kube_config_ctx)
-
-        kube_config.contexts = contexts
-
-        users = env_config.users.copy()
-
-        for kube_config_user in kube_config.users:
-            if kube_config_user.name in [u.name for u in users]:
-                continue
-            users.append(kube_config_user)
-
-        kube_config.users = users
-
-        clusters = env_config.clusters.copy()
-
-        for kube_config_cluster in kube_config.clusters:
-            if kube_config_cluster.name in [c.name for c in clusters]:
-                continue
-            clusters.append(kube_config_cluster)
-        kube_config.clusters = clusters
+        for field in ("contexts", "users", "clusters"):
+            entries = {entry.name: entry for entry in getattr(kube_config, field)}
+            entries.update((entry.name, entry) for entry in getattr(env_config, field))
+            setattr(kube_config, field, list(entries.values()))
         kube_config.current_context = env_config.current_context
 
         logger.info(f"Done for {env_obj.short_name}")

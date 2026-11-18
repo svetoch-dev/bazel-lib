@@ -142,6 +142,17 @@ class TestUpdateKubeConfig(unittest.TestCase):
         self.assertEqual(self._read_config(), expected.model_dump())
         self.assertEqual(self.config_path.read_text(), first_run)
 
+    def test_refreshes_existing_entries_without_changing_their_order(self):
+        existing = self._merged_config()
+        existing.clusters[0].cluster.server = "https://old.example.com"
+        existing.users[0].user.exec.command = "old-credential-plugin"
+        existing.contexts[0].context.namespace = "old-namespace"
+        self._write_config(existing)
+
+        poststep.update_kube_config()
+
+        self.assertEqual(self._read_config(), self._merged_config().model_dump())
+
     def test_empty_environment_configs_preserve_entries_and_clear_current_context(self):
         """
         Verify empty cluster configs preserve entries and clear the selection.
