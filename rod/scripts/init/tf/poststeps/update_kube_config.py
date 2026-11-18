@@ -38,17 +38,10 @@ def update_kube_config():
             logger.error(str(e))
             continue
 
-        for ctx in env_config.contexts:
-            if ctx not in kube_config.contexts:
-                kube_config.contexts.append(ctx)
-
-        for user in env_config.users:
-            if user not in kube_config.users:
-                kube_config.users.append(user)
-
-        for cluster in env_config.clusters:
-            if cluster not in kube_config.clusters:
-                kube_config.clusters.append(cluster)
+        for field in ("contexts", "users", "clusters"):
+            entries = {entry.name: entry for entry in getattr(kube_config, field)}
+            entries.update((entry.name, entry) for entry in getattr(env_config, field))
+            setattr(kube_config, field, list(entries.values()))
         kube_config.current_context = env_config.current_context
 
         logger.info(f"Done for {env_obj.short_name}")

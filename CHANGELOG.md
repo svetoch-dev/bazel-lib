@@ -1,3 +1,13 @@
+# v0.32.0
+
+Features:
+* `deps/images/argocd` token.sh script for generating remote k8s access tokens
+
+Fixes:
+* `rod/scripts/init/tf/poststeps/update_kube_config`
+  * add script to poststeps 
+  * replace old cluster/user/context configs in .kube/config with new ones 
+
 # v0.31.0
 
 Features:

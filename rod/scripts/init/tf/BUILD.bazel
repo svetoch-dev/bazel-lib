@@ -44,6 +44,7 @@ multirun(
         "apply",
         "import_secrets",
         "update_tfvars",
+        "update_kube_config",
     ],
     visibility = ["//visibility:public"],
 )

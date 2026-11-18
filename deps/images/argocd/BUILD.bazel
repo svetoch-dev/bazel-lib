@@ -25,10 +25,19 @@ tar(
     ],
 )
 
+tar(
+    name = "token",
+    srcs = ["token.sh"],
+    mtree = [
+        "./token.sh type=file mode=0755 uid=0 gid=0 content=$(execpath token.sh)",
+    ],
+)
+
 oci_image(
     name = "argocd_img",
     base = "@svetoch_bazel_lib_argocd",
     tars = [
+        ":token",
         ":yc",
         ":yc_link",
     ],
