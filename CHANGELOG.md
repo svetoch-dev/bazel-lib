@@ -1,3 +1,8 @@
+# v0.32.1
+
+Enhancements:
+* `argocd` update image v3.6.1 -> v3.6.2
+
 # v0.32.0
 
 Features:
