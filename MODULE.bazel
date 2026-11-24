@@ -67,7 +67,12 @@ use_repo(load_file, "svetoch_bazel_lib_tfvars")
 ###################
 
 bazel_dep(name = "rules_oci", version = "2.3.0")
-bazel_dep(name = "rules_distroless", version = "0.9.4")
+bazel_dep(name = "rules_distroless")
+git_override(
+    module_name = "rules_distroless",
+    commit = "cdd138b5931e0919b01ddab5a8957885885c40ce",  # v0.11.2
+    remote = "https://github.com/bazel-contrib/rules_distroless",
+)
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
@@ -122,6 +127,9 @@ apt.sources_list(
         "https://snapshot.debian.org/archive/debian/20261109T083251Z",
         "https://snapshot-cloudflare.debian.org/archive/debian/20261109T083251Z",
     ],
+    gpg_keys = [
+        "@svetoch_bazel_lib//deps/deb/keys:debian-archive-keyring.gpg",
+    ]
 )
 apt.sources_list(
     architectures = ["amd64"],
@@ -132,6 +140,9 @@ apt.sources_list(
         "https://snapshot.debian.org/archive/debian-security/20261109T104312Z",
         "https://snapshot-cloudflare.debian.org/archive/debian-security/20261109T104312Z",
     ],
+    gpg_keys = [
+        "@svetoch_bazel_lib//deps/deb/keys:debian-archive-keyring.gpg",
+    ]
 )
 apt.install(
     dependency_set = "svetoch_bazel_lib_trixie",
