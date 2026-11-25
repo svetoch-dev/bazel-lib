@@ -81,8 +81,8 @@ oci.pull(
 )
 oci.pull(
     name = "svetoch_bazel_lib_postgres-exporter",
-    #v0.18.1
-    digest = "sha256:fb96c4413985d4b23ab02b19022b3d70a86c8e0a62f41ab15ebb6f4673781a5d",
+    #v0.21.1
+    digest = "sha256:a88794758ad461c75f3825b51cde4bde730bdff04b3b24d00efe14217e41f615",
     image = "quay.io/prometheuscommunity/postgres-exporter",
     platforms = [
         "linux/amd64",
