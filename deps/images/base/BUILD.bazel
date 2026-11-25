@@ -62,6 +62,7 @@ tar(
         #symlink awk to mawk the same how its done in ubuntu
         "./usr/bin/awk type=link link=/usr/bin/mawk",
     ],
+    compress = "gzip",
 )
 
 PACKAGES = [

@@ -1,3 +1,8 @@
+# v0.33.0
+
+BrakingChanges:
+* move to `rules_distroless` v0.11.2 that make `gpg_keys` for apt repos mandatory
+
 # v0.32.1
 
 Enhancements:
