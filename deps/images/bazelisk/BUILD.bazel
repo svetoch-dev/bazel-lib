@@ -74,19 +74,20 @@ mtree_mutate(
 tar(
     name = "bazelisk",
     srcs = ["@svetoch_bazel_lib_bazelisk//file"],
-    mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_bazelisk",
     compress = "gzip",
+    mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_bazelisk",
 )
 
 tar(
     name = "docker_credential_gcr",
     srcs = ["@svetoch_bazel_lib_docker_credential_gcr//:docker-credential-gcr"],
-    mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_docker_credential_gcr",
     compress = "gzip",
+    mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_docker_credential_gcr",
 )
 
 tar(
     name = "links",
+    compress = "gzip",
     mtree = [
         #Some bug with mtree_mutate with strip_prefix = "file"
         #so we need to use a symlink here
@@ -95,7 +96,6 @@ tar(
         #change permissions of home dir
         "./home/debian/ uid=1001 gid=0 mode=0755 type=dir",
     ],
-    compress = "gzip"
 )
 
 oci_image(

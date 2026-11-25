@@ -15,8 +15,8 @@ mtree_mutate(
 tar(
     name = "entrypoint",
     srcs = ["entrypoint.sh"],
-    mtree = "strip_package",
     compress = "gzip",
+    mtree = "strip_package",
 )
 
 oci_image(

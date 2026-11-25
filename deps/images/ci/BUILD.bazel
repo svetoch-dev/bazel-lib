@@ -26,8 +26,8 @@ mtree_mutate(
 tar(
     name = "yq",
     srcs = ["@svetoch_bazel_lib_yq//file"],
-    mtree = ":install_yq",
     compress = "gzip",
+    mtree = ":install_yq",
 )
 
 passwd(
@@ -55,10 +55,10 @@ group(
 
 tar(
     name = "runner_home",
+    compress = "gzip",
     mtree = [
         "./home/runner/ uid=1001 gid=1001 mode=0755 type=dir",
     ],
-    compress = "gzip",
 )
 
 mtree_spec(
@@ -76,8 +76,8 @@ mtree_mutate(
 tar(
     name = "update_image_tag",
     srcs = ["ci-update-image-tag.sh"],
-    mtree = ":install_update_image_tag",
     compress = "gzip",
+    mtree = ":install_update_image_tag",
 )
 
 oci_image(
