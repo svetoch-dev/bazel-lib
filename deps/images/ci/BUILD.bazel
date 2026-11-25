@@ -1,7 +1,7 @@
-load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@rules_distroless//distroless:defs.bzl", "group", "passwd")
 load("@rules_oci//oci:defs.bzl", "oci_image")
 load("@svetoch_bazel_lib//tools/macros:deb_packages.bzl", "deb_packages")
+load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 
 PACKAGES = [
     "@svetoch_bazel_lib_trixie//git",

@@ -8,9 +8,9 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 bazel_dep(name = "buildifier_prebuilt", version = "10.1.0")
-bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "bazel_lib", version = "3.8.0")
 
-bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib_toolchains = use_extension("@bazel_lib//lib:extensions.bzl", "toolchains")
 use_repo(bazel_lib_toolchains, "zstd_toolchains")
 
 bazel_dep(name = "rules_multirun", version = "0.14.0")
@@ -66,6 +66,7 @@ use_repo(load_file, "svetoch_bazel_lib_tfvars")
 # Container support
 ###################
 
+bazel_dep(name = "tar.bzl", version = "0.10.9")
 bazel_dep(name = "rules_oci", version = "2.3.0")
 bazel_dep(name = "rules_distroless")
 git_override(
@@ -118,6 +119,9 @@ apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
 apt.sources_list(
     architectures = ["amd64"],
     components = ["main"],
+    gpg_keys = [
+        "@svetoch_bazel_lib//deps/deb/keys:debian-archive-keyring.gpg",
+    ],
     suites = [
         "trixie",
         "trixie-updates",
@@ -127,22 +131,19 @@ apt.sources_list(
         "https://snapshot.debian.org/archive/debian/20261109T083251Z",
         "https://snapshot-cloudflare.debian.org/archive/debian/20261109T083251Z",
     ],
-    gpg_keys = [
-        "@svetoch_bazel_lib//deps/deb/keys:debian-archive-keyring.gpg",
-    ]
 )
 apt.sources_list(
     architectures = ["amd64"],
     components = ["main"],
+    gpg_keys = [
+        "@svetoch_bazel_lib//deps/deb/keys:debian-archive-keyring.gpg",
+    ],
     suites = ["trixie-security"],
     types = ["deb"],
     uris = [
         "https://snapshot.debian.org/archive/debian-security/20261109T104312Z",
         "https://snapshot-cloudflare.debian.org/archive/debian-security/20261109T104312Z",
     ],
-    gpg_keys = [
-        "@svetoch_bazel_lib//deps/deb/keys:debian-archive-keyring.gpg",
-    ]
 )
 apt.install(
     dependency_set = "svetoch_bazel_lib_trixie",

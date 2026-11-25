@@ -1,5 +1,5 @@
-load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 
 mtree_spec(
     name = "mtree_yc",
