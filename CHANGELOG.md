@@ -4,6 +4,9 @@ BrakingChanges:
 * move to `rules_distroless` v0.11.2 that make `gpg_keys` for apt repos mandatory
 * migrate from `aspect_bazel_lib` to `bazel_lib`
 
+Enhancements:
+* compress all image layers
+
 # v0.32.1
 
 Enhancements:
