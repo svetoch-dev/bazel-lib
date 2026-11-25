@@ -16,6 +16,7 @@ tar(
     name = "yc",
     srcs = ["@svetoch_bazel_lib_yc_cli//file"],
     mtree = ":install_yc",
+    compress = "gzip",
 )
 
 tar(
@@ -23,6 +24,7 @@ tar(
     mtree = [
         "./usr/local/bin/yc type=link link=/usr/local/bin/file/yc",
     ],
+    compress = "gzip",
 )
 
 tar(
@@ -31,6 +33,7 @@ tar(
     mtree = [
         "./token.sh type=file mode=0755 uid=0 gid=0 content=$(execpath token.sh)",
     ],
+    compress = "gzip",
 )
 
 oci_image(

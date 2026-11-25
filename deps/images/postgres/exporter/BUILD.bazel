@@ -16,6 +16,7 @@ tar(
     name = "entrypoint",
     srcs = ["entrypoint.sh"],
     mtree = "strip_package",
+    compress = "gzip",
 )
 
 oci_image(

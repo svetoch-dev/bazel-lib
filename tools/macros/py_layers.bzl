@@ -109,6 +109,7 @@ def py_layers(
             name = layer_target,
             srcs = [binary],
             mtree = "{}.{}_tar_manifest".format(name, layer),
+            compress = "gzip",
             visibility = ["//visibility:public"],
         )
 

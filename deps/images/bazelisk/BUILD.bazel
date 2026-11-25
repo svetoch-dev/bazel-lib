@@ -75,12 +75,14 @@ tar(
     name = "bazelisk",
     srcs = ["@svetoch_bazel_lib_bazelisk//file"],
     mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_bazelisk",
+    compress = "gzip",
 )
 
 tar(
     name = "docker_credential_gcr",
     srcs = ["@svetoch_bazel_lib_docker_credential_gcr//:docker-credential-gcr"],
     mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_docker_credential_gcr",
+    compress = "gzip",
 )
 
 tar(
@@ -93,6 +95,7 @@ tar(
         #change permissions of home dir
         "./home/debian/ uid=1001 gid=0 mode=0755 type=dir",
     ],
+    compress = "gzip"
 )
 
 oci_image(
