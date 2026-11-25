@@ -154,27 +154,27 @@ apt.install(
         "libncurses6",
         "tzdata",
         "bash",
-        "coreutils", # for commands like `ls`
+        "coreutils",  # for commands like `ls`
         "grep",
         # for apt list --installed
         "dpkg",
         "apt",
         "perl",
         "sed",  # needed by py_binary rules
-        "mawk", # needed by py_binary rules + mtree_mutate + rules_distroless.flatten
+        "mawk",  # needed by py_binary rules + mtree_mutate + rules_distroless.flatten
         # CI helper image tools
         "openssh-client",
         # bazelisk deps
-        "git",       # used in scripts/ci/ci.sh
-        "curl",      # used in scripts/ci/ci.sh
-        "gzip",      # used in scripts/ci/ci.sh
-        "libc6-dev", # assert.h, stdlib.h etc used by dpkg_status to compile packages
-        "g++",       # used by dpkg_status to compile packages
+        "git",  # used in scripts/ci/ci.sh
+        "curl",  # used in scripts/ci/ci.sh
+        "gzip",  # used in scripts/ci/ci.sh
+        "libc6-dev",  # assert.h, stdlib.h etc used by dpkg_status to compile packages
+        "g++",  # used by dpkg_status to compile packages
         "libc-bin",  # contains getent CLI needed by rules_tf to look up HOME if it is not set
         "xz-utils",  # needed by rules distroless
-        "gcc",       # needed by bazel
-        "findutils", # needed for requirements.txt.lock tests
-        "python3",   # needed for requirements.txt.lock tests
+        "gcc",  # needed by bazel
+        "findutils",  # needed for requirements.txt.lock tests
+        "python3",  # needed for requirements.txt.lock tests
     ],
 )
 use_repo(apt, "svetoch_bazel_lib_trixie")
