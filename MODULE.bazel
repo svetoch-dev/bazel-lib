@@ -78,8 +78,8 @@ git_override(
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
     name = "svetoch_bazel_lib_argocd",
-    #v3.6.2
-    digest = "sha256:bbcc3b6e79c5963439bdc5170f6e20a52365b41878133fac5ce8d6810d2641dc",
+    #v3.6.3
+    digest = "sha256:2d1a0b9389ad3a74283b2ac56bc5b3fb0803173512a2481970ca879844271ebd",
     image = "quay.io/argoproj/argocd",
     platforms = [
         "linux/amd64",
