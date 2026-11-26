@@ -1,7 +1,7 @@
-load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@rules_distroless//distroless:defs.bzl", "group", "passwd")
 load("@rules_oci//oci:defs.bzl", "oci_image")
 load("@svetoch_bazel_lib//tools/macros:deb_packages.bzl", "deb_packages")
+load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 
 PACKAGES = [
     "@svetoch_bazel_lib_trixie//git",
@@ -26,6 +26,7 @@ mtree_mutate(
 tar(
     name = "yq",
     srcs = ["@svetoch_bazel_lib_yq//file"],
+    compress = "gzip",
     mtree = ":install_yq",
 )
 
@@ -54,6 +55,7 @@ group(
 
 tar(
     name = "runner_home",
+    compress = "gzip",
     mtree = [
         "./home/runner/ uid=1001 gid=1001 mode=0755 type=dir",
     ],
@@ -74,6 +76,7 @@ mtree_mutate(
 tar(
     name = "update_image_tag",
     srcs = ["ci-update-image-tag.sh"],
+    compress = "gzip",
     mtree = ":install_update_image_tag",
 )
 

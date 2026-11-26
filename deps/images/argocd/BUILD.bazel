@@ -1,5 +1,5 @@
-load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 
 mtree_spec(
     name = "mtree_yc",
@@ -15,11 +15,13 @@ mtree_mutate(
 tar(
     name = "yc",
     srcs = ["@svetoch_bazel_lib_yc_cli//file"],
+    compress = "gzip",
     mtree = ":install_yc",
 )
 
 tar(
     name = "yc_link",
+    compress = "gzip",
     mtree = [
         "./usr/local/bin/yc type=link link=/usr/local/bin/file/yc",
     ],
@@ -28,6 +30,7 @@ tar(
 tar(
     name = "token",
     srcs = ["token.sh"],
+    compress = "gzip",
     mtree = [
         "./token.sh type=file mode=0755 uid=0 gid=0 content=$(execpath token.sh)",
     ],

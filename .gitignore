@@ -20,3 +20,6 @@ bazel-*
 ## Python ##
 venv
 __pycache__
+
+## Local rc file ##
+.bazelrc.local

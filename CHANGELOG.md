@@ -1,3 +1,13 @@
+# v0.33.0
+
+BrakingChanges:
+* move to `rules_distroless` v0.11.2 that make `gpg_keys` for apt repos mandatory
+* migrate from `aspect_bazel_lib` to `bazel_lib`
+
+Enhancements:
+* compress all image layers
+* `argocd` update image v3.6.2 -> v3.6.3
+
 # v0.32.1
 
 Enhancements:

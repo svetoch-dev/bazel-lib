@@ -8,9 +8,9 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 bazel_dep(name = "buildifier_prebuilt", version = "10.1.0")
-bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "bazel_lib", version = "3.8.0")
 
-bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib_toolchains = use_extension("@bazel_lib//lib:extensions.bzl", "toolchains")
 use_repo(bazel_lib_toolchains, "zstd_toolchains")
 
 bazel_dep(name = "rules_multirun", version = "0.14.0")
@@ -66,14 +66,20 @@ use_repo(load_file, "svetoch_bazel_lib_tfvars")
 # Container support
 ###################
 
+bazel_dep(name = "tar.bzl", version = "0.10.9")
 bazel_dep(name = "rules_oci", version = "2.3.0")
-bazel_dep(name = "rules_distroless", version = "0.9.4")
+bazel_dep(name = "rules_distroless")
+git_override(
+    module_name = "rules_distroless",
+    commit = "cdd138b5931e0919b01ddab5a8957885885c40ce",  # v0.11.2
+    remote = "https://github.com/bazel-contrib/rules_distroless",
+)
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
     name = "svetoch_bazel_lib_argocd",
-    #v3.6.2
-    digest = "sha256:bbcc3b6e79c5963439bdc5170f6e20a52365b41878133fac5ce8d6810d2641dc",
+    #v3.6.3
+    digest = "sha256:2d1a0b9389ad3a74283b2ac56bc5b3fb0803173512a2481970ca879844271ebd",
     image = "quay.io/argoproj/argocd",
     platforms = [
         "linux/amd64",
@@ -113,6 +119,9 @@ apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
 apt.sources_list(
     architectures = ["amd64"],
     components = ["main"],
+    gpg_keys = [
+        "@svetoch_bazel_lib//deps/deb/keys:debian-archive-keyring.gpg",
+    ],
     suites = [
         "trixie",
         "trixie-updates",
@@ -126,6 +135,9 @@ apt.sources_list(
 apt.sources_list(
     architectures = ["amd64"],
     components = ["main"],
+    gpg_keys = [
+        "@svetoch_bazel_lib//deps/deb/keys:debian-archive-keyring.gpg",
+    ],
     suites = ["trixie-security"],
     types = ["deb"],
     uris = [
@@ -159,6 +171,7 @@ apt.install(
         "libc6-dev",  # assert.h, stdlib.h etc used by dpkg_status to compile packages
         "g++",  # used by dpkg_status to compile packages
         "libc-bin",  # contains getent CLI needed by rules_tf to look up HOME if it is not set
+        "xz-utils",  # needed by rules distroless
         "gcc",  # needed by bazel
         "findutils",  # needed for requirements.txt.lock tests
         "python3",  # needed for requirements.txt.lock tests

@@ -1,6 +1,6 @@
 """Tf macros"""
 
-load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@bazel_lib//lib:expand_template.bzl", "expand_template")
 load(
     "@rules_tf//tf:defs.bzl",
     "tf_apply",

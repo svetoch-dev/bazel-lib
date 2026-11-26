@@ -1,7 +1,7 @@
-load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@rules_distroless//distroless:defs.bzl", "passwd")
 load("@rules_oci//oci:defs.bzl", "oci_image")
 load("@svetoch_bazel_lib//tools/macros:deb_packages.bzl", "deb_packages")
+load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 
 #github actions runner uses a user with uid=1001 https://github.com/actions/runner-images/issues/10936
 #because of this there is a permission missmatch  running in a container where user
@@ -40,6 +40,7 @@ PACKAGES = [
     "@svetoch_bazel_lib_trixie//findutils",
     "@svetoch_bazel_lib_trixie//python3",
     "@svetoch_bazel_lib_trixie//gzip",
+    "@svetoch_bazel_lib_trixie//xz-utils",
     "@svetoch_bazel_lib_trixie//libc-bin",
     "@svetoch_bazel_lib_trixie//libc6-dev",
     "@svetoch_bazel_lib_trixie//g++",
@@ -74,17 +75,20 @@ mtree_mutate(
 tar(
     name = "bazelisk",
     srcs = ["@svetoch_bazel_lib_bazelisk//file"],
+    compress = "gzip",
     mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_bazelisk",
 )
 
 tar(
     name = "docker_credential_gcr",
     srcs = ["@svetoch_bazel_lib_docker_credential_gcr//:docker-credential-gcr"],
+    compress = "gzip",
     mtree = "@svetoch_bazel_lib//deps/images/bazelisk:change_owner_docker_credential_gcr",
 )
 
 tar(
     name = "links",
+    compress = "gzip",
     mtree = [
         #Some bug with mtree_mutate with strip_prefix = "file"
         #so we need to use a symlink here
