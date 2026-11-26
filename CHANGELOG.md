@@ -6,7 +6,7 @@ BrakingChanges:
 
 Enhancements:
 * compress all image layers
-* `argocd` update image v3.6.1 -> v3.6.3
+* `argocd` update image v3.6.2 -> v3.6.3
 
 # v0.32.1
 
