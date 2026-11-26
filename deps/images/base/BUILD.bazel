@@ -1,7 +1,7 @@
-load("@aspect_bazel_lib//lib:tar.bzl", "tar")
 load("@rules_distroless//distroless:defs.bzl", "cacerts", "group", "passwd")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
 load("@svetoch_bazel_lib//tools/macros:deb_packages.bzl", "deb_packages")
+load("@tar.bzl", "tar")
 
 cacerts(
     name = "ca",
@@ -55,6 +55,7 @@ group(
 
 tar(
     name = "sh_homedir",
+    compress = "gzip",
     mtree = [
         # needed as dpkg assumes sh is installed in a typical debian installation.
         "./usr/bin/sh type=link link=/usr/bin/bash",

@@ -2,8 +2,8 @@
 Build layers for py container images
 """
 
-load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@aspect_rules_py//py:defs.bzl", "py_image_layer", "py_layer_tier")
+load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 
 # match *only* external repositories that have the string "python"
 # e.g. this will match
@@ -109,6 +109,7 @@ def py_layers(
             name = layer_target,
             srcs = [binary],
             mtree = "{}.{}_tar_manifest".format(name, layer),
+            compress = "gzip",
             visibility = ["//visibility:public"],
         )
 

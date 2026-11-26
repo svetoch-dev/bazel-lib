@@ -1,4 +1,4 @@
-load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@bazel_lib//lib:expand_template.bzl", "expand_template")
 
 #Used for pushing every image (in every push_* target)
 expand_template(
